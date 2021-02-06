@@ -1,16 +1,89 @@
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap");
+
 html,
 body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  height: 100%;
+}
+
+body {
+  @apply dark:bg-gray-800 font-serif;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  @apply text-yellow-500;
 }
 
-* {
-  box-sizing: border-box;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+small {
+  @apply dark:text-gray-200;
 }
+
+.html {
+  @apply dark:text-gray-200;
+}
+
+.html a {
+  @apply text-yellow-500 underline hover:no-underline;
+}
+
+.html ul {
+  @apply m-8 list-outside list-disc;
+}
+
+.html ul li + li {
+  @apply mt-4;
+}
+
+.blog-container {
+  max-width: 630px;
+  @apply mx-auto p-4;
+}
+
+.html h1 {
+  @apply text-3xl font-bold mb-2;
+}
+
+.html h2 {
+  @apply text-2xl font-bold mb-2;
+}
+
+.html h3 {
+  @apply text-xl font-bold mb-2;
+}
+
+.html p {
+  @apply mb-6;
+}
+
+.html code {
+  background-color: #011627;
+  @apply rounded p-1;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background: #011627 !important;
+  @apply rounded;
+  margin-bottom: 1.8rem !important;
+}
+
+@media screen and (min-width: 640px) {
+  :not(pre) > code[class*="language-"],
+  pre[class*="language-"] {
+    margin: 0.5em -2.5rem 1.8rem !important;
+  }
+}
+
+.bio p {
+  margin-bottom: 0;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

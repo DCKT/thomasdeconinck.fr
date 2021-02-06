@@ -1,65 +1,75 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import { request } from "../shared/datocms";
+import markdownToHtml from "../shared/markdownToHtml";
+import Bio from "../shared/Bio";
+import Link from "next/link";
+import ArticleListItem from "../shared/ArticleListItem";
+import Head from "next/head";
+import { useRouter } from "next/router";
 
-export default function Home() {
+const HOMEPAGE_QUERY = `
+query HomePage($limit: IntType, $locale: SiteLocale) {
+  allArticles(first: $limit, locale: $locale) {
+    title
+    description
+    slug
+    _publishedAt
+  }
+  siteInformation(locale: $locale) {
+    siteTitle
+    siteDescription
+  }
+}`;
+
+export async function getStaticProps({ locale }) {
+  const data = await request({
+    query: HOMEPAGE_QUERY,
+    variables: { limit: 10, locale },
+  });
+
+  const siteDescription = await markdownToHtml(
+    data.siteInformation.siteDescription
+  );
+
+  return {
+    props: {
+      articles: data.allArticles,
+      siteInformation: {
+        ...data.siteInformation,
+        siteDescription,
+      },
+    },
+  };
+}
+
+export default function Home({ siteInformation, articles }) {
+  let { locale } = useRouter();
   return (
-    <div className={styles.container}>
+    <div className="blog-container">
       <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>{siteInformation.siteTitle}</title>
+        <meta type="description" content={siteInformation.siteDescription} />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+      <h1 className="text-gray-700 dark:text-gray-200 text-4xl lg:text-5xl text-center mt-4 mb-8 font-bold">
+        {siteInformation.siteTitle}
+      </h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+      <Bio content={siteInformation.siteDescription} />
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+      <div className="mt-16">
+        {articles.map(({ title, description, _publishedAt, slug }, i) => {
+          return (
+            <ArticleListItem
+              key={i}
+              title={title}
+              description={description}
+              date={_publishedAt}
+              slug={slug}
+              locale
+            />
+          );
+        })}
+      </div>
     </div>
-  )
+  );
 }
