@@ -1,5 +1,5 @@
-import { request } from "../../lib/datocms";
-import markdownToHtml from "../../lib/markdownToHtml";
+import { request } from "../../shared/datocms";
+import markdownToHtml from "../../shared/markdownToHtml";
 import Bio from "../../shared/Bio";
 import Link from "next/link";
 import { useRouter } from "next/router";
