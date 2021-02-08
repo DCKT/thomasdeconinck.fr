@@ -96,7 +96,7 @@ export default function Article({
     <div className="blog-container">
       <Head>
         <title>{title}</title>
-        <meta type="description" content={description} />
+        <meta name="description" content={description} />
       </Head>
 
       <h4 className="text-lg font-bold mb-4">

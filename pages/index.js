@@ -36,6 +36,7 @@ export async function getStaticProps({ locale }) {
       siteInformation: {
         ...data.siteInformation,
         siteDescription,
+        metaDescription: siteDescription.replace(/(<([^>]+)>)/gi, ""),
       },
     },
   };
@@ -47,7 +48,7 @@ export default function Home({ siteInformation, articles }) {
     <div className="blog-container">
       <Head>
         <title>{siteInformation.siteTitle}</title>
-        <meta type="description" content={siteInformation.siteDescription} />
+        <meta name="description" content={siteInformation.metaDescription} />
       </Head>
 
       <h1 className="text-gray-700 dark:text-gray-200 text-4xl lg:text-5xl text-center mt-4 mb-8 font-bold">

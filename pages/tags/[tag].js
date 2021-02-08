@@ -77,7 +77,7 @@ export default function Tag({ articles, siteInformation }) {
     <div className="blog-container">
       <Head>
         <title>{siteInformation.siteTitle}</title>
-        <meta type="description" content={siteInformation.siteDescription} />
+        <meta name="description" content={siteInformation.siteDescription} />
       </Head>
 
       <Link href="/">
