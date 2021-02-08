@@ -90,6 +90,10 @@ small {
   @apply rounded p-1;
 }
 
+.html img {
+  @apply my-6;
+}
+
 .html .remark-highlight {
   @apply my-6;
 }
