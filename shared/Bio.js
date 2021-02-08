@@ -7,7 +7,8 @@ export default function Bio({ content, locale }) {
   return (
     <div className="flex flex-row">
       <img
-        src="http://placehold.it/100x100"
+        alt="Thomas Deconinck"
+        src="/me.png"
         className="rounded-full mr-4 w-16 h-16"
       />
       <div className="flex flex-col">
