@@ -3,7 +3,10 @@ module.exports = {
   darkMode: "media", // or 'media' or 'class'
   theme: {
     extend: {
-      serif: ["Merriweather", "serif"],
+      serif: ["system-ui", "serif"],
+      colors: {
+        orange: "#ff8a65",
+      },
     },
   },
   variants: {

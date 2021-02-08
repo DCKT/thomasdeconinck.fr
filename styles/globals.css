@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap");
-
 html,
 body {
   height: 100%;
@@ -10,7 +8,7 @@ body {
 }
 
 a {
-  @apply text-yellow-500;
+  @apply text-orange;
 }
 
 h1,
@@ -29,11 +27,37 @@ small {
 }
 
 .html a {
-  @apply text-yellow-500 underline hover:no-underline;
+  @apply text-orange underline hover:no-underline font-semibold;
+}
+
+.html h1 a,
+.html h2 a,
+.html h3 a,
+.html h4 a,
+.html h5 a,
+.html h6 a {
+  @apply dark:text-gray-200;
+}
+
+.html h1[id]:before,
+.html h2[id]:before,
+.html h3[id]:before,
+.html h4[id]:before,
+.html h5[id]:before,
+.html h6[id]:before {
+  content: "#";
+  font-size: 20px;
+  text-decoration: none;
+  margin-right: 6px;
+  border: none;
 }
 
 .html ul {
   @apply m-8 list-outside list-disc;
+}
+
+.html ul li {
+  @apply text-lg;
 }
 
 .html ul li + li {
@@ -58,12 +82,16 @@ small {
 }
 
 .html p {
-  @apply mb-6;
+  @apply mb-5 text-lg leading-8;
 }
 
 .html code {
   background-color: #011627;
   @apply rounded p-1;
+}
+
+.html .remark-highlight {
+  @apply my-6;
 }
 
 :not(pre) > code[class*="language-"],

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useEffect } from "react";
-import Prism from "prismjs";
 import flatten from "lodash/flatten";
 
 const POST_QUERY = `
@@ -88,27 +87,34 @@ export default function Article({
     dateStyle: "full",
   }).format(new Date(_publishedAt));
 
-  useEffect(() => {
-    Prism.highlightAll();
-  }, []);
-
   return (
     <div className="blog-container">
       <Head>
         <title>{title}</title>
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
         <meta name="description" content={description} />
+        <meta
+          property="og:site_name"
+          content={siteInformation.siteInformation}
+        />
+        <meta property="og:description" content={description} />
+        <meta property="og:title" content={title} />
+        <meta property="og:type" content="website" />
+        <meta name="robots" content="follow, index" />
+        <meta charSet="utf-8" />
       </Head>
 
       <h4 className="text-lg font-bold mb-4">
         <Link href="/">{siteInformation.siteTitle}</Link>
       </h4>
 
-      <h1 className="text-4xl font-bold">{title}</h1>
+      <h1 className="text-4xl font-bold leading-snug">{title}</h1>
       <div className="flex flex-row flex-wrap gap-x-2 mt-6 mb-2">
         {tags.map((tag, i) => {
           return (
             <Link key={`tags-${i}`} href={`/tags/${encodeURIComponent(tag)}`}>
-              <a className="bg-yellow-500 text-gray-700 rounded py-1 px-2 text-sm hover:bg-yellow-400">
+              <a className="bg-orange text-gray-700 rounded py-1 px-2 text-sm hover:opacity-75">
                 {tag}
               </a>
             </Link>
@@ -117,7 +123,7 @@ export default function Article({
       </div>
       <small>{formattedDate}</small>
 
-      <div
+      <main
         className="html mt-8"
         dangerouslySetInnerHTML={{ __html: content }}
       />

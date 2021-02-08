@@ -14,7 +14,7 @@ export default function Bio({ content, locale }) {
       <div className="flex flex-col">
         <div>
           <div
-            className="html font-serif bio"
+            className="html bio"
             dangerouslySetInnerHTML={{
               __html: content,
             }}
@@ -25,7 +25,7 @@ export default function Bio({ content, locale }) {
             href="https://github.com/DCKT"
             target="_blank"
             title="Github link"
-            className="text-yellow-500"
+            className="text-orange"
           >
             <GithubIcon size={26} />
           </a>
@@ -33,7 +33,7 @@ export default function Bio({ content, locale }) {
             href="https://twitter.com/DCK__"
             target="_blank"
             title="Twitter link"
-            className="text-yellow-500"
+            className="text-orange"
           >
             <TwitterIcon size={26} />
           </a>
