@@ -9,7 +9,7 @@ import DarkModeToggler from "../shared/DarkModeToggler";
 
 const HOMEPAGE_QUERY = `
 query HomePage($limit: IntType, $locale: SiteLocale) {
-  allArticles(first: $limit, locale: $locale) {
+  allArticles(first: $limit, locale: $locale, orderBy: _publishedAt_DESC) {
     title
     description
     slug
@@ -19,7 +19,8 @@ query HomePage($limit: IntType, $locale: SiteLocale) {
     siteTitle
     siteDescription
   }
-}`;
+}
+`;
 
 export async function getStaticProps({ locale }) {
   const data = await request({
