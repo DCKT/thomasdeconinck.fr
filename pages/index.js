@@ -5,6 +5,7 @@ import Link from "next/link";
 import ArticleListItem from "../shared/ArticleListItem";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import DarkModeToggler from "../shared/DarkModeToggler";
 
 const HOMEPAGE_QUERY = `
 query HomePage($limit: IntType, $locale: SiteLocale) {
@@ -51,9 +52,12 @@ export default function Home({ siteInformation, articles }) {
         <meta name="description" content={siteInformation.metaDescription} />
       </Head>
 
-      <h1 className="text-gray-700 dark:text-gray-200 text-4xl lg:text-5xl text-center mt-4 mb-8 font-bold">
-        {siteInformation.siteTitle}
-      </h1>
+      <div className="flex flex-row justify-center items-center mt-4 mb-8">
+        <h1 className="text-gray-700 dark:text-gray-200 text-4xl lg:text-5xl text-center font-bold mr-4">
+          {siteInformation.siteTitle}
+        </h1>
+        <DarkModeToggler />
+      </div>
 
       <Bio content={siteInformation.siteDescription} />
 

@@ -1,6 +1,6 @@
 module.exports = {
   purge: ["./pages/**/*.{js,ts,jsx,tsx}", "./shared/**/*.{js,ts,jsx,tsx}"],
-  darkMode: "media", // or 'media' or 'class'
+  darkMode: "class", // or 'media' or 'class'
   theme: {
     extend: {
       serif: ["system-ui", "serif"],
@@ -10,7 +10,9 @@ module.exports = {
     },
   },
   variants: {
-    extend: {},
+    extend: {
+      opacity: ["dark"],
+    },
   },
   plugins: [],
 };

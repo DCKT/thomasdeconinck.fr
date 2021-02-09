@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import { useEffect } from "react";
 import flatten from "lodash/flatten";
+import DarkModeToggler from "../../shared/DarkModeToggler";
 
 const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -105,9 +106,12 @@ export default function Article({
         <meta charSet="utf-8" />
       </Head>
 
-      <h4 className="text-lg font-bold mb-4">
-        <Link href="/">{siteInformation.siteTitle}</Link>
-      </h4>
+      <div className="flex flex-row justify-center items-center mb-4">
+        <h4 className="text-lg font-bold mr-4">
+          <Link href="/">{siteInformation.siteTitle}</Link>
+        </h4>
+        <DarkModeToggler />
+      </div>
 
       <h1 className="text-4xl font-bold leading-snug">{title}</h1>
       <div className="flex flex-row flex-wrap gap-x-2 mt-6 mb-2">
