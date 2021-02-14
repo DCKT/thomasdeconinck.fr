@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useEffect } from "react";
-import Prism from "prismjs";
 import flatten from "lodash/flatten";
 import uniq from "lodash/uniq";
 import ArticleListItem from "../../shared/ArticleListItem";

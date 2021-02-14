@@ -94,10 +94,19 @@ export default function Article({
         <title>{title}</title>
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:image"
+          content={"https://blog.thomasdeconinck.fr/favicon.ico"}
+        />
         <meta name="description" content={description} />
         <meta
           property="og:site_name"
           content={siteInformation.siteInformation}
+        />
+        <meta
+          name="og:image"
+          content={"https://blog.thomasdeconinck.fr/favicon.ico"}
         />
         <meta property="og:description" content={description} />
         <meta property="og:title" content={title} />

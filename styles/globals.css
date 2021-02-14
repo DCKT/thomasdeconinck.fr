@@ -87,7 +87,7 @@ small {
 
 .html code {
   background-color: #011627;
-  @apply rounded p-1;
+  @apply rounded p-1 text-gray-200;
 }
 
 .html img {
