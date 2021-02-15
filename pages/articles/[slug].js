@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import flatten from "lodash/flatten";
 import DarkModeToggler from "../../shared/DarkModeToggler";
 
-const POST_QUERY = `
+export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
   article(filter: {slug: {eq: $slug}}, locale: $locale) {
     title
@@ -50,10 +50,11 @@ export async function getStaticPaths() {
   };
 }
 
-export async function getStaticProps({ params, locale }) {
+export async function getStaticProps({ params, locale, preview }) {
   const data = await request({
     query: POST_QUERY,
     variables: { slug: params.slug, locale },
+    preview: preview,
   });
 
   const content = await markdownToHtml(data.article.content);
@@ -70,6 +71,7 @@ export async function getStaticProps({ params, locale }) {
         ...data.siteInformation,
         siteDescription,
       },
+      preview: !!preview,
     },
   };
 }
@@ -81,6 +83,7 @@ export default function Article({
   tags,
   _publishedAt,
   siteInformation,
+  preview,
 }) {
   const { locale } = useRouter();
 
@@ -90,6 +93,14 @@ export default function Article({
 
   return (
     <div className="blog-container">
+      {preview ? (
+        <div className="fixed top-0 right-0 p-4 bg-blue-200 rounded-bl">
+          <a className="block underline text-center" href="/api/exit-preview">
+            Exit
+          </a>
+          Preview mode enabled
+        </div>
+      ) : null}
       <Head>
         <title>{title}</title>
         <meta name="twitter:title" content={title} />
