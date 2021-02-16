@@ -46,7 +46,7 @@ export async function getStaticPaths() {
         return slugs.map(({ locale, slug }) => ({ params: { slug }, locale }));
       })
     ),
-    fallback: true,
+    fallback: false,
   };
 }
 
@@ -56,8 +56,6 @@ export async function getStaticProps({ params, locale, preview }) {
     variables: { slug: params.slug, locale },
     preview: preview,
   });
-
-  console.log("preview mode", preview);
 
   const content = await markdownToHtml(data.article.content);
   const siteDescription = await markdownToHtml(
