@@ -85,11 +85,11 @@ export default function Article({
   siteInformation,
   preview,
 }) {
-  const { locale } = useRouter();
+  const { locale, isFallback } = useRouter();
 
-  const formattedDate = new Intl.DateTimeFormat("fr-FR", {
-    dateStyle: "full",
-  }).format(new Date(_publishedAt));
+  if (isFallback) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="blog-container">
@@ -145,7 +145,14 @@ export default function Article({
           );
         })}
       </div>
-      <small>{formattedDate}</small>
+
+      {_publishedAt ? (
+        <small>
+          {new Intl.DateTimeFormat("fr-FR", {
+            dateStyle: "full",
+          }).format(new Date(_publishedAt))}
+        </small>
+      ) : null}
 
       <main
         className="html mt-8"
