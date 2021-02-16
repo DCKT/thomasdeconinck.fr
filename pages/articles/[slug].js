@@ -57,6 +57,8 @@ export async function getStaticProps({ params, locale, preview }) {
     preview: preview,
   });
 
+  console.log("preview mode", preview);
+
   const content = await markdownToHtml(data.article.content);
   const siteDescription = await markdownToHtml(
     data.siteInformation.siteDescription

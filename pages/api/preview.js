@@ -1,4 +1,3 @@
-// import { POST_QUERY } from "../articles/[slug]";
 import { request } from "../../shared/datocms";
 
 export const POST_QUERY = `
