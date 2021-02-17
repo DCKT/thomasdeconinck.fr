@@ -7,6 +7,7 @@ import Head from "next/head";
 import { useEffect } from "react";
 import flatten from "lodash/flatten";
 import DarkModeToggler from "../../shared/DarkModeToggler";
+import { DiscussionEmbed } from "disqus-react";
 
 export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -80,12 +81,13 @@ export default function Article({
   title,
   content,
   description,
+  slug,
   tags,
   _publishedAt,
   siteInformation,
   preview,
 }) {
-  const { locale, isFallback } = useRouter();
+  const { locale, isFallback, asPath } = useRouter();
 
   if (isFallback) {
     return <div>Loading...</div>;
@@ -157,6 +159,16 @@ export default function Article({
       <main
         className="html mt-8"
         dangerouslySetInnerHTML={{ __html: content }}
+      />
+
+      <DiscussionEmbed
+        shortname={"blog-de-dck"}
+        config={{
+          url: `https://blog.thomasdeconinck.fr/${locale}/asPath`,
+          identifier: slug,
+          title: title,
+          language: locale,
+        }}
       />
 
       <div className="mt-10 border-t pt-6 border-gray-500">
