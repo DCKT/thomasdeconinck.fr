@@ -1,10 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap");
+@font-face {
+  src: url(http://lea.verou.me/logo.otf);
+  font-family: "LeaVerou";
+}
 html,
 body {
   height: 100%;
 }
 
 body {
-  @apply dark:bg-gray-800 font-serif;
+  @apply dark:bg-gray-800;
+  font-family: "Inter", sans-serif !important;
 }
 
 a {
@@ -65,7 +71,7 @@ small {
 }
 
 .blog-container {
-  max-width: 630px;
+  max-width: 720px;
   @apply mx-auto p-4;
 }
 
@@ -186,3 +192,43 @@ html.dark-mode .dark-mode-toggle > button:last-child {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+pre[class*="language-"].line-numbers {
+  position: relative;
+  padding-left: 3.8em;
+  counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+  position: relative;
+  white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 100%;
+  left: -3.8em;
+  width: 3em; /* works for line-numbers below 1000 lines */
+  letter-spacing: -1px;
+  border-right: 1px solid #999;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.line-numbers-rows > span {
+  display: block;
+  counter-increment: linenumber;
+}
+
+.line-numbers-rows > span:before {
+  content: counter(linenumber);
+  color: #999;
+  display: block;
+  padding-right: 0.8em;
+  text-align: right;
+}

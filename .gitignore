@@ -41,3 +41,5 @@ certificates/
 server.js
 
 report.*
+
+Tmp.res

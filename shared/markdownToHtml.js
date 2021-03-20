@@ -13,7 +13,19 @@ export default async function markdownToHtml(markdown) {
       behavior: "wrap",
     })
     .use(html)
-    .use(prism)
+    .use(prism, {
+      plugins: [
+        "autolinker",
+        // 'command-line',
+        // 'data-uri-highlight',
+        // 'diff-highlight',
+        // 'inline-color',
+        // 'keep-markup',
+        // "line-numbers",
+        // 'show-invisibles',
+        // 'treeview',
+      ],
+    })
     .process(markdown);
   return result.toString();
 }

@@ -32,8 +32,7 @@
     "use-dark-mode": "2.3.1"
   },
   "devDependencies": {
-    "@babel/runtime": "7.12.13",
-    "bs-platform": "8.4.2"
+    "@babel/runtime": "7.12.13"
   },
   "engines": {
     "node": ">=12.x"

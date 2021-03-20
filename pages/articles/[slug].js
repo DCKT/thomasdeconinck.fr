@@ -135,29 +135,31 @@ export default function Article({
         <DarkModeToggler />
       </div>
 
-      <h1 className="text-4xl font-bold leading-snug">{title}</h1>
-      <div className="flex flex-row flex-wrap gap-x-2 mt-6 mb-2">
-        {tags.map((tag, i) => {
-          return (
-            <Link key={`tags-${i}`} href={`/tags/${encodeURIComponent(tag)}`}>
-              <a className="bg-orange text-gray-700 rounded py-1 px-2 text-sm hover:opacity-75">
-                {tag}
-              </a>
-            </Link>
-          );
-        })}
+      <div className="max-w-xl mx-auto text-center">
+        <h1 className="text-4xl font-bold leading-snug">{title}</h1>
+        <div className="flex flex-row justify-center flex-wrap gap-x-2 my-2">
+          {tags.map((tag, i) => {
+            return (
+              <Link key={`tags-${i}`} href={`/tags/${encodeURIComponent(tag)}`}>
+                <a className="bg-orange text-gray-700 rounded py-1 px-2 text-sm hover:opacity-75">
+                  {tag}
+                </a>
+              </Link>
+            );
+          })}
+        </div>
+
+        {_publishedAt ? (
+          <small>
+            {new Intl.DateTimeFormat("fr-FR", {
+              dateStyle: "full",
+            }).format(new Date(_publishedAt))}
+          </small>
+        ) : null}
       </div>
 
-      {_publishedAt ? (
-        <small>
-          {new Intl.DateTimeFormat("fr-FR", {
-            dateStyle: "full",
-          }).format(new Date(_publishedAt))}
-        </small>
-      ) : null}
-
       <main
-        className="html mt-8"
+        className="html mt-8 line-numbers"
         dangerouslySetInnerHTML={{ __html: content }}
       />
 
