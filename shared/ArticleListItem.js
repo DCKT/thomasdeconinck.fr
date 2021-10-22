@@ -14,7 +14,7 @@ export default function ArticleListItem({
   return (
     <div className="mb-6">
       <h3 className="text-2xl font-bold mb-1 text-orange dark:text-orange">
-        <Link href={`/articles/${slug}`}>{title}</Link>
+        <Link href={`/blog/${slug}`}>{title}</Link>
       </h3>
       <small className="text-xs">{formattedDate}</small>
       <p className="text-md">{description}</p>

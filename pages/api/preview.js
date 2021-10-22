@@ -24,5 +24,5 @@ export default async function handler(req, res) {
 
   res.setPreviewData({});
 
-  res.redirect(`/articles/${post.article.slug}`);
+  res.redirect(`/blog/${post.article.slug}`);
 }

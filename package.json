@@ -5,34 +5,31 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "re:build": "bsb -make-world -clean-world",
-    "re:watch": "bsb -make-world -clean-world -w"
+    "start": "next start"
   },
   "dependencies": {
-    "@rescript/react": "0.10.1",
-    "autoprefixer": "10.2.4",
-    "disqus-react": "1.0.11",
-    "graphql": "15.5.0",
-    "graphql-request": "3.4.0",
-    "lodash": "4.17.20",
-    "next": "10.0.6",
-    "postcss": "8.2.4",
+    "autoprefixer": "10.3.7",
+    "clsx": "1.1.1",
+    "graphql": "15.6.1",
+    "graphql-request": "3.6.1",
+    "lodash": "4.17.21",
+    "next": "11.1.2",
+    "postcss": "8.3.11",
     "prismjs": "1.23.0",
     "react": "17.0.1",
     "react-dom": "17.0.1",
-    "react-icons": "4.1.0",
+    "react-icons": "4.3.1",
     "remark": "13.0.0",
     "remark-autolink-headings": "6.0.1",
     "remark-external-links": "8.0.0",
     "remark-html": "13.0.1",
     "remark-prism": "1.3.4",
     "remark-slug": "6.0.0",
-    "tailwindcss": "2.0.2",
+    "tailwindcss": "2.2.17",
     "use-dark-mode": "2.3.1"
   },
   "devDependencies": {
-    "@babel/runtime": "7.12.13"
+    "@babel/runtime": "7.15.4"
   },
   "engines": {
     "node": ">=12.x"

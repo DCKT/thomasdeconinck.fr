@@ -1,80 +1,130 @@
-import { request } from "../shared/datocms";
-import markdownToHtml from "../shared/markdownToHtml";
-import Bio from "../shared/Bio";
-import Link from "next/link";
-import ArticleListItem from "../shared/ArticleListItem";
+import React from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import DarkModeToggler from "../shared/DarkModeToggler";
+import { request } from "../shared/datocms";
+import { HiMenu } from "react-icons/hi";
+import { GrClose } from "react-icons/gr";
+import clsx from "clsx";
+import Link from "next/link";
 
 const HOMEPAGE_QUERY = `
-query HomePage($limit: IntType, $locale: SiteLocale) {
-  allArticles(first: $limit, locale: $locale, orderBy: _publishedAt_DESC) {
-    title
-    description
-    slug
-    _publishedAt
-  }
-  siteInformation(locale: $locale) {
-    siteTitle
-    siteDescription
+query HomePage($locale: SiteLocale) {
+  homepage(locale: $locale) {
+    hello
   }
 }
+`;
+
+const MENU_QUERY = `
+  query Menu($locale: SiteLocale) {
+    menu(locale: $locale) {
+      navContent {
+        label
+        url
+      }
+    }
+  }
 `;
 
 export async function getStaticProps({ locale }) {
   const data = await request({
     query: HOMEPAGE_QUERY,
-    variables: { limit: 10, locale },
+    variables: { locale },
   });
 
-  const siteDescription = await markdownToHtml(
-    data.siteInformation.siteDescription
-  );
+  const menuData = await request({
+    query: MENU_QUERY,
+    variables: { locale },
+  });
 
   return {
     props: {
-      articles: data.allArticles,
-      siteInformation: {
-        ...data.siteInformation,
-        siteDescription,
-        metaDescription: siteDescription.replace(/(<([^>]+)>)/gi, ""),
-      },
+      hello: data.homepage.hello,
+      menu: menuData.menu.navContent,
     },
   };
 }
 
-export default function Home({ siteInformation, articles }) {
+export default function Home({ hello, menu }) {
   let { locale } = useRouter();
+  let [isMenuVisible, setMenuVisible] = React.useState(false);
+
   return (
-    <div className="blog-container">
-      <Head>
-        <title>{siteInformation.siteTitle}</title>
-        <meta name="description" content={siteInformation.metaDescription} />
-      </Head>
+    <div
+      className={clsx({
+        "fixed w-full h-full overflow-y-hidden": isMenuVisible,
+      })}
+    >
+      <nav className="relative flex items-center md:items-start justify-between py-8 px-4 md:px-0 max-w-screen-lg 2xl:max-w-screen-2xl mx-auto">
+        <a href="" className="font-bold text-2xl menu-link">
+          Thomas Deconinck
+        </a>
 
-      <div className="flex flex-row justify-center items-center mt-4 mb-8">
-        <h1 className="text-gray-700 dark:text-gray-200 text-4xl lg:text-5xl text-center font-bold mr-4">
-          {siteInformation.siteTitle}
-        </h1>
-        <DarkModeToggler />
-      </div>
+        <button
+          className="border-2 border-black rounded-full md:hidden relative w-12 h-12 "
+          onClick={(e) => {
+            e.preventDefault();
+            setMenuVisible((v) => !v);
+          }}
+        >
+          <HiMenu
+            size={32}
+            className={clsx(
+              "absolute left-1/2 top-1/2 -translate-x-2/4 -translate-y-2/4 transition-opacity ease-in-out duration-150",
+              {
+                "opacity-100": !isMenuVisible,
+                "opacity-0": isMenuVisible,
+              }
+            )}
+          />
+          <GrClose
+            size={26}
+            className={clsx(
+              "absolute left-1/2 top-1/2 -translate-x-2/4 -translate-y-2/4 transition-opacity ease-in-out duration-150",
+              {
+                "opacity-100": isMenuVisible,
+                "opacity-0": !isMenuVisible,
+              }
+            )}
+          />
+        </button>
 
-      <Bio content={siteInformation.siteDescription} />
+        <ul
+          className={clsx(
+            "absolute h-[100vh] md:h-auto top-full bg-white left-0 w-full md:w-auto md:static flex flex-col md:flex-row items-center md:items-start md:gap-12  transition-all ease-in-out duration-200",
+            {
+              "opacity-100": isMenuVisible,
+              "z-40": isMenuVisible,
+              "z-[-1] md:z-auto opacity-0 md:opacity-100": !isMenuVisible,
+            }
+          )}
+        >
+          {menu.map(({ label, url }) => {
+            return (
+              <li
+                key={label}
+                className="border-t md:border-none w-full md:w-auto"
+              >
+                <Link href={url} passHref>
+                  <a className="text-xl p-4 md:p-0 inline-block h-full md:h-auto menu-link w-full">
+                    {label}
+                  </a>
+                </Link>
+              </li>
+            );
+          })}
 
-      <div className="mt-16">
-        {articles.map(({ title, description, _publishedAt, slug }, i) => {
-          return (
-            <ArticleListItem
-              key={i}
-              title={title}
-              description={description}
-              date={_publishedAt}
-              slug={slug}
-              locale
-            />
-          );
-        })}
+          <li>
+            <DarkModeToggler />
+          </li>
+        </ul>
+      </nav>
+
+      <div className="max-w-screen-lg 2xl:max-w-screen-2xl mx-auto pt-40">
+        <p className={clsx("2xl:text-[6rem] lg:text-[4rem] italic font-light")}>
+          {hello}
+        </p>
       </div>
     </div>
   );

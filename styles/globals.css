@@ -1,8 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap");
-@font-face {
-  src: url(http://lea.verou.me/logo.otf);
-  font-family: "LeaVerou";
-}
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300,400;600&display=swap");
 html,
 body {
   height: 100%;
@@ -10,7 +6,7 @@ body {
 
 body {
   @apply dark:bg-gray-800;
-  font-family: "Inter", sans-serif !important;
+  font-family: "Rubik", sans-serif !important;
 }
 
 a {
@@ -231,4 +227,27 @@ pre[class*="language-"].line-numbers > code {
   display: block;
   padding-right: 0.8em;
   text-align: right;
+}
+
+.menu-link:after {
+  content: "";
+  display: block;
+  position: relative;
+  width: 0px;
+  height: 3px;
+  opacity: 0;
+  transition: all 0.5s ease-out;
+}
+
+.menu-link:hover:after {
+  width: 100%;
+  background: #000;
+  opacity: 1;
+  transition: all 0.25s ease-in;
+}
+
+@media screen and (max-width: 767px) {
+  .menu-link:after {
+    display: none;
+  }
 }
