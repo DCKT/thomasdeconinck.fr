@@ -1,17 +1,42 @@
 import React from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import DarkModeToggler from "../shared/DarkModeToggler";
+import markdownToHtml from "../shared/markdownToHtml";
 import { request } from "../shared/datocms";
-import { HiMenu } from "react-icons/hi";
-import { GrClose } from "react-icons/gr";
 import clsx from "clsx";
 import Link from "next/link";
+import Navigation from "../shared/Navigation";
 
 const HOMEPAGE_QUERY = `
 query HomePage($locale: SiteLocale) {
   homepage(locale: $locale) {
     hello
+    presentation
+    seo: pageTitle {
+      description
+      title
+      twitterCard
+    }
+    xlResPicture: picture {
+      responsiveImage(imgixParams: {fm: jpg, w: 850, h: 850 }) {
+        srcSet
+        webpSrcSet
+        src
+        title
+      }
+    }
+    lgResPicture : picture {
+      responsiveImage(imgixParams: {fm: jpg, w: 700, h: 700 }) {
+        srcSet
+        webpSrcSet
+      }
+    }
+    lowResPicture: picture {
+      responsiveImage(imgixParams: {fm: jpg, w: 500, h: 500 }) {
+        src
+        alt
+      }
+    }
   }
 }
 `;
@@ -38,94 +63,80 @@ export async function getStaticProps({ locale }) {
     variables: { locale },
   });
 
+  const presentation = await markdownToHtml(data.homepage.presentation);
+
   return {
     props: {
       hello: data.homepage.hello,
+      presentation: presentation,
+      xlResPicture: data.homepage.xlResPicture.responsiveImage,
+      lgResPicture: data.homepage.lgResPicture.responsiveImage,
+      lowResPicture: data.homepage.lowResPicture.responsiveImage,
+      seo: data.homepage.seo,
       menu: menuData.menu.navContent,
     },
   };
 }
 
-export default function Home({ hello, menu }) {
+export default function Home({
+  hello,
+  xlResPicture,
+  lgResPicture,
+  lowResPicture,
+  presentation,
+  menu,
+  seo,
+}) {
   let { locale } = useRouter();
   let [isMenuVisible, setMenuVisible] = React.useState(false);
 
   return (
-    <div
-      className={clsx({
-        "fixed w-full h-full overflow-y-hidden": isMenuVisible,
-      })}
-    >
-      <nav className="relative flex items-center md:items-start justify-between py-8 px-4 md:px-0 max-w-screen-lg 2xl:max-w-screen-2xl mx-auto">
-        <a href="" className="font-bold text-2xl menu-link">
-          Thomas Deconinck
-        </a>
+    <>
+      <Head>
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
+      </Head>
 
-        <button
-          className="border-2 border-black rounded-full md:hidden relative w-12 h-12 "
-          onClick={(e) => {
-            e.preventDefault();
-            setMenuVisible((v) => !v);
-          }}
-        >
-          <HiMenu
-            size={32}
-            className={clsx(
-              "absolute left-1/2 top-1/2 -translate-x-2/4 -translate-y-2/4 transition-opacity ease-in-out duration-150",
-              {
-                "opacity-100": !isMenuVisible,
-                "opacity-0": isMenuVisible,
-              }
-            )}
-          />
-          <GrClose
-            size={26}
-            className={clsx(
-              "absolute left-1/2 top-1/2 -translate-x-2/4 -translate-y-2/4 transition-opacity ease-in-out duration-150",
-              {
-                "opacity-100": isMenuVisible,
-                "opacity-0": !isMenuVisible,
-              }
-            )}
-          />
-        </button>
+      <Navigation links={menu} />
 
-        <ul
-          className={clsx(
-            "absolute h-[100vh] md:h-auto top-full bg-white left-0 w-full md:w-auto md:static flex flex-col md:flex-row items-center md:items-start md:gap-12  transition-all ease-in-out duration-200",
-            {
-              "opacity-100": isMenuVisible,
-              "z-40": isMenuVisible,
-              "z-[-1] md:z-auto opacity-0 md:opacity-100": !isMenuVisible,
+      <div className="max-w-screen-lg 2xl:max-w-screen-2xl mx-auto pt-10 md:pt-10 lg:pt-24 xl:pt-28 flex items-center justify-between px-4 lg:px-0 lg:flex-row flex-col-reverse">
+        <div className="text-center lg:text-left ">
+          <p
+            className={
+              "2xl:text-[6rem] lg:text-[4rem] text-[3rem] italic mt-10 lg:mt-0 dark:text-gray-100 tracking-wider"
             }
-          )}
-        >
-          {menu.map(({ label, url }) => {
-            return (
-              <li
-                key={label}
-                className="border-t md:border-none w-full md:w-auto"
-              >
-                <Link href={url} passHref>
-                  <a className="text-xl p-4 md:p-0 inline-block h-full md:h-auto menu-link w-full">
-                    {label}
-                  </a>
-                </Link>
-              </li>
-            );
-          })}
+          >
+            {hello}
+          </p>
 
-          <li>
-            <DarkModeToggler />
-          </li>
-        </ul>
-      </nav>
+          <div
+            className="2xl:text-[2.3rem] lg:text-[1.75rem] text-[1.50rem] font-light dark:text-gray-200"
+            dangerouslySetInnerHTML={{ __html: presentation }}
+          />
+        </div>
+        <picture className="md:w-[700px] xl:w-[850px] mr-0  lg:-mr-40 animate-upScale motion-reduce:transition-none motion-reduce:transform-none">
+          <source
+            media="(min-width: 1280px)"
+            srcSet={xlResPicture.webpSrcSet}
+            type="image/webp"
+          />
+          <source media="(min-width: 1280px)" srcSet={xlResPicture.srcSet} />
 
-      <div className="max-w-screen-lg 2xl:max-w-screen-2xl mx-auto pt-40">
-        <p className={clsx("2xl:text-[6rem] lg:text-[4rem] italic font-light")}>
-          {hello}
-        </p>
+          <source
+            media="(min-width: 768px)"
+            srcSet={lgResPicture.webpSrcSet}
+            type="image/webp"
+          />
+          <source media="(min-width: 768px)" srcSet={lgResPicture.srcSet} />
+          <source
+            media="(min-width: 768px)"
+            srcSet={lgResPicture.webpSrcSet}
+            type="image/webp"
+          />
+          <source media="(min-width: 768px)" srcSet={lgResPicture.srcSet} />
+          <img src={lowResPicture.src} alt={lowResPicture.alt} loading="lazy" />
+        </picture>
       </div>
-    </div>
+    </>
   );
 }

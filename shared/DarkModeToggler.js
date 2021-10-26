@@ -1,42 +1,55 @@
-import useDarkMode from "use-dark-mode";
+import { BsSunFill, BsMoonStarsFill } from "react-icons/bs";
+import clsx from "clsx";
+import { useSsr, useLocalStorage, useDarkMode } from "./hooks";
+import React from "react";
 
 export default function DarkModeToggler() {
-  const darkMode = useDarkMode(false, {
-    classNameDark: "dark",
-    element: (typeof document !== "undefined" && document.documentElement) || {
-      classList: {
-        add: () => {},
-        remove: () => {},
-      },
-    },
-  });
+  const [darkModeEnabled, toggleDarkMode] = useDarkMode();
 
   return (
-    <div className="dark-mode-toggle">
-      <button
-        type="button"
-        onClick={darkMode.disable}
-        className="opacity-1 dark:opacity-50 mr-1"
+    <label
+      htmlFor="dmcheck"
+      className={clsx(
+        "select-none relative w-14 h-6 border dark:border-gray-700 rounded-full flex items-center cursor-pointer transition-colors ease-in duration-150 bg-gray-50 dark:bg-gray-700"
+      )}
+    >
+      <input
+        className="dmcheck absolute opacity-0"
+        type="checkbox"
+        checked={darkModeEnabled}
+        onChange={(_) => toggleDarkMode()}
+        id="dmcheck"
+      />
+      <div
+        className={clsx(
+          "border dark:border-gray-500 inline-block w-8 h-8 rounded-full absolute shadow bg-white dark:bg-gray-800 transition-all ease-in duration-250",
+          {
+            "left-0": !darkModeEnabled,
+            "translate-x-6": darkModeEnabled,
+          }
+        )}
       >
-        ☀
-      </button>
-      <span className="toggle-control">
-        <input
-          className="dmcheck"
-          type="checkbox"
-          checked={darkMode.value}
-          onChange={darkMode.toggle}
-          id="dmcheck"
+        <BsSunFill
+          size={16}
+          color="#374151"
+          className={clsx(
+            "transition-opacity ease-in-out duration-150 absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2",
+            {
+              "opacity-0": !!darkModeEnabled,
+            }
+          )}
         />
-        <label htmlFor="dmcheck" />
-      </span>
-      <button
-        type="button"
-        onClick={darkMode.enable}
-        className="text-gray-400 dark:text-yellow-400 ml-1"
-      >
-        ☾
-      </button>
-    </div>
+        <BsMoonStarsFill
+          size={16}
+          color="#F9FAFB"
+          className={clsx(
+            "transition-opacity ease-in-out duration-150 absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2",
+            {
+              "opacity-0": !darkModeEnabled,
+            }
+          )}
+        />
+      </div>
+    </label>
   );
 }
