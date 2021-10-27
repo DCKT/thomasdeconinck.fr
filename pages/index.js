@@ -5,7 +5,8 @@ import markdownToHtml from "../shared/markdownToHtml";
 import { request } from "../shared/datocms";
 import clsx from "clsx";
 import Link from "next/link";
-import Navigation from "../shared/Navigation";
+import Navigation from "../components/Navigation";
+import { MENU_QUERY } from "../shared/queries";
 
 const HOMEPAGE_QUERY = `
 query HomePage($locale: SiteLocale) {
@@ -39,17 +40,6 @@ query HomePage($locale: SiteLocale) {
     }
   }
 }
-`;
-
-const MENU_QUERY = `
-  query Menu($locale: SiteLocale) {
-    menu(locale: $locale) {
-      navContent {
-        label
-        url
-      }
-    }
-  }
 `;
 
 export async function getStaticProps({ locale }) {
@@ -88,7 +78,6 @@ export default function Home({
   seo,
 }) {
   let { locale } = useRouter();
-  let [isMenuVisible, setMenuVisible] = React.useState(false);
 
   return (
     <>

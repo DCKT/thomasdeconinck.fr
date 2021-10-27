@@ -1,11 +1,12 @@
 import { request } from "../../shared/datocms";
 import markdownToHtml from "../../shared/markdownToHtml";
-import Bio from "../../shared/Bio";
+import Bio from "../../components/Bio";
 import Link from "next/link";
-import ArticleListItem from "../../shared/ArticleListItem";
+import ArticleListItem from "../../components/ArticleListItem";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import DarkModeToggler from "../../shared/DarkModeToggler";
+import { MENU_QUERY } from "../../shared/queries";
+import Navigation from "../../components/Navigation";
 
 const HOMEPAGE_QUERY = `
 query HomePage($limit: IntType, $locale: SiteLocale) {
@@ -28,6 +29,11 @@ export async function getStaticProps({ locale }) {
     variables: { limit: 10, locale },
   });
 
+  const menuData = await request({
+    query: MENU_QUERY,
+    variables: { locale },
+  });
+
   const siteDescription = await markdownToHtml(
     data.siteInformation.siteDescription
   );
@@ -35,6 +41,7 @@ export async function getStaticProps({ locale }) {
   return {
     props: {
       articles: data.allArticles,
+      menu: menuData.menu.navContent,
       siteInformation: {
         ...data.siteInformation,
         siteDescription,
@@ -44,7 +51,7 @@ export async function getStaticProps({ locale }) {
   };
 }
 
-export default function Home({ siteInformation, articles }) {
+export default function Home({ siteInformation, articles, menu }) {
   let { locale } = useRouter();
   return (
     <div className="blog-container">
@@ -53,14 +60,7 @@ export default function Home({ siteInformation, articles }) {
         <meta name="description" content={siteInformation.metaDescription} />
       </Head>
 
-      <div className="flex flex-row justify-center items-center mt-4 mb-8">
-        <h1 className="text-gray-700 dark:text-gray-200 text-4xl lg:text-5xl text-center font-bold mr-4">
-          {siteInformation.siteTitle}
-        </h1>
-        <DarkModeToggler />
-      </div>
-
-      <Bio content={siteInformation.siteDescription} />
+      <Navigation links={menu} />
 
       <div className="mt-16">
         {articles.map(({ title, description, _publishedAt, slug }, i) => {
