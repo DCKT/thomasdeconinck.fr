@@ -8,3 +8,14 @@ export const MENU_QUERY = `
     }
   }
 `;
+
+export const ALL_ARTICLES_QUERY = `
+query AllArticles {
+  articles: allArticles {
+    slugs: _allSlugLocales {
+      locale
+      slug: value
+    }
+  }
+}
+`;

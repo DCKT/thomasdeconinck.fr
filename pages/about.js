@@ -7,10 +7,12 @@ import clsx from "clsx";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
 import { MENU_QUERY } from "../shared/queries";
+import markdownToHtml from "../shared/markdownToHtml";
 
 const ABOUT_QUERY = `
 query AboutPage($locale: SiteLocale) {
   aboutPage(locale: $locale) {
+    description
     pictureOfMe {
       responsiveImage(imgixParams: {fm: jpg, w: 256, h: 256, fit: crop, crop: faces }) {
         srcSet
@@ -35,25 +37,32 @@ query AboutPage($locale: SiteLocale) {
 `;
 
 export async function getStaticProps({ locale }) {
-  const data = await request({
+  const {
+    aboutPage: { seo, pictureOfMe, description },
+  } = await request({
     query: ABOUT_QUERY,
     variables: { locale },
   });
-  const menuData = await request({
+  const {
+    menu: { navContent },
+  } = await request({
     query: MENU_QUERY,
     variables: { locale },
   });
 
+  const htmlDescription = await markdownToHtml(description);
+
   return {
     props: {
-      menu: menuData.menu.navContent,
-      seo: data.aboutPage.seo,
-      pictureOfMe: data.aboutPage.pictureOfMe.responsiveImage,
+      menu: navContent,
+      seo: seo,
+      pictureOfMe: pictureOfMe.responsiveImage,
+      description: htmlDescription,
     },
   };
 }
 
-export default function About({ menu, seo, pictureOfMe }) {
+export default function About({ menu, seo, pictureOfMe, description }) {
   let { locale } = useRouter();
 
   return (
@@ -87,6 +96,10 @@ export default function About({ menu, seo, pictureOfMe }) {
               className="block rounded-full border-8 mx-auto shadow-lg border-gray-100 dark:border-gray-200"
             />
           </picture>
+        </div>
+
+        <div className="max-w-screen-sm mx-auto text-gray-900 dark:text-gray-200 about-presentation mt-10">
+          <div dangerouslySetInnerHTML={{ __html: description }} />
         </div>
       </div>
     </>

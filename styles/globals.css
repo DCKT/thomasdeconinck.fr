@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300,400;600&display=swap");
 html,
 body {
   height: 100%;
@@ -198,4 +197,20 @@ pre[class*="language-"].line-numbers > code {
   .menu-link:after {
     display: none;
   }
+}
+
+.about-presentation h1 {
+  @apply text-5xl text-center font-light mb-4;
+}
+
+.about-presentation h2 {
+  @apply text-3xl text-center font-light mt-8 mb-4;
+}
+
+.about-presentation h3 {
+  @apply text-2xl text-center font-light mt-8 mb-4;
+}
+
+.about-presentation p {
+  @apply text-lg tracking-wide mb-4;
 }

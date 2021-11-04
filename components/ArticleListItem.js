@@ -6,6 +6,7 @@ export default function ArticleListItem({
   date,
   slug,
   locale,
+  splash,
 }) {
   const formattedDate = new Intl.DateTimeFormat(locale, {
     dateStyle: "full",
@@ -13,7 +14,19 @@ export default function ArticleListItem({
 
   return (
     <div className="mb-6">
-      <h3 className="text-2xl font-bold mb-1 text-orange dark:text-orange">
+      <picture className="rounded hidden md:block shadow-lg">
+        <source
+          media="(min-width: 768px)"
+          srcSet={splash.webpSrcSet}
+          type="image/webp"
+        />
+        <img
+          src={splash.src}
+          alt={splash.alt}
+          className="rounded shadow-lg border dark:border-0"
+        />
+      </picture>
+      <h3 className="text-2xl md:text-xl font-semibold mb-1 text-orange dark:text-orange">
         <Link href={`/blog/${slug}`}>{title}</Link>
       </h3>
       <small className="text-xs">{formattedDate}</small>

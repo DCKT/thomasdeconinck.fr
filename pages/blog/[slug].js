@@ -1,12 +1,13 @@
-import { request } from "../../shared/datocms";
-import markdownToHtml from "../../shared/markdownToHtml";
-import Bio from "../../shared/Bio";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useEffect } from "react";
 import flatten from "lodash/flatten";
-import DarkModeToggler from "../../shared/DarkModeToggler";
+import Navigation from "../../components/Navigation";
+import { request } from "../../shared/datocms";
+import markdownToHtml from "../../shared/markdownToHtml";
+import { ALL_ARTICLES_QUERY, MENU_QUERY } from "../../shared/queries";
+import HtmlContent from "../../components/HtmlContent";
 
 export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -24,20 +25,9 @@ query Post($slug: String, $locale: SiteLocale) {
   }
 }`;
 
-const TEST_QUERY = `
-query AllArticles {
-  articles: allArticles {
-    slugs: _allSlugLocales {
-      locale
-      slug: value
-    }
-  }
-}
-`;
-
 export async function getStaticPaths() {
   const data = await request({
-    query: TEST_QUERY,
+    query: ALL_ARTICLES_QUERY,
   });
 
   return {
@@ -57,6 +47,11 @@ export async function getStaticProps({ params, locale, preview }) {
     preview: preview,
   });
 
+  const menuData = await request({
+    query: MENU_QUERY,
+    variables: { locale },
+  });
+
   const content = await markdownToHtml(data.article.content);
   const siteDescription = await markdownToHtml(
     data.siteInformation.siteDescription
@@ -72,6 +67,7 @@ export async function getStaticProps({ params, locale, preview }) {
         siteDescription,
       },
       preview: !!preview,
+      menu: menuData.menu.navContent,
     },
   };
 }
@@ -85,6 +81,7 @@ export default function Article({
   _publishedAt,
   siteInformation,
   preview,
+  menu,
 }) {
   const { locale, isFallback, asPath } = useRouter();
 
@@ -127,12 +124,7 @@ export default function Article({
         <meta charSet="utf-8" />
       </Head>
 
-      <div className="flex flex-row justify-center items-center mb-4">
-        <h4 className="text-lg font-bold mr-4">
-          <Link href="/">{siteInformation.siteTitle}</Link>
-        </h4>
-        <DarkModeToggler />
-      </div>
+      <Navigation links={menu} />
 
       <div className="max-w-xl mx-auto text-center">
         <h1 className="text-4xl font-bold leading-snug">{title}</h1>
@@ -157,14 +149,7 @@ export default function Article({
         ) : null}
       </div>
 
-      <main
-        className="html mt-8 line-numbers"
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-
-      <div className="mt-10 border-t pt-6 border-gray-500">
-        <Bio content={siteInformation.siteDescription} />
-      </div>
+      <HtmlContent content={content} />
     </div>
   );
 }

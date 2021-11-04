@@ -1,5 +1,5 @@
 import "../styles/globals.css";
-import "prismjs/themes/prism-okaidia.css";
+import "../styles/prism-theme.css";
 
 function MyApp({ Component, pageProps }) {
   return <Component {...pageProps} />;

@@ -10,6 +10,9 @@ module.exports = {
     extend: {
       serif: ["Rubik", "system-ui", "serif"],
       colors: {
+        gray: {
+          900: "#1f2028",
+        },
         orange: "#ff8a65",
       },
       keyframes: {

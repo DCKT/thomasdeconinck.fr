@@ -1,31 +1,40 @@
-import remark from "remark";
-import html from "remark-html";
-import prism from "remark-prism";
-import slug from "remark-slug";
-import headings from "remark-autolink-headings";
-import externalLinks from "remark-external-links";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import remarkPrism from "remark-prism";
+import rehypeSlug from "rehype-slug";
+import rehypeStringify from "rehype-stringify";
+import rehypeHeadings from "rehype-autolink-headings";
+import rehypeExternalLinks from "rehype-external-links";
 
 export default async function markdownToHtml(markdown) {
-  const result = await remark()
-    .use(slug)
-    .use(externalLinks, { target: "_blank", rel: ["noopener", "noreferrer"] })
-    .use(headings, {
-      behavior: "wrap",
-    })
-    .use(html)
-    .use(prism, {
+  const result = await unified()
+    .use(remarkParse)
+    .use(remarkPrism, {
+      transformInlineCode: true,
       plugins: [
+        "line-numbers",
         "autolinker",
-        // 'command-line',
-        // 'data-uri-highlight',
-        // 'diff-highlight',
-        // 'inline-color',
-        // 'keep-markup',
-        // "line-numbers",
-        // 'show-invisibles',
-        // 'treeview',
+        "command-line",
+        "data-uri-highlight",
+        "diff-highlight",
+        "inline-color",
+        "keep-markup",
+        "treeview",
       ],
     })
-    .process(markdown);
-  return result.toString();
+    .use(remarkRehype)
+    .use(rehypeSlug)
+    .use(rehypeExternalLinks, {
+      target: "_blank",
+      rel: ["noopener", "noreferrer"],
+    })
+    .use(rehypeHeadings, {
+      behavior: "wrap",
+    })
+    .use(rehypeStringify)
+    .process(markdown)
+    .then((file) => String(file));
+
+  return result;
 }

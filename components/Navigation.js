@@ -7,6 +7,13 @@ import { useSsr, useLocalStorage, useDarkMode } from "../shared/hooks";
 import { BsSunFill, BsMoonStarsFill } from "react-icons/bs";
 
 const DarkModeToggler = () => {
+  const { isServer, isBrowser } = useSsr();
+
+  // useEffect & useLayoutEffect can't be used on server side
+  if (isServer) {
+    return null;
+  }
+
   const [darkModeEnabled, toggleDarkMode] = useDarkMode();
 
   return (
