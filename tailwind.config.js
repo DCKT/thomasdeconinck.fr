@@ -11,6 +11,7 @@ module.exports = {
       serif: ["Rubik", "system-ui", "serif"],
       colors: {
         gray: {
+          800: "#2e3039",
           900: "#1f2028",
         },
         orange: "#ff8a65",

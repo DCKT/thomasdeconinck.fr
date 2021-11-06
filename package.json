@@ -32,8 +32,7 @@
     "unified-stream": "2.0.0"
   },
   "devDependencies": {
-    "@babel/runtime": "7.16.0",
-    "babel-plugin-module-resolver": "4.1.0"
+    "@babel/runtime": "7.16.0"
   },
   "engines": {
     "node": ">=12.x"

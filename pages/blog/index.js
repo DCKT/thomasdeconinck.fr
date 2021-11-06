@@ -7,10 +7,11 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { MENU_QUERY } from "../../shared/queries";
 import Navigation from "../../components/Navigation";
+import clsx from "clsx";
 
 const BLOG_INDEX_QUERY = `
-query BlogIndex($limit: IntType, $locale: SiteLocale) {
-  allArticles(first: $limit, locale: $locale, orderBy: _publishedAt_DESC) {
+query BlogIndex($locale: SiteLocale) {
+  latestArticle: allArticles(first: 1, locale: $locale, orderBy: _publishedAt_DESC) {
     title
     description
     slug
@@ -21,6 +22,29 @@ query BlogIndex($limit: IntType, $locale: SiteLocale) {
        webpSrcSet
        src
        alt
+       width
+       height
+       aspectRatio
+       base64
+     }
+   }
+  }
+  
+  nextArticles: allArticles(skip:1, first:3, locale: $locale, orderBy: _publishedAt_DESC) {
+    title
+    description
+    slug
+    _publishedAt
+    splash {
+      responsiveImage(imgixParams: {fm: jpg, w: 450, h: 500 }) {
+       srcSet
+       webpSrcSet
+       src
+       alt
+       width
+       height
+       aspectRatio
+       base64
      }
    }
   }
@@ -30,7 +54,7 @@ query BlogIndex($limit: IntType, $locale: SiteLocale) {
 export async function getStaticProps({ locale }) {
   const data = await request({
     query: BLOG_INDEX_QUERY,
-    variables: { limit: 4, locale },
+    variables: { locale },
   });
 
   const menuData = await request({
@@ -40,15 +64,15 @@ export async function getStaticProps({ locale }) {
 
   return {
     props: {
-      articles: data.allArticles,
+      latestArticle: data.latestArticle[0],
+      nextArticles: data.nextArticles,
       menu: menuData.menu.navContent,
     },
   };
 }
 
-export default function Home({ articles, menu }) {
+export default function Home({ latestArticle, nextArticles, menu }) {
   let { locale } = useRouter();
-  const [latestArticle, ...nextArticles] = articles;
 
   return (
     <div className="blog-container">
@@ -59,10 +83,10 @@ export default function Home({ articles, menu }) {
 
       <Navigation links={menu} />
 
-      <div className="mt-16 max-w-screen-xl mx-auto px-4">
-        <div className="flex flex-row items-center gap-8 mb-12 lg:mb-20">
-          <Link href={`/blog/${latestArticle.slug}`}>
-            <picture className="rounded hidden md:block shadow-lg cursor-pointer">
+      <div className="mt-16 max-w-screen-xl mx-auto px-4 pb-10">
+        <Link href={`/blog/${latestArticle.slug}`} passHref>
+          <a className="relative flex flex-row items-center gap-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg blog-featured-article cursor-pointer">
+            <picture className="rounded-lg hidden md:block dark:shadow-lg  flex-shrink-0 ">
               <source
                 media="(min-width: 768px)"
                 srcSet={latestArticle.splash.responsiveImage.webpSrcSet}
@@ -71,58 +95,89 @@ export default function Home({ articles, menu }) {
               <img
                 src={latestArticle.splash.responsiveImage.src}
                 alt={latestArticle.splash.responsiveImage.alt}
-                className="rounded shadow-lg border dark:border-0"
+                className="rounded-lg dark:shadow-lg border dark:border-0 md:w-[450px] lg:w-[550px] xl:w-[650px] xl:h-[400px]"
               />
             </picture>
-          </Link>
-          <div>
-            <Link href={`/blog/${latestArticle.slug}`}>
-              <h1 className="text-2xl md:text-2xl font-semibold dark:text-gray-100 cursor-pointer">
+
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-gray-100">
                 {latestArticle.title}
               </h1>
-            </Link>
-            <small className="text-xs lg:text-base dark:text-gray-500">
-              {new Intl.DateTimeFormat(locale, {
-                dateStyle: "full",
-              }).format(new Date(latestArticle._publishedAt))}
-            </small>
-            <p className="text-lg md:text-base dark:text-gray-300 mt-2">
-              {latestArticle.description}
-            </p>
-          </div>
-        </div>
+              <small className="text-base md:text-xs lg:text-base dark:text-gray-400">
+                {new Intl.DateTimeFormat(locale, {
+                  dateStyle: "full",
+                }).format(new Date(latestArticle._publishedAt))}
+              </small>
+              <p className="text-lg md:text-base text-gray-900 dark:text-gray-300  mt-4 lg:mt-10">
+                {latestArticle.description}
+              </p>
+            </div>
+          </a>
+        </Link>
 
-        <div className="grid grid-flow-col md:grid-flow-row grid-rows-3 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
+        <h4 className="text-2xl md:text-4xl font-light dark:text-gray-200 my-8 md:my-12 lg:my-20">
+          Mes derniers articles
+        </h4>
+
+        <div className="grid md:grid-flow-row sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
           {nextArticles.map(
-            ({ title, description, _publishedAt, slug, splash }) => {
+            (
+              {
+                title,
+                description,
+                _publishedAt,
+                slug,
+                splash: { responsiveImage },
+              },
+              i
+            ) => {
               return (
-                <div key={slug}>
-                  <Link href={`/blog/${slug}`}>
-                    <picture className="rounded hidden md:block shadow mb-4">
-                      <source
-                        media="(min-width: 768px)"
-                        srcSet={splash.responsiveImage.webpSrcSet}
-                        type="image/webp"
-                      />
-                      <img
-                        src={splash.responsiveImage.src}
-                        alt={splash.responsiveImage.alt}
-                        className="rounded shadow border dark:border-0"
-                      />
-                    </picture>
-                  </Link>
+                <div
+                  key={slug}
+                  className={clsx("flex flex-col shadow-xl", {
+                    "border-t border-gray-400 dark:border-gray-700 pt-4 md:border-0 md:pt-0":
+                      i > 0,
+                  })}
+                >
+                  <Link href={`/blog/${slug}`} passHref>
+                    <a
+                      className={
+                        "relative md:h-[500px] rounded-lg cursor-pointer blog-item z-10"
+                      }
+                      style={{
+                        backgroundImage: `url(${responsiveImage.base64})`,
+                        backgroundSize: "cover",
+                      }}
+                    >
+                      <picture className="absolute left-0 top-0 w-full rounded-lg hidden md:block mb-4 h-full">
+                        <source
+                          srcSet={responsiveImage.webpSrcSet}
+                          type="image/webp"
+                        />
+                        <source srcSet={responsiveImage.srcSet} />
+                        <img
+                          src={responsiveImage.src}
+                          alt={responsiveImage.alt}
+                          loading="lazy"
+                          className="block rounded-lg border dark:border-0 w-full h-full "
+                        />
+                      </picture>
 
-                  <small className="text-base font-light dark:text-gray-500 mb-2">
-                    {new Intl.DateTimeFormat(locale, {
-                      dateStyle: "full",
-                    }).format(new Date(_publishedAt))}
-                  </small>
-                  <h3 className="text-2xl md:text-xl font-semibold dark:text-gray-100">
-                    <Link href={`/blog/${slug}`}>{title}</Link>
-                  </h3>
-                  <p className="sm:hidden text-lg md:text-base dark:text-gray-300">
-                    {description}
-                  </p>
+                      <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
+                        <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">
+                          {new Intl.DateTimeFormat(locale, {
+                            dateStyle: "full",
+                          }).format(new Date(_publishedAt))}
+                        </small>
+                        <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
+                          <Link href={`/blog/${slug}`}>{title}</Link>
+                        </h3>
+                        <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
+                          {description}
+                        </p>
+                      </div>
+                    </a>
+                  </Link>
                 </div>
               );
             }

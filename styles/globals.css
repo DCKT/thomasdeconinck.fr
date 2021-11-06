@@ -214,3 +214,30 @@ pre[class*="language-"].line-numbers > code {
 .about-presentation p {
   @apply text-lg tracking-wide mb-4;
 }
+
+.blog-item::after {
+  content: "";
+  @apply opacity-0 top-0 z-[-1] w-full h-full scale-95 absolute block border-4 border-purple-300 rounded-xl transition-all ease-in-out duration-200;
+}
+
+.blog-item:hover:after,
+.blog-item:active:after,
+.blog-item:focus:after {
+  @apply opacity-100   scale-y-[1.06] md:scale-y-[1.04] scale-x-[1.05];
+}
+
+.blog-featured-article:after {
+  content: "";
+  @apply left-0 opacity-0 z-[-1] w-full h-full scale-95 absolute block border-4 border-purple-300 rounded-xl transition-all ease-in-out duration-200;
+}
+.blog-featured-article:hover:after,
+.blog-featured-article:active:after,
+.blog-featured-article:focus:after {
+  @apply opacity-100 scale-y-[1.06] scale-x-[1.02];
+}
+
+@media screen and (max-width: 640px) {
+  .blog-item {
+    @apply !bg-gray-100 dark:!bg-gray-800 !bg-none;
+  }
+}
