@@ -7,6 +7,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
 import { MENU_QUERY } from "../shared/queries";
+import { Image } from "react-datocms";
 
 const HOMEPAGE_QUERY = `
 query HomePage($locale: SiteLocale) {
@@ -43,27 +44,36 @@ query HomePage($locale: SiteLocale) {
 `;
 
 export async function getStaticProps({ locale }) {
-  const data = await request({
+  const {
+    homepage: {
+      hello,
+      xlResPicture,
+      lgResPicture,
+      lowResPicture,
+      seo,
+      presentation,
+    },
+  } = await request({
     query: HOMEPAGE_QUERY,
     variables: { locale },
   });
 
-  const menuData = await request({
+  const { menu } = await request({
     query: MENU_QUERY,
     variables: { locale },
   });
 
-  const presentation = await markdownToHtml(data.homepage.presentation);
+  const parsedPresentation = await markdownToHtml(presentation);
 
   return {
     props: {
-      hello: data.homepage.hello,
-      presentation: presentation,
-      xlResPicture: data.homepage.xlResPicture.responsiveImage,
-      lgResPicture: data.homepage.lgResPicture.responsiveImage,
-      lowResPicture: data.homepage.lowResPicture.responsiveImage,
-      seo: data.homepage.seo,
-      menu: menuData.menu.navContent,
+      hello: hello,
+      presentation: parsedPresentation,
+      xlResPicture: xlResPicture.responsiveImage,
+      lgResPicture: lgResPicture.responsiveImage,
+      lowResPicture: lowResPicture.responsiveImage,
+      seo: seo,
+      menu: menu.navContent,
     },
   };
 }

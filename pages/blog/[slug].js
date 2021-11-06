@@ -8,6 +8,8 @@ import { request } from "../../shared/datocms";
 import markdownToHtml from "../../shared/markdownToHtml";
 import { ALL_ARTICLES_QUERY, MENU_QUERY } from "../../shared/queries";
 import HtmlContent from "../../components/HtmlContent";
+import { MdOutlineKeyboardBackspace } from "react-icons/md";
+import { Image } from "react-datocms";
 
 export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -18,6 +20,29 @@ query Post($slug: String, $locale: SiteLocale) {
     slug
     tags
     _publishedAt
+    splash {
+      responsiveImage(imgixParams: {fit: crop, w: 1280, h: 600, auto: format }) {
+        srcSet
+        webpSrcSet
+        sizes
+        src
+
+        # size information (post-transformations)
+        width
+        height
+        aspectRatio
+
+        # SEO attributes
+        alt
+        title
+
+        # background color placeholder or...
+        bgColor
+
+        # blur-up placeholder, JPEG format, base64-encoded
+        base64
+     }
+   }
   }
   siteInformation {
     siteTitle
@@ -82,6 +107,7 @@ export default function Article({
   siteInformation,
   preview,
   menu,
+  splash,
 }) {
   const { locale, isFallback, asPath } = useRouter();
 
@@ -126,13 +152,28 @@ export default function Article({
 
       <Navigation links={menu} />
 
-      <div className="max-w-xl mx-auto text-center">
-        <h1 className="text-4xl font-bold leading-snug">{title}</h1>
-        <div className="flex flex-row justify-center flex-wrap gap-x-2 my-2">
+      <div className="max-w-screen-lg mx-auto mt-20 pb-20 px-4">
+        <Link href="/blog" passHref>
+          <a className="flex flex-row items-center gap-4 text-lg dark:text-gray-300 mb-10 hover:text-purple-500 dark:hover:text-purple-300 group">
+            <MdOutlineKeyboardBackspace className="border-2 rounded-full border-gray-800 dark:border-gray-200 block w-10 h-10 p-1 group-hover:border-purple-500 dark:group-hover:border-purple-300" />
+            Revenir à la liste
+          </a>
+        </Link>
+        <h1 className="text-4xl font-light leading-snug dark:text-gray-100">
+          {title}
+        </h1>
+        {_publishedAt ? (
+          <small className="text-2xl text-gray-500 dark:text-gray-400">
+            {new Intl.DateTimeFormat("fr-FR", {
+              dateStyle: "full",
+            }).format(new Date(_publishedAt))}
+          </small>
+        ) : null}
+        <div className="flex flex-row flex-wrap gap-x-2 my-2">
           {tags.map((tag, i) => {
             return (
               <Link key={`tags-${i}`} href={`/tags/${encodeURIComponent(tag)}`}>
-                <a className="bg-orange text-gray-700 rounded py-1 px-2 text-sm hover:opacity-75">
+                <a className="bg-purple-300 text-gray-900 rounded py-1 px-2 text-sm hover:bg-purple-500 hover:text-white">
                   {tag}
                 </a>
               </Link>
@@ -140,16 +181,13 @@ export default function Article({
           })}
         </div>
 
-        {_publishedAt ? (
-          <small>
-            {new Intl.DateTimeFormat("fr-FR", {
-              dateStyle: "full",
-            }).format(new Date(_publishedAt))}
-          </small>
-        ) : null}
-      </div>
+        <Image
+          data={splash.responsiveImage}
+          className="rounded-lg my-10 xl:-mx-8"
+        />
 
-      <HtmlContent content={content} />
+        <HtmlContent content={content} />
+      </div>
     </div>
   );
 }

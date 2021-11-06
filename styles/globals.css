@@ -16,6 +16,59 @@ body.menu--open {
   @apply fixed w-full h-full overflow-y-hidden;
 }
 
+.html {
+  @apply dark:text-gray-300 tracking-wide leading-loose text-lg;
+}
+
+.html a {
+  @apply text-purple-500 dark:text-purple-300 underline hover:no-underline;
+}
+
+.html ul {
+  @apply ml-8 my-4 list-outside list-disc;
+}
+
+.html ul li + li {
+  @apply mt-4;
+}
+
+.html h1 a,
+.html h2 a,
+.html h3 a,
+.html h4 a {
+  @apply no-underline hover:underline;
+}
+
+.html h1,
+.html h2,
+.html h3,
+.html h4 {
+  @apply font-medium mt-12 mb-8;
+}
+
+.html h1 {
+  @apply text-3xl;
+}
+
+.html h2 {
+  @apply text-3xl;
+}
+
+.html h3 {
+  @apply text-2xl;
+}
+
+.html h4 {
+  @apply text-xl;
+}
+
+.html .remark-highlight {
+  @apply rounded-lg lg:-mx-10 my-8 text-base;
+}
+.html .remark-highlight code {
+  @apply leading-loose;
+}
+
 /* 
 a {
   @apply text-orange;
@@ -32,13 +85,7 @@ small {
   @apply dark:text-gray-200;
 }
 
-.html {
-  @apply dark:text-gray-200;
-}
 
-.html a {
-  @apply text-orange underline hover:no-underline font-semibold;
-}
 
 .html h1 a,
 .html h2 a,
@@ -62,43 +109,19 @@ small {
   border: none;
 }
 
-.html ul {
-  @apply m-8 list-outside list-disc;
-}
-
-.html ul li {
-  @apply text-lg;
-}
-
-.html ul li + li {
-  @apply mt-4;
-}
 
 .blog-container {
   max-width: 720px;
   @apply mx-auto p-4;
 }
 
-.html h1 {
-  @apply text-3xl font-bold mb-2;
-}
 
-.html h2 {
-  @apply text-2xl font-bold mb-2;
-}
-
-.html h3 {
-  @apply text-xl font-bold mb-2;
-}
 
 .html p {
   @apply mb-5 text-lg leading-8;
 }
 
-.html code {
-  background-color: #011627;
-  @apply rounded p-1 text-gray-200;
-}
+
 
 .html img {
   @apply my-6;
@@ -186,11 +209,10 @@ pre[class*="language-"].line-numbers > code {
 
 .menu-link:hover:after {
   width: 100%;
-  background: #000;
   opacity: 1;
   transition: all 0.2s ease-in;
 
-  @apply dark:bg-white;
+  @apply bg-purple-300;
 }
 
 @media screen and (max-width: 767px) {
