@@ -19,40 +19,28 @@ query HomePage($locale: SiteLocale) {
       title
       twitterCard
     }
-    xlResPicture: picture {
-      responsiveImage(imgixParams: {fm: jpg, w: 850, h: 850 }) {
+    picture {
+      responsiveImage(imgixParams: {fit: fill, w: 850, h: 850, auto: format }) {
         srcSet
         webpSrcSet
+        sizes
         src
-        title
-      }
-    }
-    lgResPicture : picture {
-      responsiveImage(imgixParams: {fm: jpg, w: 700, h: 700 }) {
-        srcSet
-        webpSrcSet
-      }
-    }
-    lowResPicture: picture {
-      responsiveImage(imgixParams: {fm: jpg, w: 500, h: 500 }) {
-        src
+
+        # size information (post-transformations)
+        width
+        height
+        aspectRatio
         alt
-      }
-    }
+        title
+     }
+   }
   }
 }
 `;
 
 export async function getStaticProps({ locale }) {
   const {
-    homepage: {
-      hello,
-      xlResPicture,
-      lgResPicture,
-      lowResPicture,
-      seo,
-      presentation,
-    },
+    homepage: { hello, picture, seo, presentation },
   } = await request({
     query: HOMEPAGE_QUERY,
     variables: { locale },
@@ -69,24 +57,14 @@ export async function getStaticProps({ locale }) {
     props: {
       hello: hello,
       presentation: parsedPresentation,
-      xlResPicture: xlResPicture.responsiveImage,
-      lgResPicture: lgResPicture.responsiveImage,
-      lowResPicture: lowResPicture.responsiveImage,
+      picture: picture.responsiveImage,
       seo: seo,
       menu: menu.navContent,
     },
   };
 }
 
-export default function Home({
-  hello,
-  xlResPicture,
-  lgResPicture,
-  lowResPicture,
-  presentation,
-  menu,
-  seo,
-}) {
+export default function Home({ hello, picture, presentation, menu, seo }) {
   let { locale } = useRouter();
 
   return (
@@ -113,28 +91,10 @@ export default function Home({
             dangerouslySetInnerHTML={{ __html: presentation }}
           />
         </div>
-        <picture className="md:w-[700px] xl:w-[850px] mr-0  lg:-mr-40 animate-upScale motion-reduce:transition-none motion-reduce:transform-none">
-          <source
-            media="(min-width: 1280px)"
-            srcSet={xlResPicture.webpSrcSet}
-            type="image/webp"
-          />
-          <source media="(min-width: 1280px)" srcSet={xlResPicture.srcSet} />
-
-          <source
-            media="(min-width: 768px)"
-            srcSet={lgResPicture.webpSrcSet}
-            type="image/webp"
-          />
-          <source media="(min-width: 768px)" srcSet={lgResPicture.srcSet} />
-          <source
-            media="(min-width: 768px)"
-            srcSet={lgResPicture.webpSrcSet}
-            type="image/webp"
-          />
-          <source media="(min-width: 768px)" srcSet={lgResPicture.srcSet} />
-          <img src={lowResPicture.src} alt={lowResPicture.alt} loading="lazy" />
-        </picture>
+        <Image
+          data={picture}
+          className="md:w-[680px] xl:w-[800px] 2xl:w-[850px] mr-0  lg:-mr-40 animate-upScale motion-reduce:transition-none motion-reduce:transform-none"
+        />
       </div>
     </>
   );

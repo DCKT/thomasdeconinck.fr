@@ -17,11 +17,11 @@ body.menu--open {
 }
 
 .html {
-  @apply dark:text-gray-300 tracking-wide leading-loose text-lg;
+  @apply dark:text-gray-400 tracking-wide leading-loose text-lg;
 }
 
 .html a {
-  @apply text-purple-500 dark:text-purple-300 underline hover:no-underline;
+  @apply text-purple-500 dark:text-purple-400 underline hover:no-underline;
 }
 
 .html ul {
@@ -63,7 +63,7 @@ body.menu--open {
 }
 
 .html .remark-highlight {
-  @apply rounded-lg lg:-mx-10 my-8 text-base;
+  @apply rounded-lg lg:-mx-10 my-12 text-base;
 }
 .html .remark-highlight code {
   @apply leading-loose;

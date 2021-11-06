@@ -183,7 +183,7 @@ export default function Article({
 
         <Image
           data={splash.responsiveImage}
-          className="rounded-lg my-10 xl:-mx-8"
+          className="rounded-lg mt-12 mb-20 xl:-mx-8"
         />
 
         <HtmlContent content={content} />

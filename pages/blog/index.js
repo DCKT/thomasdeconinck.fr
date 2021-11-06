@@ -170,7 +170,7 @@ export default function Home({ latestArticle, nextArticles, menu }) {
                           }).format(new Date(_publishedAt))}
                         </small>
                         <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
-                          <Link href={`/blog/${slug}`}>{title}</Link>
+                          {title}
                         </h3>
                         <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
                           {description}
