@@ -21,6 +21,8 @@ query Post($slug: String, $locale: SiteLocale) {
     tags
     _publishedAt
     splash {
+      author
+      copyright
       responsiveImage(imgixParams: {fit: crop, w: 1280, h: 600, auto: format }) {
         srcSet
         webpSrcSet
@@ -183,8 +185,25 @@ export default function Article({
 
         <Image
           data={splash.responsiveImage}
-          className="rounded-lg mt-12 mb-20 xl:-mx-8"
+          className="rounded-lg mt-12 mb-6 xl:-mx-8"
         />
+
+        <p className="text-sm text-center mb-20 text-gray-500 dark:text-gray-400">
+          Photo de{" "}
+          <a
+            className="underline"
+            href={`https://unsplash.com/${splash.copyright}?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText`}
+          >
+            {splash.author}
+          </a>{" "}
+          sur{" "}
+          <a
+            className="underline"
+            href="https://unsplash.com/s/photos/boat?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+          >
+            Unsplash
+          </a>
+        </p>
 
         <HtmlContent content={content} />
       </div>
