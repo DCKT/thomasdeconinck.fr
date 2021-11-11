@@ -36,7 +36,7 @@ query BlogIndex($locale: SiteLocale) {
     slug
     _publishedAt
     splash {
-      responsiveImage(imgixParams: {fm: jpg, w: 450, h: 500 }) {
+      responsiveImage(imgixParams: {fm: jpg, w: 450, h: 500, fit: crop }) {
        srcSet
        webpSrcSet
        src

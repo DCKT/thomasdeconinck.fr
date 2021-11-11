@@ -69,134 +69,6 @@ body.menu--open {
   @apply leading-loose;
 }
 
-/* 
-a {
-  @apply text-orange;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-small {
-  @apply dark:text-gray-200;
-}
-
-
-
-.html h1 a,
-.html h2 a,
-.html h3 a,
-.html h4 a,
-.html h5 a,
-.html h6 a {
-  @apply dark:text-gray-200;
-}
-
-.html h1[id]:before,
-.html h2[id]:before,
-.html h3[id]:before,
-.html h4[id]:before,
-.html h5[id]:before,
-.html h6[id]:before {
-  content: "#";
-  font-size: 20px;
-  text-decoration: none;
-  margin-right: 6px;
-  border: none;
-}
-
-
-.blog-container {
-  max-width: 720px;
-  @apply mx-auto p-4;
-}
-
-
-
-.html p {
-  @apply mb-5 text-lg leading-8;
-}
-
-
-
-.html img {
-  @apply my-6;
-}
-
-.html .remark-highlight {
-  @apply my-6;
-}
-
-:not(pre) > code[class*="language-"],
-pre[class*="language-"] {
-  background: #011627 !important;
-  @apply rounded;
-  margin-bottom: 1.8rem !important;
-}
-
-@media screen and (min-width: 640px) {
-  :not(pre) > code[class*="language-"],
-  pre[class*="language-"] {
-    margin: 0.5em -2.5rem 1.8rem !important;
-  }
-}
-
-.bio p {
-  margin-bottom: 0;
-}
-
-html.dark-mode .dark-mode-toggle > button {
-  color: #999;
-}
-
-html.dark-mode .dark-mode-toggle > button:last-child {
-  color: lightblue;
-} */
-
-pre[class*="language-"].line-numbers {
-  position: relative;
-  padding-left: 3.8em;
-  counter-reset: linenumber;
-}
-
-pre[class*="language-"].line-numbers > code {
-  position: relative;
-  white-space: inherit;
-}
-
-.line-numbers .line-numbers-rows {
-  position: absolute;
-  pointer-events: none;
-  top: 0;
-  font-size: 100%;
-  left: -3.8em;
-  width: 3em; /* works for line-numbers below 1000 lines */
-  letter-spacing: -1px;
-  border-right: 1px solid #999;
-
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.line-numbers-rows > span {
-  display: block;
-  counter-increment: linenumber;
-}
-
-.line-numbers-rows > span:before {
-  content: counter(linenumber);
-  color: #999;
-  display: block;
-  padding-right: 0.8em;
-  text-align: right;
-}
-
 .menu-link:after {
   content: "";
   display: block;
@@ -222,19 +94,19 @@ pre[class*="language-"].line-numbers > code {
 }
 
 .about-presentation h1 {
-  @apply text-5xl text-center font-light mb-4;
+  @apply text-5xl text-center font-light mb-4 dark:text-gray-200;
 }
 
 .about-presentation h2 {
-  @apply text-3xl text-center font-light mt-8 mb-4;
+  @apply text-3xl text-center font-light mt-8 mb-4 dark:text-gray-300;
 }
 
 .about-presentation h3 {
-  @apply text-2xl text-center font-light mt-8 mb-4;
+  @apply text-2xl text-center font-light mt-8 mb-4 dark:text-gray-300;
 }
 
 .about-presentation p {
-  @apply text-lg tracking-wide mb-4;
+  @apply text-lg tracking-wide leading-relaxed  mb-4;
 }
 
 .blog-item::after {

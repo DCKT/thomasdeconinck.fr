@@ -68,13 +68,16 @@ export default function Navigation({ links }) {
   const { isBrower } = useSsr();
   let [isMenuVisible, setMenuVisible] = React.useState(false);
 
-  React.useEffect(() => {
-    if (isMenuVisible) {
-      document.body.classList.add("menu--open");
-    } else {
-      document.body.classList.remove("menu--open");
-    }
-  }, [isMenuVisible]);
+  React.useEffect(
+    function handleMenuVisibility() {
+      if (isMenuVisible) {
+        document.body.classList.add("menu--open");
+      } else {
+        document.body.classList.remove("menu--open");
+      }
+    },
+    [isMenuVisible]
+  );
 
   return (
     <nav className="relative flex items-center md:items-start justify-between py-8 px-4 lg:px-0 max-w-screen-lg 2xl:max-w-screen-2xl mx-auto">

@@ -238,34 +238,34 @@
   * http://prismjs.com/plugins/line-highlight/
   */
 .dark .line-highlight.line-highlight {
-  background: #3c526d5f;
-  background: linear-gradient(to right, #3c526d5f 70%, #3c526d55);
+  background: #3c526d5f !important;
+  background: linear-gradient(to right, #3c526d5f 70%, #3c526d55) !important;
 }
 
 .dark .line-highlight.line-highlight:before,
 .dark .line-highlight.line-highlight[data-end]:after {
-  background-color: #8da1b9;
-  color: #111b27;
-  box-shadow: 0 1px #3c526d;
+  background-color: #8da1b9 !important;
+  color: #111b27 !important;
+  box-shadow: 0 1px #3c526d !important;
 }
 
 .dark
   pre[id].linkable-line-numbers.linkable-line-numbers
   span.line-numbers-rows
   > span:hover:before {
-  background-color: #8da1b918;
+  background-color: #8da1b918 !important;
 }
 
 /* overrides color-values for the Line Numbers plugin
   * http://prismjs.com/plugins/line-numbers/
   */
 .dark .line-numbers.line-numbers .line-numbers-rows {
-  border-right: 1px solid #0b121b;
-  background: #0b121b7a;
+  border-right: 1px solid #0b121b !important;
+  background: #0b121b7a !important;
 }
 
 .dark .line-numbers .line-numbers-rows > span:before {
-  color: #8da1b9da;
+  color: #8da1b9da !important;
 }
 
 /* overrides color-values for the Match Braces plugin
@@ -300,23 +300,23 @@
   */
 .dark pre.diff-highlight > code .token.token.deleted:not(.prefix),
 .dark pre > code.diff-highlight .token.token.deleted:not(.prefix) {
-  background-color: #cd66601f;
+  background-color: #cd66601f !important;
 }
 
 .dark pre.diff-highlight > code .token.token.inserted:not(.prefix),
 .dark pre > code.diff-highlight .token.token.inserted:not(.prefix) {
-  background-color: #91d0761f;
+  background-color: #91d0761f !important;
 }
 
 /* overrides color-values for the Command Line plugin
   * https://prismjs.com/plugins/command-line/
   */
 .dark .command-line .command-line-prompt {
-  border-right: 1px solid #0b121b;
+  border-right: 1px solid #0b121b !important;
 }
 
 .dark .command-line .command-line-prompt > span:before {
-  color: #8da1b9da;
+  color: #8da1b9da !important;
 }
 
 /**  LIGHT  **/
@@ -630,4 +630,44 @@ pre > code.diff-highlight .token.token.inserted:not(.prefix) {
 
 .command-line .command-line-prompt > span:before {
   color: #3c526dda;
+}
+
+pre[class*="language-"].line-numbers {
+  position: relative;
+  padding-left: 3.8em;
+  counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+  position: relative;
+  white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 100%;
+  left: -3.8em;
+  width: 3em; /* works for line-numbers below 1000 lines */
+  letter-spacing: -1px;
+  border-right: 1px solid #999;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.line-numbers-rows > span {
+  display: block;
+  counter-increment: linenumber;
+}
+
+.line-numbers-rows > span:before {
+  content: counter(linenumber);
+  color: #999;
+  display: block;
+  padding-right: 0.8em;
+  text-align: right;
 }

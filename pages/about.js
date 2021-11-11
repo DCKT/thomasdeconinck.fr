@@ -98,7 +98,7 @@ export default function About({ menu, seo, pictureOfMe, description }) {
           </picture>
         </div>
 
-        <div className="max-w-screen-sm mx-auto text-gray-900 dark:text-gray-200 about-presentation mt-10">
+        <div className="max-w-screen-sm mx-auto text-gray-900 dark:text-gray-400 about-presentation mt-10">
           <div dangerouslySetInnerHTML={{ __html: description }} />
         </div>
       </div>

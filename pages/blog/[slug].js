@@ -10,6 +10,7 @@ import { ALL_ARTICLES_QUERY, MENU_QUERY } from "../../shared/queries";
 import HtmlContent from "../../components/HtmlContent";
 import { MdOutlineKeyboardBackspace } from "react-icons/md";
 import { Image } from "react-datocms";
+import { FormattedMessage } from "react-intl";
 
 export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -117,6 +118,8 @@ export default function Article({
     return <div>Loading...</div>;
   }
 
+  console.log(splash);
+
   return (
     <div className="blog-container">
       {preview ? (
@@ -161,7 +164,7 @@ export default function Article({
             Revenir à la liste
           </a>
         </Link>
-        <h1 className="text-4xl font-light leading-snug dark:text-gray-100">
+        <h1 className="text-xl lg:text-4xl font-light leading-snug dark:text-gray-100">
           {title}
         </h1>
         {_publishedAt ? (
@@ -175,7 +178,7 @@ export default function Article({
           {tags.map((tag, i) => {
             return (
               <Link key={`tags-${i}`} href={`/tags/${encodeURIComponent(tag)}`}>
-                <a className="bg-purple-300 text-gray-900 rounded py-1 px-2 text-sm hover:bg-purple-500 hover:text-white">
+                <a className="bg-purple-500 dark:bg-purple-400 text-white rounded py-1 px-2 text-sm hover:bg-purple-400 dark:hover:bg-purple-500">
                   {tag}
                 </a>
               </Link>
@@ -189,20 +192,30 @@ export default function Article({
         />
 
         <p className="text-sm text-center mb-20 text-gray-500 dark:text-gray-400">
-          Photo de{" "}
-          <a
-            className="underline"
-            href={`https://unsplash.com/${splash.copyright}?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText`}
-          >
-            {splash.author}
-          </a>{" "}
-          sur{" "}
-          <a
-            className="underline"
-            href="https://unsplash.com/s/photos/boat?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
-          >
-            Unsplash
-          </a>
+          <FormattedMessage
+            id="blogDetail.splash"
+            values={{
+              author: (chunk) => (
+                <a
+                  className="underline"
+                  target="_blank"
+                  href={`https://unsplash.com/${splash.copyright}?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText`}
+                >
+                  {splash.author}
+                  toto
+                </a>
+              ),
+              unsplash: (chunk) => (
+                <a
+                  className="underline"
+                  target="_blank"
+                  href="https://unsplash.com/s/photos/boat?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+                >
+                  {chunk}
+                </a>
+              ),
+            }}
+          />
         </p>
 
         <HtmlContent content={content} />
