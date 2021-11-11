@@ -4,5 +4,6 @@
   "labs.fnacDescription": "Estimate quickly how many gift cards you need for a given price.",
   "labs.fnacRemain": "Remain",
   "labs.fnacCost": "Cost",
-  "labs.fnacCostPrice": "Price cost"
+  "labs.fnacCostPrice": "Price cost",
+  "labs.fnacUse60Card": "Prior usage of 60€ card"
 }

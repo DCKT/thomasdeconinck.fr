@@ -3,7 +3,7 @@ import Navigation from "../../components/Navigation";
 import { MENU_QUERY } from "../../shared/queries";
 import { request } from "../../shared/datocms";
 import React, { useState } from "react";
-import { useDebounce } from "react-use";
+import { useBoolean, useDebounce } from "react-use";
 import { FormattedMessage, FormattedNumber, useIntl } from "react-intl";
 
 export async function getStaticProps({ locale }) {
@@ -50,30 +50,27 @@ export default function FnacCardCalculator({ menu }) {
   const intl = useIntl();
   const [price, setPrice] = useState(null);
   const [result, setResult] = useState(null);
+  const [prior60, togglePrior60] = useBoolean(false);
 
   useDebounce(
     () => {
-      if (price) {
-        let card150Count = Math.floor(price / 150);
-        let card60Count = 0;
-        let remain = price - 150 * card150Count;
+      let priorCardCount = Math.floor(price / (prior60 ? 60 : 150));
+      let otherCards = 0;
+      let remain = price - (prior60 ? 60 : 150) * priorCardCount;
 
-        if (remain >= 60) {
-          card60Count = Math.floor(remain / 60);
-          remain = remain - 60 * card60Count;
-        }
-
-        setResult({
-          card150Count,
-          card60Count,
-          remain,
-        });
-      } else {
-        setResult(null);
+      if (remain >= (prior60 ? 150 : 60)) {
+        otherCards = Math.floor(remain / (prior60 ? 150 : 60));
+        remain = remain - (prior60 ? 150 : 60) * otherCards;
       }
+
+      setResult({
+        card150Count: prior60 ? otherCards : priorCardCount,
+        card60Count: prior60 ? priorCardCount : otherCards,
+        remain,
+      });
     },
-    500,
-    [price]
+    450,
+    [price, prior60]
   );
 
   return (
@@ -98,19 +95,36 @@ export default function FnacCardCalculator({ menu }) {
           <FormattedMessage id="labs.fnacTitle" />
         </h1>
 
-        <div className="flex flex-row justify-center items-center gap-2 ">
-          <input
-            type="number"
-            className="border-2 rounded h-16 w-50 py-2 px-3 text-xl font-bold hover:border-purple-400"
-            onChange={(event) => {
-              const value = event.target.value;
+        <div>
+          <div className="flex flex-row justify-center items-center gap-2 ">
+            <input
+              type="number"
+              className="border-2 rounded h-16 w-50 py-2 px-3 text-xl font-bold hover:border-purple-400"
+              onChange={(event) => {
+                const value = event.target.value;
 
-              if (!!value) {
-                setPrice(parseInt(value));
-              }
-            }}
-          />
-          <span className="text-4xl dark:text-gray-400">€</span>
+                if (!!value) {
+                  setPrice(parseInt(value));
+                } else {
+                  setPrice(null);
+                }
+              }}
+            />
+            <span className="text-4xl dark:text-gray-400">€</span>
+          </div>
+
+          <label
+            htmlFor="use60CardFirst"
+            className="mt-4 block dark:text-gray-400"
+          >
+            <input
+              type="checkbox"
+              id="use60CardFirst"
+              className="mr-2"
+              onChange={(_) => togglePrior60()}
+            />
+            <FormattedMessage id="labs.fnacUse60Card" />
+          </label>
         </div>
 
         {result ? (

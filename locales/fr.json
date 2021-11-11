@@ -4,5 +4,6 @@
   "labs.fnacDescription": "Estimez rapidement combien de cartes cadeaux vous avez besoin sur un prix donné.",
   "labs.fnacRemain": "Restant",
   "labs.fnacCost": "Coût",
-  "labs.fnacCostPrice": "Coût de l'achat"
+  "labs.fnacCostPrice": "Coût de l'achat",
+  "labs.fnacUse60Card": "Favoriser l'usage des cartes de 60€"
 }
