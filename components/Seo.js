@@ -1,0 +1,20 @@
+import Head from "next/head";
+export default function Seo({ title, description, favicon, twitterImage }) {
+  return (
+    <Head>
+      <title>{title}</title>
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content={favicon} />
+      <meta name="description" content={description} />
+      <meta property="og:site_name" content={title} />
+      <meta name="og:image" content={twitterImage || favicon} />
+      <meta property="og:description" content={description} />
+      <meta property="og:title" content={title} />
+      <meta property="og:type" content="website" />
+      <meta name="robots" content="follow, index" />
+      <meta charSet="utf-8" />
+    </Head>
+  );
+}

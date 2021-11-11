@@ -6,6 +6,7 @@ import { request } from "../shared/datocms";
 import clsx from "clsx";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
+import Seo from "../components/Seo";
 import { MENU_QUERY } from "../shared/queries";
 import { Image } from "react-datocms";
 
@@ -69,10 +70,11 @@ export default function Home({ hello, picture, presentation, menu, seo }) {
 
   return (
     <>
-      <Head>
-        <title>{seo.title}</title>
-        <meta name="description" content={seo.description} />
-      </Head>
+      <Seo
+        title={seo.title}
+        description={seo.description}
+        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+      />
 
       <Navigation links={menu} />
 

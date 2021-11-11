@@ -11,6 +11,7 @@ import HtmlContent from "../../components/HtmlContent";
 import { MdOutlineKeyboardBackspace } from "react-icons/md";
 import { Image } from "react-datocms";
 import { FormattedMessage } from "react-intl";
+import Seo from "../../components/Seo";
 
 export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -130,30 +131,12 @@ export default function Article({
           Preview mode enabled
         </div>
       ) : null}
-      <Head>
-        <title>{title}</title>
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta
-          name="twitter:image"
-          content={"https://blog.thomasdeconinck.fr/favicon.ico"}
-        />
-        <meta name="description" content={description} />
-        <meta
-          property="og:site_name"
-          content={siteInformation.siteInformation}
-        />
-        <meta
-          name="og:image"
-          content={"https://blog.thomasdeconinck.fr/favicon.ico"}
-        />
-        <meta property="og:description" content={description} />
-        <meta property="og:title" content={title} />
-        <meta property="og:type" content="website" />
-        <meta name="robots" content="follow, index" />
-        <meta charSet="utf-8" />
-      </Head>
+
+      <Seo
+        title={title}
+        description={description}
+        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+      />
 
       <Navigation links={menu} />
 
