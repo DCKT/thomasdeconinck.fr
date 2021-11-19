@@ -2,6 +2,7 @@ import { request } from "../../shared/datocms";
 import Bio from "../../components/Bio";
 import Link from "next/link";
 import ArticleListItem from "../../components/ArticleListItem";
+import Seo from "../../components/Seo";
 import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
@@ -11,6 +12,13 @@ import clsx from "clsx";
 
 const BLOG_INDEX_QUERY = `
 query BlogIndex($locale: SiteLocale) {
+  blogIndex(locale: $locale) {
+    seo {
+      title
+      description
+    }
+  }
+
   latestArticle: allArticles(first: 1, locale: $locale, orderBy: _publishedAt_DESC) {
     title
     description
@@ -52,7 +60,7 @@ query BlogIndex($locale: SiteLocale) {
 `;
 
 export async function getStaticProps({ locale }) {
-  const data = await request({
+  const { blogIndex, latestArticle, nextArticles } = await request({
     query: BLOG_INDEX_QUERY,
     variables: { locale },
   });
@@ -64,22 +72,24 @@ export async function getStaticProps({ locale }) {
 
   return {
     props: {
-      latestArticle: data.latestArticle[0],
-      nextArticles: data.nextArticles,
+      latestArticle: latestArticle[0],
+      nextArticles: nextArticles,
       menu: menuData.menu.navContent,
+      seo: blogIndex.seo,
     },
   };
 }
 
-export default function Home({ latestArticle, nextArticles, menu }) {
+export default function Home({ latestArticle, nextArticles, menu, seo }) {
   let { locale } = useRouter();
 
   return (
     <div className="blog-container">
-      {/* <Head>
-        <title>{siteInformation.siteTitle}</title>
-        <meta name="description" content={siteInformation.metaDescription} />
-      </Head> */}
+      <Seo
+        title={seo.title}
+        description={seo.description}
+        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+      />
 
       <Navigation links={menu} />
 
