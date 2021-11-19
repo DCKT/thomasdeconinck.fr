@@ -109,6 +109,22 @@ body.menu--open {
   @apply text-lg tracking-wide leading-relaxed  mb-4;
 }
 
+.about-presentation p a {
+  @apply text-purple-700 dark:text-purple-400 hover:underline;
+}
+
+.about-presentation img {
+  @apply rounded-lg shadow-lg block;
+}
+
+.about-presentation blockquote {
+  @apply bg-gray-800 p-4 mb-4 rounded;
+}
+
+.about-presentation blockquote p {
+  @apply mb-0;
+}
+
 .blog-item::after {
   content: "";
   @apply opacity-0 top-0 z-[-1] w-full h-full scale-95 absolute block border-4 border-purple-300 rounded-xl transition-all ease-in-out duration-200;

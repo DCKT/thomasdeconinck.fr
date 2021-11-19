@@ -1,29 +1,40 @@
-import { request } from "../../shared/datocms";
-import markdownToHtml from "../../shared/markdownToHtml";
-import Bio from "../../shared/Bio";
+import { request } from "../../../shared/datocms";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useEffect } from "react";
 import flatten from "lodash/flatten";
 import uniq from "lodash/uniq";
-import ArticleListItem from "../../shared/ArticleListItem";
+import Navigation from "../../../components/Navigation";
+import { MENU_QUERY } from "../../../shared/queries";
+import ArticleListItem from "../../../components/ArticleListItem";
+import clsx from "clsx";
+import Image from "next/image";
+import { FormattedMessage } from "react-intl";
 
 const TAGGED_POSTS_QUERY = `
-query Posts($tag: String!) {
-  allArticles(filter: {tags: {matches: {pattern: $tag}}}) {
+query Posts($tag: String!, $locale: SiteLocale) {
+  allArticles(filter: {tags: {matches: {pattern: $tag}}}, locale: $locale) {
     title
     description
     slug
     _publishedAt
-  }
-  siteInformation {
-    siteTitle
-    siteDescription
+    splash {
+      responsiveImage(imgixParams: {fm: jpg, w: 450, h: 500, fit: crop }) {
+       srcSet
+       webpSrcSet
+       src
+       alt
+       width
+       height
+       aspectRatio
+       base64
+     }
+   }
   }
 }`;
 
-const TEST_QUERY = `
+const ALL_TAG_QUERY = `
 query AllArticles {
   allArticles {
     tags
@@ -32,7 +43,7 @@ query AllArticles {
 
 export async function getStaticPaths() {
   const data = await request({
-    query: TEST_QUERY,
+    query: ALL_TAG_QUERY,
   });
 
   return {
@@ -47,60 +58,112 @@ export async function getStaticPaths() {
   };
 }
 
-export async function getStaticProps({ params }) {
-  const data = await request({
-    query: TAGGED_POSTS_QUERY,
-    variables: { tag: params.tag },
+export async function getStaticProps({ params, locale }) {
+  const menuData = await request({
+    query: MENU_QUERY,
+    variables: { locale },
   });
 
-  const siteDescription = await markdownToHtml(
-    data.siteInformation.siteDescription
-  );
+  const data = await request({
+    query: TAGGED_POSTS_QUERY,
+    variables: { tag: params.tag, locale },
+  });
 
   return {
     props: {
+      menu: menuData.menu.navContent,
       articles: data.allArticles,
-      siteInformation: {
-        ...data.siteInformation,
-        siteDescription,
-      },
     },
   };
 }
 
-export default function Tag({ articles, siteInformation }) {
-  const router = useRouter();
-  const { tag } = router.query;
+export default function Tag({ articles, menu }) {
+  const { query, locale } = useRouter();
+  const { tag } = query;
 
   return (
     <div className="blog-container">
-      <Head>
-        <title>{siteInformation.siteTitle}</title>
-        <meta name="description" content={siteInformation.siteDescription} />
-      </Head>
+      <Navigation links={menu} />
 
-      <Link href="/">
-        <h3 className="text-gray-700 dark:text-gray-200 text-2xl lg:text-3xl text-center mt-4 mb-8 font-bold cursor-pointer">
-          {siteInformation.siteTitle}
-        </h3>
-      </Link>
+      <div className="mt-16 max-w-screen-xl mx-auto px-4 pb-10">
+        <h1 className="text-4xl font-bold mt-8 dark:text-gray-100 text-center mb-20">
+          <FormattedMessage
+            defaultMessage="Articles about <tag>tag</tag>"
+            id="blog.tagsTitle"
+            values={{
+              tag: (_) => (
+                <span className="text-purple-500 dark:text-purple-300">
+                  {tag}
+                </span>
+              ),
+            }}
+          />
+        </h1>
 
-      <Bio content={siteInformation.siteDescription} />
+        <div className="grid md:grid-flow-row sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
+          {articles.map(
+            (
+              {
+                title,
+                description,
+                _publishedAt,
+                slug,
+                splash: { responsiveImage },
+              },
+              i
+            ) => {
+              return (
+                <div
+                  key={slug}
+                  className={clsx("flex flex-col shadow-xl", {
+                    "border-t border-gray-400 dark:border-gray-700 pt-4 md:border-0 md:pt-0":
+                      i > 0,
+                  })}
+                >
+                  <Link href={`/blog/${slug}`} passHref>
+                    <a
+                      className={
+                        "relative md:h-[500px] rounded-lg cursor-pointer blog-item z-10"
+                      }
+                      style={{
+                        backgroundImage: `url(${responsiveImage.base64})`,
+                        backgroundSize: "cover",
+                      }}
+                    >
+                      <picture className="absolute left-0 top-0 w-full rounded-lg hidden md:block mb-4 h-full">
+                        <source
+                          srcSet={responsiveImage.webpSrcSet}
+                          type="image/webp"
+                        />
+                        <source srcSet={responsiveImage.srcSet} />
+                        <img
+                          src={responsiveImage.src}
+                          alt={responsiveImage.alt}
+                          loading="lazy"
+                          className="block rounded-lg border dark:border-0 w-full h-full "
+                        />
+                      </picture>
 
-      <h1 className="text-4xl font-bold mt-8">Articles : {tag}</h1>
-
-      <div className="mt-16">
-        {articles.map(({ title, description, _publishedAt, slug }, i) => {
-          return (
-            <ArticleListItem
-              key={i}
-              title={title}
-              description={description}
-              date={_publishedAt}
-              slug={slug}
-            />
-          );
-        })}
+                      <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
+                        <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">
+                          {new Intl.DateTimeFormat(locale, {
+                            dateStyle: "full",
+                          }).format(new Date(_publishedAt))}
+                        </small>
+                        <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
+                          {title}
+                        </h3>
+                        <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
+                          {description}
+                        </p>
+                      </div>
+                    </a>
+                  </Link>
+                </div>
+              );
+            }
+          )}
+        </div>
       </div>
     </div>
   );

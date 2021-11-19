@@ -5,5 +5,9 @@
   "labs.fnacRemain": "Remain",
   "labs.fnacCost": "Cost",
   "labs.fnacCostPrice": "Price cost",
-  "labs.fnacUse60Card": "Prior usage of 60€ card"
+  "labs.fnacUse60Card": "Prior usage of 60€ card",
+  "labs.christmasSoonTitle": "Is christmas soon ?",
+  "labs.christmasSoonDescription": "Discover how many days left until christmas.",
+  "labs.christmasSoonInXDays": "Still {number} days before christmas",
+  "blog.tagsTitle": "Articles about <tag>tag</tag>"
 }

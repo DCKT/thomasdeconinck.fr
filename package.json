@@ -13,6 +13,7 @@
   "dependencies": {
     "autoprefixer": "10.4.0",
     "clsx": "1.1.1",
+    "date-fns": "2.25.0",
     "graphql": "15.7.1",
     "graphql-request": "3.6.1",
     "lodash": "4.17.21",
@@ -41,8 +42,5 @@
     "@babel/runtime": "7.16.0",
     "@formatjs/cli": "4.4.0",
     "babel-plugin-formatjs": "10.3.11"
-  },
-  "engines": {
-    "node": ">=12.x"
   }
 }

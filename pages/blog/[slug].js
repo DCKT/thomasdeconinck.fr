@@ -119,8 +119,6 @@ export default function Article({
     return <div>Loading...</div>;
   }
 
-  console.log(splash);
-
   return (
     <div className="blog-container">
       {preview ? (
@@ -147,11 +145,11 @@ export default function Article({
             Revenir à la liste
           </a>
         </Link>
-        <h1 className="text-xl lg:text-4xl font-light leading-snug dark:text-gray-100">
+        <h1 className="text-xl sm:text-2xl lg:text-4xl font-light leading-snug dark:text-gray-100">
           {title}
         </h1>
         {_publishedAt ? (
-          <small className="text-2xl text-gray-500 dark:text-gray-400">
+          <small className="text-lg lg:text-2xl text-gray-500 dark:text-gray-400">
             {new Intl.DateTimeFormat("fr-FR", {
               dateStyle: "full",
             }).format(new Date(_publishedAt))}
@@ -160,7 +158,10 @@ export default function Article({
         <div className="flex flex-row flex-wrap gap-x-2 my-2">
           {tags.map((tag, i) => {
             return (
-              <Link key={`tags-${i}`} href={`/tags/${encodeURIComponent(tag)}`}>
+              <Link
+                key={`tags-${i}`}
+                href={`/blog/tags/${encodeURIComponent(tag)}`}
+              >
                 <a className="bg-purple-500 dark:bg-purple-400 text-white rounded py-1 px-2 text-sm hover:bg-purple-400 dark:hover:bg-purple-500">
                   {tag}
                 </a>

@@ -5,5 +5,9 @@
   "labs.fnacRemain": "Restant",
   "labs.fnacCost": "Coût",
   "labs.fnacCostPrice": "Coût de l'achat",
-  "labs.fnacUse60Card": "Favoriser l'usage des cartes de 60€"
+  "labs.fnacUse60Card": "Favoriser l'usage des cartes de 60€",
+  "labs.christmasSoonTitle": "C'est bientôt Noël ?",
+  "labs.christmasSoonDescription": "Découvrez combien de jours il reste avant Noël ?",
+  "labs.christmasSoonInXDays": "Encore {number} jours avant Noël",
+  "blog.tagsTitle": "Articles à propos de <tag>tag</tag>"
 }

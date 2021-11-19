@@ -33,13 +33,29 @@ query LabsIndex($locale: SiteLocale) {
     }
     presentation
     title
+    items: item {
+      name
+      slug
+      icon {
+        responsiveImage(imgixParams: {fm: jpg, w: 256, h: 256}) {
+          srcSet
+          webpSrcSet
+          src
+          alt
+          title
+          width
+          height
+          aspectRatio
+        }
+      }
+    }
   }
 }
 `;
 
 export async function getStaticProps({ locale }) {
   const {
-    labsIndex: { seo, presentationPicture, presentation, title },
+    labsIndex: { seo, presentationPicture, presentation, title, items },
   } = await request({
     query: QUERY,
     variables: { locale },
@@ -61,6 +77,7 @@ export async function getStaticProps({ locale }) {
       presentationPicture: presentationPicture.responsiveImage,
       presentation: htmlPresentation,
       title,
+      items,
     },
   };
 }
@@ -71,34 +88,8 @@ export default function LabsIndex({
   presentation,
   presentationPicture,
   title,
+  items,
 }) {
-  const experiments = [
-    {
-      title: "Fnac calculator",
-      slug: "fnac-card-calculator",
-    },
-    {
-      title: "Fnac calculator",
-      slug: "fnac-card-calculator",
-    },
-    {
-      title: "Fnac calculator",
-      slug: "fnac-card-calculator",
-    },
-    {
-      title: "Fnac calculator",
-      slug: "fnac-card-calculator",
-    },
-    {
-      title: "Fnac calculator",
-      slug: "fnac-card-calculator",
-    },
-    {
-      title: "Fnac calculator",
-      slug: "fnac-card-calculator",
-    },
-  ];
-
   return (
     <>
       <Seo
@@ -120,15 +111,12 @@ export default function LabsIndex({
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-8 mt-20">
-          {experiments.map(({ slug }) => {
+        <div className="grid grid-cols-3 gap-8 mt-20">
+          {items.map(({ slug, name, icon }) => {
             return (
               <Link key={slug} href={`/labs/${slug}`} passHref>
-                <a className="group transform duration-200 ease-in-out hover:scale-110">
-                  <img
-                    src="http://placehold.it/140x140"
-                    className="transition-shadow duration-200 ease-in-out rounded-lg shadow-lg w-full group-hover:shadow-xl"
-                  />
+                <a className="transform duration-200 ease-in-out hover:scale-110">
+                  <Image data={icon.responsiveImage} className="w-full" />
                 </a>
               </Link>
             );
