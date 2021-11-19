@@ -94,11 +94,11 @@ body.menu--open {
 }
 
 .about-presentation h1 {
-  @apply text-5xl text-center font-light mb-4 dark:text-gray-200;
+  @apply text-5xl text-center font-light mb-8 dark:text-gray-200;
 }
 
 .about-presentation h2 {
-  @apply text-3xl text-center font-light mt-8 mb-4 dark:text-gray-300;
+  @apply text-3xl text-center font-light mt-10 mb-4 dark:text-gray-300;
 }
 
 .about-presentation h3 {

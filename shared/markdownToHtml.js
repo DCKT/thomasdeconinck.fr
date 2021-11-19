@@ -6,6 +6,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import rehypeHeadings from "rehype-autolink-headings";
 import rehypeExternalLinks from "rehype-external-links";
+import rehypeRewrite from "rehype-rewrite";
 
 export default async function markdownToHtml(markdown) {
   const result = await unified()
@@ -28,6 +29,13 @@ export default async function markdownToHtml(markdown) {
     .use(rehypeExternalLinks, {
       target: "_blank",
       rel: ["noopener", "noreferrer"],
+    })
+    .use(rehypeRewrite, {
+      rewrite: (node, index, parent) => {
+        if (node.tagName === "img") {
+          node.properties = { ...node.properties, lazyLoad: true };
+        }
+      },
     })
     .use(rehypeHeadings, {
       behavior: "wrap",
