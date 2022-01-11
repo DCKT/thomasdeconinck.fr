@@ -5,6 +5,7 @@ import { IoMdClose } from "react-icons/io";
 import clsx from "clsx";
 import { useSsr, useLocalStorage, useDarkMode } from "../shared/hooks";
 import { BsSunFill, BsMoonStarsFill } from "react-icons/bs";
+import { useRouter } from "next/router";
 
 const DarkModeToggler = () => {
   const { isServer, isBrowser } = useSsr();
@@ -66,6 +67,7 @@ const DarkModeToggler = () => {
 
 export default function Navigation({ links }) {
   const { isBrower } = useSsr();
+  const router = useRouter();
   let [isMenuVisible, setMenuVisible] = React.useState(false);
 
   React.useEffect(
@@ -82,7 +84,14 @@ export default function Navigation({ links }) {
   return (
     <nav className="relative flex items-center md:items-start justify-between py-8 px-4 lg:px-0 max-w-screen-lg 2xl:max-w-screen-2xl mx-auto">
       <Link href="/" passHref>
-        <a className="font-bold text-2xl menu-link dark:text-white tracking-wider">
+        <a
+          className={clsx(
+            "font-bold text-2xl menu-link dark:text-white tracking-wider",
+            {
+              "menu-link--active": router.asPath === "/",
+            }
+          )}
+        >
           Thomas Deconinck
         </a>
       </Link>
@@ -133,7 +142,14 @@ export default function Navigation({ links }) {
               className="border-t md:border-none w-full md:w-auto dark:border-gray-500"
             >
               <Link href={url} passHref>
-                <a className="tracking-wider text-xl p-4 md:p-0 inline-block h-full md:h-auto menu-link w-full dark:text-gray-300 dark:hover:text-white">
+                <a
+                  className={clsx(
+                    "tracking-wider text-xl p-4 md:p-0 inline-block h-full md:h-auto menu-link w-full dark:text-gray-300 dark:hover:text-white",
+                    {
+                      "menu-link--active": router.asPath === url,
+                    }
+                  )}
+                >
                   {label}
                 </a>
               </Link>

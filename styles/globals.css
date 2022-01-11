@@ -17,7 +17,8 @@ body.menu--open {
 }
 
 .html {
-  @apply dark:text-gray-400 tracking-wide leading-loose text-lg;
+  @apply dark:text-gray-300 tracking-wide text-lg;
+  line-height: 1.8;
 }
 
 .html a {
@@ -29,7 +30,7 @@ body.menu--open {
 }
 
 .html ul li + li {
-  @apply mt-4;
+  @apply mt-3;
 }
 
 .html h1 a,
@@ -63,10 +64,14 @@ body.menu--open {
 }
 
 .html .remark-highlight {
-  @apply rounded-lg lg:-mx-10 my-12 text-base;
+  @apply rounded-lg lg:-mx-10 my-10 text-base;
 }
 .html .remark-highlight code {
   @apply leading-loose;
+}
+
+.html img {
+  @apply my-8 mx-auto;
 }
 
 .menu-link:after {
@@ -80,6 +85,14 @@ body.menu--open {
 }
 
 .menu-link:hover:after {
+  width: 100%;
+  opacity: 1;
+  transition: all 0.2s ease-in;
+
+  @apply bg-purple-300;
+}
+
+.menu-link--active:after {
   width: 100%;
   opacity: 1;
   transition: all 0.2s ease-in;
@@ -118,7 +131,7 @@ body.menu--open {
 }
 
 .about-presentation blockquote {
-  @apply bg-gray-800 p-4 mb-4 rounded;
+  @apply dark:bg-gray-800 p-4 mb-4 rounded bg-gray-200;
 }
 
 .about-presentation blockquote p {
