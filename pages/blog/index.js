@@ -55,11 +55,23 @@ query BlogIndex($locale: SiteLocale) {
      }
    }
   }
+  _site {
+    favicon {
+      url
+    }
+  }
 }
 `;
 
 export async function getStaticProps({ locale }) {
-  const { blogIndex, latestArticle, nextArticles } = await request({
+  const {
+    blogIndex,
+    latestArticle,
+    nextArticles,
+    _site: {
+      favicon: { url: faviconUrl },
+    },
+  } = await request({
     query: BLOG_INDEX_QUERY,
     variables: { locale },
   });
@@ -75,11 +87,18 @@ export async function getStaticProps({ locale }) {
       nextArticles: nextArticles,
       menu: menuData.menu.navContent,
       seo: blogIndex.seo,
+      faviconUrl,
     },
   };
 }
 
-export default function Home({ latestArticle, nextArticles, menu, seo }) {
+export default function Home({
+  latestArticle,
+  nextArticles,
+  menu,
+  seo,
+  faviconUrl,
+}) {
   let { locale } = useRouter();
 
   return (
@@ -87,7 +106,7 @@ export default function Home({ latestArticle, nextArticles, menu, seo }) {
       <Seo
         title={seo.title}
         description={seo.description}
-        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+        favicon={faviconUrl}
       />
 
       <Navigation links={menu} />

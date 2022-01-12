@@ -50,12 +50,20 @@ query LabsIndex($locale: SiteLocale) {
       }
     }
   }
+  _site {
+    favicon {
+      url
+    }
+  }
 }
 `;
 
 export async function getStaticProps({ locale }) {
   const {
     labsIndex: { seo, presentationPicture, presentation, title, items },
+    _site: {
+      favicon: { url: faviconUrl },
+    },
   } = await request({
     query: QUERY,
     variables: { locale },
@@ -78,6 +86,7 @@ export async function getStaticProps({ locale }) {
       presentation: htmlPresentation,
       title,
       items,
+      faviconUrl,
     },
   };
 }
@@ -89,13 +98,14 @@ export default function LabsIndex({
   presentationPicture,
   title,
   items,
+  faviconUrl,
 }) {
   return (
     <>
       <Seo
         title={seo.title}
         description={seo.description}
-        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+        favicon={faviconUrl}
       />
       <Navigation links={menu} />
 

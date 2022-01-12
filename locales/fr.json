@@ -9,5 +9,7 @@
   "labs.christmasSoonTitle": "C'est bientôt Noël ?",
   "labs.christmasSoonDescription": "Découvrez combien de jours il reste avant Noël ?",
   "labs.christmasSoonInXDays": "Encore {number} jours avant Noël",
-  "blog.tagsTitle": "Articles à propos de <tag>tag</tag>"
+  "blog.tagsTitle": "Articles à propos de <tag>tag</tag>",
+  "tags.title": "Articles à propos de {tag}",
+  "tags.description": "Retrouvez l'ensemble de mes articles à propos de {tag}"
 }

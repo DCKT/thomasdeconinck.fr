@@ -34,12 +34,21 @@ query AboutPage($locale: SiteLocale) {
       twitterCard
     }
   }
+
+  _site {
+    favicon {
+      url
+    }
+  }
 }
 `;
 
 export async function getStaticProps({ locale }) {
   const {
     aboutPage: { seo, pictureOfMe, description },
+    _site: {
+      favicon: { url: faviconUrl },
+    },
   } = await request({
     query: ABOUT_QUERY,
     variables: { locale },
@@ -59,11 +68,18 @@ export async function getStaticProps({ locale }) {
       seo: seo,
       pictureOfMe: pictureOfMe.responsiveImage,
       description: htmlDescription,
+      faviconUrl,
     },
   };
 }
 
-export default function About({ menu, seo, pictureOfMe, description }) {
+export default function About({
+  menu,
+  seo,
+  pictureOfMe,
+  description,
+  faviconUrl,
+}) {
   let { locale } = useRouter();
 
   return (
@@ -71,7 +87,7 @@ export default function About({ menu, seo, pictureOfMe, description }) {
       <Seo
         title={seo.title}
         description={seo.description}
-        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+        favicon={faviconUrl}
       />
 
       <Navigation links={menu} />

@@ -11,6 +11,8 @@ import ArticleListItem from "../../../components/ArticleListItem";
 import clsx from "clsx";
 import Image from "next/image";
 import { FormattedMessage } from "react-intl";
+import Seo from "../../../components/Seo";
+import { useIntl } from "react-intl";
 
 const TAGGED_POSTS_QUERY = `
 query Posts($tag: String!, $locale: SiteLocale) {
@@ -31,6 +33,11 @@ query Posts($tag: String!, $locale: SiteLocale) {
        base64
      }
    }
+  }
+  _site {
+    favicon {
+      url
+    }
   }
 }`;
 
@@ -73,16 +80,38 @@ export async function getStaticProps({ params, locale }) {
     props: {
       menu: menuData.menu.navContent,
       articles: data.allArticles,
+      faviconUrl: data._site.favicon.url,
     },
   };
 }
 
-export default function Tag({ articles, menu }) {
+export default function Tag({ articles, menu, faviconUrl }) {
   const { query, locale } = useRouter();
+  const intl = useIntl();
   const { tag } = query;
 
   return (
     <div className="blog-container">
+      <Seo
+        title={intl.formatMessage(
+          {
+            id: "tags.title",
+          },
+          {
+            tag,
+          }
+        )}
+        description={intl.formatMessage(
+          {
+            id: "tags.description",
+          },
+          {
+            tag,
+          }
+        )}
+        favicon={faviconUrl}
+      />
+
       <Navigation links={menu} />
 
       <div className="mt-16 max-w-screen-xl mx-auto px-4 pb-10">

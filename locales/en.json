@@ -9,5 +9,7 @@
   "labs.christmasSoonTitle": "Is christmas soon ?",
   "labs.christmasSoonDescription": "Discover how many days left until christmas.",
   "labs.christmasSoonInXDays": "Still {number} days before christmas",
-  "blog.tagsTitle": "Articles about <tag>tag</tag>"
+  "blog.tagsTitle": "Articles about <tag>tag</tag>",
+  "tags.title": "Articles about {tag}",
+  "tags.description": "Fin all of my articles about {tag}"
 }
