@@ -1,6 +1,9 @@
 import { SiteClient } from "datocms-client";
 
-const datoClient = new SiteClient(process.env.NEXT_ADMIN_DATOCMS_API_TOKEN);
+const { NEXT_ADMIN_LOGIN, NEXT_ADMIN_PASSWORD, NEXT_ADMIN_DATOCMS_API_TOKEN } =
+  process.env;
+
+const datoClient = new SiteClient(NEXT_ADMIN_DATOCMS_API_TOKEN);
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
 async function createImageUpload({ title, uploadId, previousValue, host }) {
   console.log(`⏳  Create upload path`);
   const uploadPath = await datoClient.createUploadPath(
-    `https://${host}/api/internals/placeholder-builder?text=${encodeURIComponent(
+    `https://${host}/api/internals/canvas-image-builder?text=${encodeURIComponent(
       title
     )}`
   );
