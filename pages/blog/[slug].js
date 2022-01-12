@@ -47,10 +47,20 @@ query Post($slug: String, $locale: SiteLocale) {
         base64
      }
    }
+   socialPlaceholder {
+    responsiveImage {
+      src
+    }
+   }
   }
   siteInformation {
     siteTitle
     siteDescription
+  }
+  _site {
+    favicon {
+      url
+    }
   }
 }`;
 
@@ -97,6 +107,8 @@ export async function getStaticProps({ params, locale, preview }) {
       },
       preview: !!preview,
       menu: menuData.menu.navContent,
+      favicon: data._site.favicon.url,
+      twitterImage: data.articlesocialPlaceholder?.responsiveImage.src || null,
     },
   };
 }
@@ -112,6 +124,8 @@ export default function Article({
   preview,
   menu,
   splash,
+  favicon,
+  twitterImage,
 }) {
   const { locale, isFallback, asPath } = useRouter();
 
@@ -133,7 +147,8 @@ export default function Article({
       <Seo
         title={title}
         description={description}
-        favicon={"https://blog.thomasdeconinck.fr/favicon.ico"}
+        favicon={favicon}
+        twitterImage={twitterImage}
       />
 
       <Navigation links={menu} />

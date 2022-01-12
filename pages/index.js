@@ -95,7 +95,7 @@ export default function Home({ hello, picture, presentation, menu, seo }) {
         </div>
         <Image
           data={picture}
-          className="md:w-[680px] xl:w-[800px] 2xl:w-[850px] mr-0   animate-upScale motion-reduce:transition-none motion-reduce:transform-none"
+          className="md:w-[680px] xl:w-[740px] 2xl:w-[850px] mr-0  lg:-mr-24  animate-upScale motion-reduce:transition-none motion-reduce:transform-none"
         />
       </div>
     </>

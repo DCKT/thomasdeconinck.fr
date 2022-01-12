@@ -1,5 +1,4 @@
 import { request } from "../../shared/datocms";
-import Bio from "../../components/Bio";
 import Link from "next/link";
 import ArticleListItem from "../../components/ArticleListItem";
 import Seo from "../../components/Seo";
