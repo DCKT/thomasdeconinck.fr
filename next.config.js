@@ -4,5 +4,5 @@ module.exports = {
     defaultLocale: "fr",
   },
   swcMinify: false,
-  staticPageGenerationTimeout: 300,
+  staticPageGenerationTimeout: 500,
 };
