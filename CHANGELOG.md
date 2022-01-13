@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.1...v1.1.2) (2022-01-13)
+
+
+### Bug Fixes
+
+* Increase staticPageGenerationTimeout ([73ad159](https://github.com/DCKT/thomasdeconinck.fr/commit/73ad159638184aa1c454353f253f22cff93ae6b6))
+
 ## [1.1.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.0...v1.1.1) (2022-01-13)
 
 
