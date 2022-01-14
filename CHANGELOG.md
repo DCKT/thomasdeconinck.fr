@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.2...v1.1.3) (2022-01-14)
+
+
+### Bug Fixes
+
+* Fix internals middleware ([f965340](https://github.com/DCKT/thomasdeconinck.fr/commit/f9653402178d16a9cbc549f3ec69f86004e34e3a))
+
 ## [1.1.2](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.1...v1.1.2) (2022-01-13)
 
 
