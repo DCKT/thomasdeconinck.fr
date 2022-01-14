@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 
-const { NEXT_ADMIN_LOGIN, NEXT_ADMIN_PASSWORD } = process.env;
-
 export default function restrictAccessToAdmin(req) {
-  const auth = req.headers.get("authorization").split(" ")[1];
-  const [login, password] = Buffer.from(auth, "base64")
-    .toString("ascii")
-    .split(":");
+  const auth = req.headers.get("authorization")?.split(" ")[1];
 
-  if (login === NEXT_ADMIN_LOGIN && password === NEXT_ADMIN_PASSWORD) {
-    return NextResponse.next();
+  if (auth) {
+    const [login, password] = Buffer.from(auth, "base64")
+      .toString("ascii")
+      .split(":");
+
+    console.log(process.env.NEXT_ADMIN_LOGIN);
+
+    if (
+      login === process.env.NEXT_ADMIN_LOGIN &&
+      password === process.env.NEXT_ADMIN_PASSWORD
+    ) {
+      return NextResponse.next();
+    }
   }
 
   return new Response("Auth required", {
