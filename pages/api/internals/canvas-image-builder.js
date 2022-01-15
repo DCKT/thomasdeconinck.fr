@@ -113,7 +113,13 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
     const text = decodeURIComponent(searchParams.get("text"));
-    const imageBuffer = await buildImage(text);
+
+    try {
+      const imageBuffer = await buildImage(text);
+    } catch (err) {
+      console.log("🚨 An error occured while building the image");
+      console.error(err);
+    }
 
     res.setHeader("Content-Type", "image/png");
     res.send(imageBuffer);
