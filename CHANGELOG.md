@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.3...v1.1.4) (2022-01-15)
+
+
+### Bug Fixes
+
+* Fix canvas package issue by adding some LD_LIBRARY_PATH env in next.config.js ([07aa876](https://github.com/DCKT/thomasdeconinck.fr/commit/07aa876f0e57bb0334884a1dcfc775b91ecbea8f))
+
 ## [1.1.3](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.2...v1.1.3) (2022-01-14)
 
 
