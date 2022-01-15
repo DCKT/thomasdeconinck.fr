@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.6...v1.1.7) (2022-01-15)
+
+
+### Bug Fixes
+
+* Add try/catch to build image api ([e338af2](https://github.com/DCKT/thomasdeconinck.fr/commit/e338af2fd8a93b55bc1497ddb5371178acfe8354))
+
 ## [1.1.6](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.5...v1.1.6) (2022-01-15)
 
 
