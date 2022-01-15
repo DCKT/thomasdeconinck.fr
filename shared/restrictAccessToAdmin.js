@@ -8,8 +8,6 @@ export default function restrictAccessToAdmin(req) {
       .toString("ascii")
       .split(":");
 
-    console.log(process.env.NEXT_ADMIN_LOGIN);
-
     if (
       login === process.env.NEXT_ADMIN_LOGIN &&
       password === process.env.NEXT_ADMIN_PASSWORD

@@ -68,7 +68,9 @@ export default async function handler(req, res) {
 async function createImageUpload({ title, uploadId, previousValue, host }) {
   console.log(`⏳  Create upload path`);
   const uploadPath = await datoClient.createUploadPath(
-    `https://${host}/api/internals/canvas-image-builder?text=${encodeURIComponent(
+    `https://${process.env.NEXT_ADMIN_LOGIN}:${
+      process.env.NEXT_ADMIN_PASSWORD
+    }${host}/api/internals/canvas-image-builder?text=${encodeURIComponent(
       title
     )}`
   );
