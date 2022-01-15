@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.4...v1.1.5) (2022-01-15)
+
+
+### Bug Fixes
+
+* Add basic auth to article-placeholder api call ([9212161](https://github.com/DCKT/thomasdeconinck.fr/commit/921216176279063c7984db5437902ce59c06cf98))
+
 ## [1.1.4](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.3...v1.1.4) (2022-01-15)
 
 
