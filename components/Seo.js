@@ -6,6 +6,7 @@ export default function Seo({ title, description, favicon, twitterImage }) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:creator" content="@DCK__" />
       <link rel="icon" href={favicon} />
       <meta name="twitter:image" content={twitterImage || favicon} />
       <meta name="description" content={description} />

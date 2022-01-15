@@ -70,7 +70,7 @@ async function createImageUpload({ title, uploadId, previousValue, host }) {
   const uploadPath = await datoClient.createUploadPath(
     `https://${process.env.NEXT_ADMIN_LOGIN}:${
       process.env.NEXT_ADMIN_PASSWORD
-    }${host}/api/internals/canvas-image-builder?text=${encodeURIComponent(
+    }@${host}/api/internals/canvas-image-builder?text=${encodeURIComponent(
       title
     )}`
   );
