@@ -118,11 +118,17 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
     const text = decodeURIComponent(searchParams.get("text"));
+    const CACHE_DURATION = 60 * 60 * 24 * 365;
 
     try {
       const imageBuffer = await buildImage(text);
       res.setHeader("Content-Type", "image/png");
-      res.send(imageBuffer);
+      res.setHeader("Content-Length", imageBuffer.length);
+      res.setHeader(
+        "Cache-Control",
+        `max-age=0, s-maxage=${CACHE_DURATION}, stale-while-revalidate`
+      );
+      res.end(imageBuffer, "binary");
     } catch (err) {
       console.log("🚨 An error occured while building the image");
       console.error(err);

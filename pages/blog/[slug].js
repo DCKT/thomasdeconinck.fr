@@ -47,11 +47,6 @@ query Post($slug: String, $locale: SiteLocale) {
         base64
      }
    }
-   socialPlaceholder {
-    responsiveImage {
-      src
-    }
-   }
   }
   siteInformation {
     siteTitle
@@ -108,10 +103,15 @@ export async function getStaticProps({ params, locale, preview }) {
       preview: !!preview,
       menu: menuData.menu.navContent,
       favicon: data._site.favicon.url,
-      twitterImage: data.articlesocialPlaceholder?.responsiveImage.src || null,
     },
   };
 }
+
+const getAbsoluteURL = (path) => {
+  const baseURL =
+    `https://${process.env.VERCEL_URL}` || "http://localhost:3000";
+  return baseURL + path;
+};
 
 export default function Article({
   title,
@@ -125,13 +125,16 @@ export default function Article({
   menu,
   splash,
   favicon,
-  twitterImage,
 }) {
-  const { locale, isFallback, asPath } = useRouter();
+  const { locale, isFallback, asPath, basePath } = useRouter();
 
   if (isFallback) {
     return <div>Loading...</div>;
   }
+
+  const twitterImage = getAbsoluteURL(
+    `/api/canvas-image-builder?text=${encodeURIComponent(title)}`
+  );
 
   return (
     <div className="blog-container">
@@ -157,7 +160,7 @@ export default function Article({
         <Link href="/blog" passHref>
           <a className="flex flex-row items-center gap-4 text-lg dark:text-gray-300 mb-10 hover:text-purple-500 dark:hover:text-purple-300 group">
             <MdOutlineKeyboardBackspace className="border-2 rounded-full border-gray-800 dark:border-gray-200 block w-10 h-10 p-1 group-hover:border-purple-500 dark:group-hover:border-purple-300" />
-            Revenir à la liste
+            <FormattedMessage id="blogDetail.back" />
           </a>
         </Link>
         <h1 className="text-xl sm:text-2xl lg:text-4xl font-light leading-snug dark:text-gray-100">
