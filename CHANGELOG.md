@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.2.0...v1.3.0) (2022-01-23)
+
+
+### Bug Fixes
+
+* fix ignore message ([5e41f0c](https://github.com/DCKT/thomasdeconinck.fr/commit/5e41f0c86ea6730bdd93ad2f387a7bb8cddfad10))
+
+
+### Features
+
+* ignore semantic release commit on vercel ([faea7cd](https://github.com/DCKT/thomasdeconinck.fr/commit/faea7cd4f376cc3620f7d50937199225d98494b3))
+
 # [1.2.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.11...v1.2.0) (2022-01-23)
 
 
