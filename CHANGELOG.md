@@ -1,3 +1,10 @@
+## [1.1.8](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.7...v1.1.8) (2022-01-23)
+
+
+### Bug Fixes
+
+* downgrade canvas@2.6.1 for ZLIB_1.2.9 issue ([c8c51d5](https://github.com/DCKT/thomasdeconinck.fr/commit/c8c51d5beea123ee86a6e60ea331bb82515f1f6d))
+
 ## [1.1.7](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.6...v1.1.7) (2022-01-15)
 
 
