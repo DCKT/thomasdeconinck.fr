@@ -1,3 +1,10 @@
+## [1.1.11](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.10...v1.1.11) (2022-01-23)
+
+
+### Bug Fixes
+
+* Finally got the dynamic placeholder ? ([ff6ad16](https://github.com/DCKT/thomasdeconinck.fr/commit/ff6ad16c00a691cc780c7c3351d9200a17baf82b))
+
 ## [1.1.10](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.9...v1.1.10) (2022-01-23)
 
 
