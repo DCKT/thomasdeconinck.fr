@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.11...v1.2.0) (2022-01-23)
+
+
+### Features
+
+* add semantic-release/github plugin ([b05e132](https://github.com/DCKT/thomasdeconinck.fr/commit/b05e132e9d67a5fccf428659ba30de1a2fa9c86c))
+
 ## [1.1.11](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.10...v1.1.11) (2022-01-23)
 
 
