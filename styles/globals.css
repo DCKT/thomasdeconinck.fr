@@ -17,7 +17,7 @@ body.menu--open {
 }
 
 .html {
-  @apply dark:text-gray-300 tracking-wide text-lg;
+  @apply dark:text-[#bdbdbf] tracking-wide text-lg;
   line-height: 1.8;
 }
 

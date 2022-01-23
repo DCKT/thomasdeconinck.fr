@@ -58,7 +58,7 @@ export function useDarkMode() {
     }
   }, [isBrowser, hasActivatedDarkMode]);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (darkModeEnabled) {
       document.body.parentElement.classList.add("dark");
     } else {

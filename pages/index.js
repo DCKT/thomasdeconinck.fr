@@ -98,7 +98,7 @@ export default function Home({
         <div className="text-center lg:text-left ">
           <p
             className={
-              "2xl:text-[6rem] lg:text-[4rem] text-[3rem] italic mt-10 lg:mt-0 dark:text-gray-100 tracking-wider"
+              "2xl:text-[6rem] lg:text-[4.5rem] text-[3rem] italic mt-10 lg:mt-0 dark:text-gray-100 tracking-wider"
             }
           >
             {hello}
@@ -111,7 +111,7 @@ export default function Home({
         </div>
         <Image
           data={picture}
-          className="md:w-[680px] xl:w-[740px] 2xl:w-[850px] mr-0  lg:-mr-24  animate-upScale motion-reduce:transition-none motion-reduce:transform-none"
+          className="md:!w-[680px] xl:!w-[740px] 2xl:w-[850px] mr-0  lg:-mr-24  animate-upScale motion-reduce:transition-none motion-reduce:transform-none"
         />
       </div>
     </>

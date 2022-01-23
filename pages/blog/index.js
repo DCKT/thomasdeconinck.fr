@@ -37,7 +37,7 @@ query BlogIndex($locale: SiteLocale) {
    }
   }
   
-  nextArticles: allArticles(skip:1, first:3, locale: $locale, orderBy: _publishedAt_DESC) {
+  nextArticles: allArticles(skip:1, first:5, locale: $locale, orderBy: _publishedAt_DESC) {
     title
     description
     slug
