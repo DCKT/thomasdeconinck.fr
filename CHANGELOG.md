@@ -1,3 +1,10 @@
+## [1.1.9](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.8...v1.1.9) (2022-01-23)
+
+
+### Bug Fixes
+
+* finally resolve Vercel / Canvas issue ([5c1de2e](https://github.com/DCKT/thomasdeconinck.fr/commit/5c1de2e2898726ec3a1b189c8005a032aaa3abe5))
+
 ## [1.1.8](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.7...v1.1.8) (2022-01-23)
 
 
