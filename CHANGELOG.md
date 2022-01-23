@@ -1,3 +1,10 @@
+## [1.1.10](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.9...v1.1.10) (2022-01-23)
+
+
+### Bug Fixes
+
+* Fix missing auth token in article-placeholder api ([bfc865a](https://github.com/DCKT/thomasdeconinck.fr/commit/bfc865a633e5dfb07c5aff57a38086a3cc3f0860))
+
 ## [1.1.9](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.1.8...v1.1.9) (2022-01-23)
 
 
