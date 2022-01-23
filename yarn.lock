@@ -224,13 +224,13 @@
   resolved "https://registry.yarnpkg.com/@contentful/rich-text-types/-/rich-text-types-14.1.2.tgz#33162fdbf427891122a96030f806ca9a9cf0e844"
   integrity sha512-XbgZ7op5uyYYszipgQg/bYobF4b+llXyTwS8hISRniQY9xKESz544eP2OGmRc4J3MHx29M7Vmx7TVA/IK65giQ==
 
-"@formatjs/cli@4.7.1":
-  version "4.7.1"
-  resolved "https://registry.yarnpkg.com/@formatjs/cli/-/cli-4.7.1.tgz#508cf964778379673ea7788b5c2cadb7e0ff2df5"
-  integrity sha512-wOv1W1UgKKDhIaYA9XbgB82BuO8+MsW7CSuUrLflZasvrO+M3e6oC9WdTLJvn8y/54Q0B62uWuDu5CxEohDMhQ==
+"@formatjs/cli@4.8.0":
+  version "4.8.0"
+  resolved "https://registry.yarnpkg.com/@formatjs/cli/-/cli-4.8.0.tgz#394c73027c6b1e0bf2518cedb4cea44c3cbd5da3"
+  integrity sha512-ebNzmoaYK5H8m/LW5ctatljx5KQyUVWIxnqFL2Dpr2/V6oAr9Ds5ah0llIS7zkIj5fMZUnVR37oW/aMkOnCbZg==
   dependencies:
     "@formatjs/icu-messageformat-parser" "2.0.16"
-    "@formatjs/ts-transformer" "3.8.2"
+    "@formatjs/ts-transformer" "3.9.0"
     "@types/estree" "^0.0.50"
     "@types/fs-extra" "^9.0.1"
     "@types/json-stable-stringify" "^1.0.32"
@@ -316,10 +316,10 @@
     intl-messageformat "9.11.2"
     tslib "^2.1.0"
 
-"@formatjs/ts-transformer@3.8.2":
-  version "3.8.2"
-  resolved "https://registry.yarnpkg.com/@formatjs/ts-transformer/-/ts-transformer-3.8.2.tgz#67c0ad9f0f10e9b9137f26933cca4f095bab31f7"
-  integrity sha512-XWMG4DoFDdLnDKEd0qKQO+/3Kppe6vuchvYvkE0VvLNfKFfEpvJL2IGEU4hEJSK27vC99x1TsfVhMU0ODgKFZw==
+"@formatjs/ts-transformer@3.9.0":
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/@formatjs/ts-transformer/-/ts-transformer-3.9.0.tgz#8521388c27572d2f0cf20e1eabe006382aa69ab0"
+  integrity sha512-qiITJ9w6mJHqjWa+cCUogRxburQ8lbRTHloeuWQK6imm6sZkO3NHs+Zf86JWcmB2EXJBJvFabcbhrXY0vvPR5g==
   dependencies:
     "@formatjs/icu-messageformat-parser" "2.0.16"
     "@types/node" "14 || 16 || 17"
@@ -886,10 +886,10 @@ axios@^0.21.4:
   dependencies:
     follow-redirects "^1.14.0"
 
-babel-plugin-formatjs@10.3.15:
-  version "10.3.15"
-  resolved "https://registry.yarnpkg.com/babel-plugin-formatjs/-/babel-plugin-formatjs-10.3.15.tgz#1bb323697fbf6ce2962372871470b11a4072a531"
-  integrity sha512-6zIRp44C2as7WuyFZvGdoBBLRgkBU0JY4IkdcWdNqSbRPvs1nH0Ltz/Qpcn0tRK963J2QBtQHgSdYv0TKwJkyw==
+babel-plugin-formatjs@10.3.16:
+  version "10.3.16"
+  resolved "https://registry.yarnpkg.com/babel-plugin-formatjs/-/babel-plugin-formatjs-10.3.16.tgz#fe72d86f34279716db75474c0fb453dcae0a6475"
+  integrity sha512-U4iC9kx6SiAEUlhU5VTq1eM/vNuVi5cfwHB53Dxjgu7glKwjuMKhwiJ2pUoylTgNowW5seVpl5oX3Z24U7A7lw==
   dependencies:
     "@babel/core" "^7.10.4"
     "@babel/helper-plugin-utils" "^7.10.4"
@@ -897,7 +897,7 @@ babel-plugin-formatjs@10.3.15:
     "@babel/traverse" "7"
     "@babel/types" "^7.12.11"
     "@formatjs/icu-messageformat-parser" "2.0.16"
-    "@formatjs/ts-transformer" "3.8.2"
+    "@formatjs/ts-transformer" "3.9.0"
     "@types/babel__core" "^7.1.7"
     "@types/babel__helper-plugin-utils" "^7.10.0"
     tslib "^2.1.0"
@@ -1492,7 +1492,7 @@ datocms-listen@^0.1.6:
   resolved "https://registry.yarnpkg.com/datocms-listen/-/datocms-listen-0.1.7.tgz#58f90ee2668b6a9480c47d79e91c5ca5993ab8ce"
   integrity sha512-v0k6IStA6uCQa1rk03tVv2CfxUqDLa/ECN9hnYYGgV1BtZEj/HTbxvdsi/cCDPCi4iFQGY8xjqplnSgTXIA9tA==
 
-datocms-structured-text-generic-html-renderer@^1.1.0:
+datocms-structured-text-generic-html-renderer@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/datocms-structured-text-generic-html-renderer/-/datocms-structured-text-generic-html-renderer-1.3.0.tgz#7c91f969bae5b04670658b491fb5463aa3b80334"
   integrity sha512-9O9ccHSJ2sFZ6GVYYGYPBqsJrjiW1pFVvp8acSIKNHAV6IIOsHh2oeBxsvDLJgixnmiPpDDryeHXl8hwTs+OlQ==
@@ -2124,10 +2124,10 @@ graceful-fs@^4.1.6, graceful-fs@^4.2.0:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.9.tgz#041b05df45755e587a24942279b9d113146e1c96"
   integrity sha512-NtNxqUcXgpW2iMrfqSfR73Glt39K+BLwWsPs94yR63v45T0Wbej7eRmL5cWfwEgqXnmjQp3zaJTshdRW/qC2ZQ==
 
-graphql-request@3.6.1:
-  version "3.6.1"
-  resolved "https://registry.yarnpkg.com/graphql-request/-/graphql-request-3.6.1.tgz#689cce1da990131b40b05651f9f32bff506a1d8e"
-  integrity sha512-Nm1EasrAQVZllyNTlHDLnLZjlhC6eRWnWP6KH//ytnAL08pjlLkdI2K+s6OV92p45hn5b/kUlLbDwACmRoLwrQ==
+graphql-request@3.7.0:
+  version "3.7.0"
+  resolved "https://registry.yarnpkg.com/graphql-request/-/graphql-request-3.7.0.tgz#c7406e537084f8b9788541e3e6704340ca13055b"
+  integrity sha512-dw5PxHCgBneN2DDNqpWu8QkbbJ07oOziy8z+bK/TAXufsOLaETuVO4GkXrbs0WjhdKhBMN3BkpN/RIvUHkmNUQ==
   dependencies:
     cross-fetch "^3.0.6"
     extract-files "^9.0.0"
@@ -2391,11 +2391,6 @@ inline-style-prefixer@^6.0.0:
   integrity sha512-AsqazZ8KcRzJ9YPN1wMH2aNM7lkWQ8tSPrW5uDk1ziYwiAPWSZnUsC7lfZq+BDqLqz0B4Pho5wscWcJzVvRzDQ==
   dependencies:
     css-in-js-utils "^2.0.0"
-
-intersection-observer@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/intersection-observer/-/intersection-observer-0.12.0.tgz#6c84628f67ce8698e5f9ccf857d97718745837aa"
-  integrity sha512-2Vkz8z46Dv401zTWudDGwO7KiGHNDkMv417T5ItcNYfmvHR/1qCTVBO9vwH8zZmQ0WkA/1ARwpysR9bsnop4NQ==
 
 intl-messageformat@9.11.2:
   version "9.11.2"
@@ -3609,12 +3604,7 @@ pretty-error@^2.1.1:
     lodash "^4.17.20"
     renderkid "^2.0.4"
 
-prismjs@1.25.0:
-  version "1.25.0"
-  resolved "https://registry.yarnpkg.com/prismjs/-/prismjs-1.25.0.tgz#6f822df1bdad965734b310b315a23315cf999756"
-  integrity sha512-WCjJHl1KEWbnkQom1+SzftbtXMKQoezOCYs5rECqMN+jP+apI7ftoflyqigqzopSO3hMhTEb0mFClA8lkolgEg==
-
-prismjs@^1.23.0:
+prismjs@1.26.0, prismjs@^1.23.0:
   version "1.26.0"
   resolved "https://registry.yarnpkg.com/prismjs/-/prismjs-1.26.0.tgz#16881b594828bb6b45296083a8cbab46b0accd47"
   integrity sha512-HUoH9C5Z3jKkl3UunCyiD5jwk0+Hz0fIgQ2nbwU2Oo/ceuTAQAg+pPVnfdt2TJWRVLcxKh9iuoYDUSc8clb5UQ==
@@ -3694,16 +3684,15 @@ rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-datocms@1.6.6:
-  version "1.6.6"
-  resolved "https://registry.yarnpkg.com/react-datocms/-/react-datocms-1.6.6.tgz#c3c4a14e8369ff4355612160325efc184299075f"
-  integrity sha512-7k8HziRVkTLGz5MM+MmdO815rSEUJb1xPv0dNRJoCJBh+UDkB3hRBCwDZgVPJMK5AH9DSshcu6bN1gAhLpHRtw==
+react-datocms@3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-datocms/-/react-datocms-3.0.0.tgz#162e7785d5415ec884f3dd3de11aa363bda26730"
+  integrity sha512-ZSIw1U9L4hCp6lUx4hxzn5KQw94tN/07YCVAn/FfyXg4VLqpFvGVh8wjPU4sCrFEuKCu9TiqhyuUn0TMiZtaIQ==
   dependencies:
     datocms-listen "^0.1.6"
-    datocms-structured-text-generic-html-renderer "^1.1.0"
+    datocms-structured-text-generic-html-renderer "^1.3.0"
     datocms-structured-text-utils "^1.1.0"
-    intersection-observer "^0.12.0"
-    react-intersection-observer "^8.31.1"
+    react-intersection-observer "^8.33.1"
     use-deep-compare-effect "^1.6.1"
 
 react-dom@17.0.2:
@@ -3720,7 +3709,7 @@ react-icons@4.3.1:
   resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-4.3.1.tgz#2fa92aebbbc71f43d2db2ed1aed07361124e91ca"
   integrity sha512-cB10MXLTs3gVuXimblAdI71jrJx8njrJZmNMEMC+sQu5B/BIOmlsAjskdqpn81y8UBVEGuHODd7/ci5DvoSzTQ==
 
-react-intersection-observer@^8.31.1:
+react-intersection-observer@^8.33.1:
   version "8.33.1"
   resolved "https://registry.yarnpkg.com/react-intersection-observer/-/react-intersection-observer-8.33.1.tgz#8e6442cac7052ed63056e191b7539e423e7d5c64"
   integrity sha512-3v+qaJvp3D1MlGHyM+KISVg/CMhPiOlO6FgPHcluqHkx4YFCLuyXNlQ/LE6UkbODXlQcLOppfX6UMxCEkUhDLw==
@@ -4371,10 +4360,10 @@ symbol-tree@^3.2.4:
   resolved "https://registry.yarnpkg.com/symbol-tree/-/symbol-tree-3.2.4.tgz#430637d248ba77e078883951fb9aa0eed7c63fa2"
   integrity sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==
 
-tailwindcss@3.0.14:
-  version "3.0.14"
-  resolved "https://registry.yarnpkg.com/tailwindcss/-/tailwindcss-3.0.14.tgz#207dc80351ac6a0746799be3ef2af836c9eea3c5"
-  integrity sha512-7VTZJVMY9iTZhGsiTC9d3gWk+tSJz8iKZoxd5mvO0w4n0lulzVPYEOiwKcz5h8M/rNhlpymU7Ix5519Tl5wrfA==
+tailwindcss@3.0.15:
+  version "3.0.15"
+  resolved "https://registry.yarnpkg.com/tailwindcss/-/tailwindcss-3.0.15.tgz#e4db219771eb7678a3bfd97b3f6c8fe20be0a410"
+  integrity sha512-bT2iy7FtjwgsXik4ZoJnHXR+SRCiGR1W95fVqpLZebr64m4ahwUwRbIAc5w5+2fzr1YF4Ct2eI7dojMRRl8sVQ==
   dependencies:
     arg "^5.0.1"
     chalk "^4.1.2"

@@ -1,9 +1,6 @@
 import { SiteClient } from "datocms-client";
 
-const { NEXT_ADMIN_LOGIN, NEXT_ADMIN_PASSWORD, NEXT_ADMIN_DATOCMS_API_TOKEN } =
-  process.env;
-
-const datoClient = new SiteClient(NEXT_ADMIN_DATOCMS_API_TOKEN);
+const datoClient = new SiteClient(process.env.NEXT_ADMIN_DATOCMS_API_TOKEN);
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
