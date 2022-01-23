@@ -1,4 +1,5 @@
 import { createCanvas, loadImage, Image, registerFont } from "canvas";
+import path from "path";
 
 function wrapText({
   ctx,
@@ -40,14 +41,18 @@ function wrapText({
     y += lineHeight;
   }
 }
+const IMAGE_WIDTH = 1200;
+const IMAGE_HEIGHT = 630;
 
-const IMAGE_WIDTH = 1900;
-const IMAGE_HEIGHT = 1080;
+const FONT_PUBLIC_FOLDER_PATH = path.resolve("./public", "font");
+const PICTURE_PUBLIC_FOLDER_PATH = path.resolve("./public", "./me.png");
 
-registerFont("./public/font/rubik/Rubik-Medium.ttf", {
+registerFont(`${FONT_PUBLIC_FOLDER_PATH}/rubik/Rubik-Medium.ttf`, {
   family: "Rubik Medium",
 });
-registerFont("./public/font/rubik/Rubik-Light.ttf", { family: "Rubik Light" });
+registerFont(`${FONT_PUBLIC_FOLDER_PATH}/rubik/Rubik-Light.ttf`, {
+  family: "Rubik Light",
+});
 
 const buildImage = (text) => {
   const canvas = createCanvas(IMAGE_WIDTH, IMAGE_HEIGHT);
@@ -61,16 +66,16 @@ const buildImage = (text) => {
 
   ctx.fillStyle = "#e5e7eb";
 
-  return loadImage("./public/me.png").then((image) => {
+  return loadImage(`${PICTURE_PUBLIC_FOLDER_PATH}`).then((image) => {
     const paddingX = 80;
-    const paddingBottom = 250;
+    const paddingBottom = 150;
     const imageY = 60;
-    const borderY = 640;
+    const borderY = 365;
     const borderWidth = 190;
-    const blogTitleY = 550;
+    const blogTitleY = 320;
     const articleTitleY = IMAGE_HEIGHT - paddingBottom;
 
-    ctx.drawImage(image, IMAGE_WIDTH / 2 - 200, imageY, 400, 400);
+    ctx.drawImage(image, IMAGE_WIDTH / 2 - 100, imageY, 200, 200);
 
     ctx.beginPath();
 
@@ -85,23 +90,23 @@ const buildImage = (text) => {
     ctx.stroke();
 
     wrapText({
-      font: "50px Rubik Light",
+      font: "34px Rubik Light",
       ctx: ctx,
       text: "Thomas Deconinck",
-      x: IMAGE_WIDTH / 2 - 210,
+      x: IMAGE_WIDTH / 2 - 140,
       y: blogTitleY,
       maxWidth: 650,
       lineHeight: 40,
     });
 
     wrapText({
-      font: "80px Rubik Medium",
+      font: "56px Rubik Medium",
       ctx: ctx,
       text: text,
       x: paddingX,
       y: articleTitleY,
       maxWidth: IMAGE_WIDTH - paddingX * 2,
-      lineHeight: 120,
+      lineHeight: 80,
       singleLinePosition: articleTitleY + 60,
     });
 
@@ -116,13 +121,14 @@ export default async function handler(req, res) {
 
     try {
       const imageBuffer = await buildImage(text);
+      res.setHeader("Content-Type", "image/png");
+      res.send(imageBuffer);
     } catch (err) {
       console.log("🚨 An error occured while building the image");
       console.error(err);
-    }
 
-    res.setHeader("Content-Type", "image/png");
-    res.send(imageBuffer);
+      res.status(500).end("🚨 An error occured while building the image");
+    }
   } else {
     res.status(405).end();
   }

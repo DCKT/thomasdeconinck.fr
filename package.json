@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "yum install libuuid-devel libmount-devel && cp /lib64/{libuuid,libmount,libblkid}.so.1 node_modules/canvas/build/Release/ && yarn build",
     "start": "next start",
     "lint": "next lint",
     "intl:extract": "formatjs extract 'pages/**/*.js*' 'components/**/*.ts*' --out-file locales/en.json",

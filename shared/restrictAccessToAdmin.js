@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 export default function restrictAccessToAdmin(req) {
   const auth = req.headers.get("authorization")?.split(" ")[1];
 
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next();
+  }
+
   if (auth) {
     const [login, password] = Buffer.from(auth, "base64")
       .toString("ascii")
