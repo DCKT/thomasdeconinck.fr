@@ -3,11 +3,12 @@ import Link from "next/link";
 import ArticleListItem from "../../components/ArticleListItem";
 import Seo from "../../components/Seo";
 import Head from "next/head";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import { MENU_QUERY } from "../../shared/queries";
 import Navigation from "../../components/Navigation";
 import clsx from "clsx";
+import { Image } from "react-datocms";
+import { FormattedMessage } from "react-intl";
 
 const BLOG_INDEX_QUERY = `
 query BlogIndex($locale: SiteLocale) {
@@ -114,18 +115,10 @@ export default function Home({
       <div className="mt-16 max-w-screen-xl mx-auto px-4 pb-10">
         <Link href={`/blog/${latestArticle.slug}`} passHref>
           <a className="relative flex flex-row items-center gap-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg blog-featured-article cursor-pointer">
-            <picture className="rounded-lg hidden md:block dark:shadow-lg  flex-shrink-0 ">
-              <source
-                media="(min-width: 768px)"
-                srcSet={latestArticle.splash.responsiveImage.webpSrcSet}
-                type="image/webp"
-              />
-              <img
-                src={latestArticle.splash.responsiveImage.src}
-                alt={latestArticle.splash.responsiveImage.alt}
-                className="rounded-lg dark:shadow-lg border dark:border-0 md:w-[450px] lg:w-[550px] xl:w-[650px] xl:h-[400px]"
-              />
-            </picture>
+            <Image
+              data={latestArticle.splash.responsiveImage}
+              className="rounded-lg hidden md:block dark:shadow-lg md:w-[450px] lg:w-[550px] xl:w-[650px] xl:h-[400px]"
+            />
 
             <div>
               <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-gray-100">
@@ -144,7 +137,7 @@ export default function Home({
         </Link>
 
         <h4 className="text-2xl md:text-4xl font-light dark:text-gray-200 my-8 md:my-12 lg:my-20">
-          Mes derniers articles
+          <FormattedMessage id="blogIndex.latestArticle" />
         </h4>
 
         <div className="grid md:grid-flow-row sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
@@ -177,19 +170,10 @@ export default function Home({
                         backgroundSize: "cover",
                       }}
                     >
-                      <picture className="absolute left-0 top-0 w-full rounded-lg hidden md:block mb-4 h-full">
-                        <source
-                          srcSet={responsiveImage.webpSrcSet}
-                          type="image/webp"
-                        />
-                        <source srcSet={responsiveImage.srcSet} />
-                        <img
-                          src={responsiveImage.src}
-                          alt={responsiveImage.alt}
-                          loading="lazy"
-                          className="block rounded-lg border dark:border-0 w-full h-full "
-                        />
-                      </picture>
+                      <Image
+                        data={responsiveImage}
+                        className="hidden md:block rounded-lg border dark:border-0 w-full h-full "
+                      />
 
                       <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
                         <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">

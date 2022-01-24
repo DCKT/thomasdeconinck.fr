@@ -1,6 +1,7 @@
 {
   "blogDetail.splash": "Picture of <author>a</author> sur <unsplash>Unsplash</unsplash>",
   "blogDetail.back": "Back to the list",
+  "blogIndex.latestArticle": "My latest articles",
   "labs.fnacTitle": "Fnac gift card calculator",
   "labs.fnacDescription": "Estimate quickly how many gift cards you need for a given price.",
   "labs.fnacRemain": "Remain",

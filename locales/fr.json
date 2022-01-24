@@ -1,6 +1,7 @@
 {
   "blogDetail.splash": "Photo de <author>a</author> sur <unsplash>Unsplash</unsplash>",
   "blogDetail.back": "Revenir à la liste",
+  "blogIndex.latestArticle": "Mes derniers articles",
   "labs.fnacTitle": "Calculateur carte cadeau Fnac",
   "labs.fnacDescription": "Estimez rapidement combien de cartes cadeaux vous avez besoin sur un prix donné.",
   "labs.fnacRemain": "Restant",
