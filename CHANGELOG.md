@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.3.0...v1.4.0) (2022-01-25)
+
+
+### Features
+
+* use Image component from react-datocms for blog index pictures ([d61092e](https://github.com/DCKT/thomasdeconinck.fr/commit/d61092ea1bd8a5675f6f65c4dd9fafe4a2419c8e))
+
 # [1.3.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.2.0...v1.3.0) (2022-01-23)
 
 
