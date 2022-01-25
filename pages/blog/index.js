@@ -112,7 +112,7 @@ export default function Home({
 
       <Navigation links={menu} />
 
-      <div className="mt-16 max-w-screen-xl mx-auto px-4 pb-10">
+      <div className="mt-24 max-w-screen-xl mx-auto px-4 pb-10">
         <Link href={`/blog/${latestArticle.slug}`} passHref>
           <a className="relative flex flex-row items-center gap-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg blog-featured-article cursor-pointer">
             <Image
@@ -136,9 +136,9 @@ export default function Home({
           </a>
         </Link>
 
-        <h4 className="text-2xl md:text-4xl font-light dark:text-gray-200 my-8 md:my-12 lg:my-20">
+        <h2 className="text-2xl md:text-5xl font-light dark:text-gray-200 my-8 md:my-12 lg:mt-28 lg:mb-36">
           <FormattedMessage id="blogIndex.latestArticle" />
-        </h4>
+        </h2>
 
         <div className="grid md:grid-flow-row sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
           {nextArticles.map(
