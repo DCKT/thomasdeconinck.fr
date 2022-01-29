@@ -12,6 +12,7 @@ import { MdOutlineKeyboardBackspace } from "react-icons/md";
 import { Image } from "react-datocms";
 import { FormattedMessage } from "react-intl";
 import Seo from "../../components/Seo";
+import readingTime from "reading-time";
 
 export const POST_QUERY = `
 query Post($slug: String, $locale: SiteLocale) {
@@ -87,6 +88,7 @@ export async function getStaticProps({ params, locale, preview }) {
   });
 
   const content = await markdownToHtml(data.article.content);
+  const readingStats = readingTime(data.article.content);
   const siteDescription = await markdownToHtml(
     data.siteInformation.siteDescription
   );
@@ -103,6 +105,7 @@ export async function getStaticProps({ params, locale, preview }) {
       preview: !!preview,
       menu: menuData.menu.navContent,
       favicon: data._site.favicon.url,
+      readingStats,
     },
   };
 }
@@ -125,6 +128,7 @@ export default function Article({
   menu,
   splash,
   favicon,
+  readingStats,
 }) {
   const { locale, isFallback, asPath, basePath } = useRouter();
 
@@ -166,13 +170,22 @@ export default function Article({
         <h1 className="text-xl sm:text-2xl lg:text-4xl font-light leading-snug dark:text-gray-100">
           {title}
         </h1>
-        {_publishedAt ? (
-          <small className="text-lg lg:text-2xl text-gray-500 dark:text-gray-400">
-            {new Intl.DateTimeFormat("fr-FR", {
-              dateStyle: "full",
-            }).format(new Date(_publishedAt))}
+        <div className="flex flex-row gap-4 items-center">
+          {_publishedAt ? (
+            <small className="text-lg lg:text-2xl text-gray-500 dark:text-gray-400">
+              {new Intl.DateTimeFormat("fr-FR", {
+                dateStyle: "full",
+              }).format(new Date(_publishedAt))}
+            </small>
+          ) : null}
+          <span className="text-lg text-gray-500 dark:text-gray-400">-</span>
+          <small className="text-lg text-gray-500 dark:text-gray-400">
+            <FormattedMessage
+              id="blogDetail.readingTime"
+              values={{ minutes: Math.round(readingStats.minutes) }}
+            />
           </small>
-        ) : null}
+        </div>
         <div className="flex flex-row flex-wrap gap-x-2 my-2">
           {tags.map((tag, i) => {
             return (
