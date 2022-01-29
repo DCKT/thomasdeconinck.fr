@@ -143,7 +143,7 @@ export default function Article({
   return (
     <div className="blog-container">
       {preview ? (
-        <div className="fixed top-0 right-0 p-4 bg-blue-200 rounded-bl">
+        <div className="fixed top-0 left-0 p-4 bg-blue-200 rounded-br z-10">
           <a className="block underline text-center" href="/api/exit-preview">
             Exit
           </a>

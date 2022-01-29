@@ -8,21 +8,11 @@ query Post($slug: String) {
 }`;
 
 export default async function handler(req, res) {
-  if (req.query.secret !== process.env.PREVIEW_TOKEN || !req.query.slug) {
+  if (req.query.secret !== process.env.PREVIEW_TOKEN) {
     return res.status(401).json({ message: "Invalid token" });
   }
 
-  const post = await request({
-    query: POST_QUERY,
-    variables: { slug: req.query.slug, locale: "fr" },
-    preview: true,
-  });
-
-  if (!post) {
-    return res.status(401).json({ message: "Invalid slug" });
-  }
-
   res.setPreviewData({});
-
-  res.redirect(`/blog/${post.article.slug}`);
+  res.writeHead(307, { Location: "/" });
+  res.end();
 }

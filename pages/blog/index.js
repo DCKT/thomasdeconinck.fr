@@ -64,7 +64,7 @@ query BlogIndex($locale: SiteLocale) {
 }
 `;
 
-export async function getStaticProps({ locale }) {
+export async function getStaticProps({ locale, preview }) {
   const {
     blogIndex,
     latestArticle,
@@ -75,6 +75,7 @@ export async function getStaticProps({ locale }) {
   } = await request({
     query: BLOG_INDEX_QUERY,
     variables: { locale },
+    preview,
   });
 
   const menuData = await request({

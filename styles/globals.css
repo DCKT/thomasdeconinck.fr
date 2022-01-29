@@ -70,6 +70,14 @@ body.menu--open {
   @apply leading-loose;
 }
 
+.html blockquote {
+  @apply bg-purple-100 dark:bg-purple-200 text-purple-600 dark:text-purple-700 py-4 px-6 rounded mt-4 mb-8;
+}
+
+.html blockquote code {
+  @apply !bg-purple-700 !text-purple-200;
+}
+
 .html img {
   @apply my-8 mx-auto;
 }
