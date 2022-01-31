@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.5.0...v1.5.1) (2022-01-31)
+
+
+### Bug Fixes
+
+* Add style for <ol> ([c94ba73](https://github.com/DCKT/thomasdeconinck.fr/commit/c94ba73a11546ab5bd4a842fdf22ba811a9bd2c4))
+
 # [1.5.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.4.0...v1.5.0) (2022-01-31)
 
 
