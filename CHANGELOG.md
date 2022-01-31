@@ -1,3 +1,16 @@
+# [1.5.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.4.0...v1.5.0) (2022-01-31)
+
+
+### Bug Fixes
+
+* order blog posts index by_firstPublishedAt_DESC ([e578e72](https://github.com/DCKT/thomasdeconinck.fr/commit/e578e720b1ffe1585130178be21b605bb630332b))
+* Simplify preview mode ([11cf152](https://github.com/DCKT/thomasdeconinck.fr/commit/11cf1526f6b1afcb2a87c46a38f7f1a5a7d18fc8))
+
+
+### Features
+
+* add time read estimation ([71c6d7e](https://github.com/DCKT/thomasdeconinck.fr/commit/71c6d7ec6bf2fc8efdb41153719f8cd9a7a0fa72))
+
 # [1.4.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.3.0...v1.4.0) (2022-01-25)
 
 
