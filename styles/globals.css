@@ -29,6 +29,10 @@ body.menu--open {
   @apply ml-8 my-4 list-outside list-disc;
 }
 
+.html ol {
+  @apply ml-8 my-4 list-outside list-decimal;
+}
+
 .html ul li + li {
   @apply mt-3;
 }
