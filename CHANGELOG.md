@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.5.1...v1.6.0) (2022-02-09)
+
+
+### Features
+
+* add load more articles button to blog index ([f9a324e](https://github.com/DCKT/thomasdeconinck.fr/commit/f9a324ef2f7351fa4fde6de619a348847b0854ad))
+
 ## [1.5.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.5.0...v1.5.1) (2022-01-31)
 
 
