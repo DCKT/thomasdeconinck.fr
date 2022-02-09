@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.6.0...v1.7.0) (2022-02-09)
+
+
+### Features
+
+* add dynamic SiteMap ([8f82cc1](https://github.com/DCKT/thomasdeconinck.fr/commit/8f82cc1197e3db36be1ef56a904702aac0942e53))
+
 # [1.6.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.5.1...v1.6.0) (2022-02-09)
 
 
