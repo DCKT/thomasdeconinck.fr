@@ -14,5 +14,7 @@
   "labs.christmasSoonInXDays": "Still {number} days before christmas",
   "blog.tagsTitle": "Articles about <tag>tag</tag>",
   "tags.title": "Articles about {tag}",
-  "tags.description": "Fin all of my articles about {tag}"
+  "tags.description": "Fin all of my articles about {tag}",
+  "blog.loadMore": "Load more articles",
+  "blog.loadingMorePostError": "An error occured while loading articles."
 }
