@@ -10,7 +10,8 @@
     "lint": "next lint",
     "intl:extract": "formatjs extract 'pages/**/*.js*' 'components/**/*.ts*' --out-file locales/en.json",
     "intl:compile": "formatjs compile locales/en.json --ast --out-file compiled-lang/en.json",
-    "intl": "npm run extract:intl && npm run compile:intl"
+    "intl": "npm run extract:intl && npm run compile:intl",
+    "generate-sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
     "autoprefixer": "10.4.2",
@@ -19,6 +20,7 @@
     "cors": "2.8.5",
     "date-fns": "2.28.0",
     "datocms-client": "3.5.14",
+    "globby": "13.1.1",
     "graphql": "15.7.1",
     "graphql-request": "3.7.0",
     "lodash": "4.17.21",
