@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.8.0...v1.8.1) (2022-02-14)
+
+
+### Bug Fixes
+
+* Fix labs sitemap ([c76518e](https://github.com/DCKT/thomasdeconinck.fr/commit/c76518e8ecf5e501028043c55869a959962c1dbe))
+
 # [1.8.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.7.0...v1.8.0) (2022-02-14)
 
 
