@@ -1,11 +1,11 @@
 import { ALL_ARTICLES_QUERY } from "../shared/queries";
 import { request } from "../shared/datocms";
 import { globby } from "globby";
+import path from "path";
 
 function generateSiteMap({ blogArticlesPaths, labsPaths }) {
   return `<?xml version="1.0" encoding="UTF-8"?>
    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-     <!--We manually set the two URLs we know already-->
      <url>
        <loc>https://thomasdeconinck.fr</loc>
      </url>
@@ -36,6 +36,8 @@ function generateSiteMap({ blogArticlesPaths, labsPaths }) {
 
 function Sitemap() {}
 
+const LABS_FOLDER_PATH = path.resolve("./pages", "labs");
+
 export async function getServerSideProps({ res }) {
   const { articles } = await request({
     query: ALL_ARTICLES_QUERY,
@@ -49,10 +51,10 @@ export async function getServerSideProps({ res }) {
     );
 
   const labsPaths = await (
-    await globby(["pages/labs/**/*.js"])
+    await globby([`${LABS_FOLDER_PATH}/**/*.js`])
   ).map((path) => {
     return path
-      .replace("pages/labs", "")
+      .replace(LABS_FOLDER_PATH, "")
       .replace("/index.js", "")
       .replace(".js", "");
   });
