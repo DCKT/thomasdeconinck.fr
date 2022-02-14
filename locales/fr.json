@@ -16,5 +16,6 @@
   "blog.tagsTitle": "Articles à propos de <tag>tag</tag>",
   "tags.title": "Articles à propos de {tag}",
   "tags.description": "Retrouvez l'ensemble de mes articles à propos de {tag}",
-  "blog.loadingMorePostError": "Une erreur est survenue lors du chargement des articles."
+  "blog.loadingMorePostError": "Une erreur est survenue lors du chargement des articles.",
+  "labs.sourceCode": "Code source"
 }

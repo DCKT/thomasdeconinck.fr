@@ -16,5 +16,6 @@
   "tags.title": "Articles about {tag}",
   "tags.description": "Fin all of my articles about {tag}",
   "blog.loadMore": "Load more articles",
-  "blog.loadingMorePostError": "An error occured while loading articles."
+  "blog.loadingMorePostError": "An error occured while loading articles.",
+  "labs.sourceCode": "Source code"
 }

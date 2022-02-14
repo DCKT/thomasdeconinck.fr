@@ -19,7 +19,7 @@ query LabsIndex($locale: SiteLocale) {
       twitterCard
     }
     presentationPicture {
-      responsiveImage(imgixParams: {fm: jpg, w: 256, h: 256, }) {
+      responsiveImage(imgixParams: {fm: jpg, w: 200, h: 200, }) {
         srcSet
         webpSrcSet
         src
@@ -36,8 +36,10 @@ query LabsIndex($locale: SiteLocale) {
     items: item {
       name
       slug
+      githubLink
+      externalLink
       icon {
-        responsiveImage(imgixParams: {fm: jpg, w: 256, h: 256}) {
+        responsiveImage(imgixParams: {fm: jpg, w: 196, h: 196}) {
           srcSet
           webpSrcSet
           src
@@ -121,14 +123,34 @@ export default function LabsIndex({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-8 mt-20">
-          {items.map(({ slug, name, icon }) => {
+        <div className="flex flex-col gap-8 mt-20 pb-10">
+          {items.map(({ slug, name, icon, githubLink, externalLink }) => {
+            let link = externalLink || `/${slug}`;
             return (
-              <Link key={slug} href={`/labs/${slug}`} passHref>
-                <a className="transform duration-200 ease-in-out hover:scale-110">
-                  <Image data={icon.responsiveImage} className="w-full" />
-                </a>
-              </Link>
+              <div key={slug} className="flex flex-row gap-8 items-center">
+                <Link href={link} passHref>
+                  <a target={"_blank"}>
+                    <Image
+                      data={icon.responsiveImage}
+                      className="w-32 flex-shrink-0"
+                    />
+                  </a>
+                </Link>
+
+                <div className="flex flex-col">
+                  <Link href={link} passHref>
+                    <a target={"_blank"} className="text-2xl text-purple-300">
+                      {name}
+                    </a>
+                  </Link>
+
+                  <Link href={githubLink} passHref>
+                    <a target={"_blank"} className="underline text-purple-300">
+                      <FormattedMessage id="labs.sourceCode" />
+                    </a>
+                  </Link>
+                </div>
+              </div>
             );
           })}
         </div>
