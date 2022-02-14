@@ -70,6 +70,10 @@ body.menu--open {
 .html .remark-highlight {
   @apply rounded-lg lg:-mx-10 my-10 text-base;
 }
+.html .remark-highlight pre {
+  @apply rounded-lg;
+}
+
 .html .remark-highlight code {
   @apply leading-loose;
 }
@@ -187,4 +191,18 @@ body.menu--open {
   .blog-item.blog-loadmore:after {
     content: none;
   }
+}
+
+pre[data-filename] {
+  position: relative;
+  @apply relative pt-4;
+}
+
+pre[data-filename]:before {
+  content: attr(data-filename);
+  @apply inline-block mb-4 text-gray-800 dark:text-gray-300 w-auto border-b-2 border-purple-400 pb-2;
+}
+
+pre[data-filename] code {
+  @apply block;
 }

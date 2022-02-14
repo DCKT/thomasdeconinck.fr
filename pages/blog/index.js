@@ -22,7 +22,7 @@ query BlogIndex($locale: SiteLocale) {
     }
   }
 
-  latestArticle: allArticles(first: 1, locale: $locale, orderBy: _publishedAt_DESC) {
+  latestArticle: allArticles(first: 1, locale: $locale, orderBy: _firstPublishedAt_DESC) {
     title
     description
     slug
@@ -152,7 +152,7 @@ export default function Home({
           <a className="relative flex flex-row items-center gap-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg blog-featured-article cursor-pointer">
             <Image
               data={latestArticle.splash.responsiveImage}
-              className="rounded-lg hidden md:block dark:shadow-lg md:w-[450px] lg:w-[550px] xl:w-[650px] xl:h-[400px]"
+              className="rounded-lg hidden md:block dark:shadow-lg md:!w-[450px] lg:!w-[550px] xl:w-[650px] xl:h-[400px]"
             />
 
             <div>
