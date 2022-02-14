@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.7.0...v1.8.0) (2022-02-14)
+
+
+### Features
+
+* update display of labs item ([583343f](https://github.com/DCKT/thomasdeconinck.fr/commit/583343f29e84943f89917b1fd8e41d8d94921139))
+
 # [1.7.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.6.0...v1.7.0) (2022-02-09)
 
 
