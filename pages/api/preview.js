@@ -8,7 +8,10 @@ query Post($slug: String) {
 }`;
 
 export default async function handler(req, res) {
-  if (req.query.secret !== process.env.PREVIEW_TOKEN) {
+  if (
+    process.env.NODE_ENV === "production" &&
+    req.query.secret !== process.env.PREVIEW_TOKEN
+  ) {
     return res.status(401).json({ message: "Invalid token" });
   }
 
