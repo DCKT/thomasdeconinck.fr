@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.8.1...v1.9.0) (2022-02-17)
+
+
+### Features
+
+* add revalidate feature from Next 12.1 ([40b21e1](https://github.com/DCKT/thomasdeconinck.fr/commit/40b21e1cef7e53f18af33e81eb640d7206e59f32))
+
 ## [1.8.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.8.0...v1.8.1) (2022-02-14)
 
 
