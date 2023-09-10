@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.9.0...v1.10.0) (2023-09-10)
+
+
+### Features
+
+* update dependencies ([97cd229](https://github.com/DCKT/thomasdeconinck.fr/commit/97cd2292eeb3ec701b08663f70c01135d33790dd))
+
 # [1.9.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.8.1...v1.9.0) (2022-02-17)
 
 
