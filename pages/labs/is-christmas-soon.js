@@ -65,11 +65,12 @@ export default function IsChristmasSoon({ menu }) {
       <Navigation links={menu} />
 
       <div className="max-w-screen-md mx-auto mt-20 text-center">
-        <Link href="/labs" passHref>
-          <a className="flex flex-row items-center gap-4 text-lg dark:text-gray-300 mb-10 hover:text-purple-500 dark:hover:text-purple-300 group">
-            <MdOutlineKeyboardBackspace className="border-2 rounded-full border-gray-800 dark:border-gray-200 block w-10 h-10 p-1 group-hover:border-purple-500 dark:group-hover:border-purple-300" />
-            <FormattedMessage id="labs.back" defaultMessage="Back to the lab" />
-          </a>
+        <Link
+          href="/labs"
+          className="flex flex-row items-center gap-4 text-lg dark:text-gray-300 mb-10 hover:text-purple-500 dark:hover:text-purple-300 group"
+        >
+          <MdOutlineKeyboardBackspace className="border-2 rounded-full border-gray-800 dark:border-gray-200 block w-10 h-10 p-1 group-hover:border-purple-500 dark:group-hover:border-purple-300" />
+          <FormattedMessage id="labs.back" defaultMessage="Back to the lab" />
         </Link>
         <h1 className="text-4xl dark:text-gray-200 mb-10 font-light">
           <FormattedMessage id="labs.christmasSoonTitle" />

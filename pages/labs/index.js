@@ -128,26 +128,28 @@ export default function LabsIndex({
             let link = externalLink || `/${slug}`;
             return (
               <div key={slug} className="flex flex-row gap-8 items-center">
-                <Link href={link} passHref>
-                  <a target={"_blank"}>
-                    <Image
-                      data={icon.responsiveImage}
-                      className="w-32 flex-shrink-0"
-                    />
-                  </a>
+                <Link href={link} target={"_blank"}>
+                  <Image
+                    data={icon.responsiveImage}
+                    className="w-32 flex-shrink-0"
+                  />
                 </Link>
 
                 <div className="flex flex-col">
-                  <Link href={link} passHref>
-                    <a target={"_blank"} className="text-2xl text-purple-300">
-                      {name}
-                    </a>
+                  <Link
+                    href={link}
+                    target={"_blank"}
+                    className="text-2xl text-purple-300"
+                  >
+                    {name}
                   </Link>
 
-                  <Link href={githubLink} passHref>
-                    <a target={"_blank"} className="underline text-purple-300">
-                      <FormattedMessage id="labs.sourceCode" />
-                    </a>
+                  <Link
+                    href={githubLink}
+                    target={"_blank"}
+                    className="underline text-purple-300"
+                  >
+                    <FormattedMessage id="labs.sourceCode" />
                   </Link>
                 </div>
               </div>

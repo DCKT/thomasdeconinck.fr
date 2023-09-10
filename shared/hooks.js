@@ -1,19 +1,6 @@
 import React from "react";
 
-export function useSsr() {
-  const isDOM =
-    typeof window !== "undefined" &&
-    window.document &&
-    window.document.documentElement;
-
-  return {
-    isBrowser: isDOM,
-    isServer: !isDOM,
-  };
-}
-
 export function useLocalStorage(key) {
-  const { isBrowser } = useSsr();
   const [item, setItem] = React.useState(null);
   const setItemToLocalStorage = React.useCallback(
     (value) => {
@@ -24,10 +11,15 @@ export function useLocalStorage(key) {
   );
 
   React.useLayoutEffect(() => {
+    const isBrowser =
+      typeof window !== "undefined" &&
+      window.document &&
+      window.document.documentElement;
+
     if (isBrowser) {
       setItem((_) => JSON.parse(window.localStorage.getItem(key)));
     }
-  }, [isBrowser, key]);
+  }, [key]);
 
   return [item, setItemToLocalStorage];
 }
@@ -36,7 +28,6 @@ export function useDarkMode() {
   const [hasActivatedDarkMode, setHasActivatedDarkMode] =
     useLocalStorage("@dck-dark-mode");
 
-  const { isBrowser } = useSsr();
   const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
   const toggle = React.useCallback(() => {
     setHasActivatedDarkMode(!darkModeEnabled);
@@ -44,6 +35,10 @@ export function useDarkMode() {
   }, [darkModeEnabled]);
 
   React.useLayoutEffect(() => {
+    const isBrowser =
+      typeof window !== "undefined" &&
+      window.document &&
+      window.document.documentElement;
     if (isBrowser) {
       if (
         typeof hasActivatedDarkMode != "undefined" &&
@@ -56,7 +51,7 @@ export function useDarkMode() {
         );
       }
     }
-  }, [isBrowser, hasActivatedDarkMode]);
+  }, [hasActivatedDarkMode]);
 
   React.useLayoutEffect(() => {
     if (darkModeEnabled) {

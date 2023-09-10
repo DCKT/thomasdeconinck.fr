@@ -112,11 +112,8 @@ export default function Home({
   let [shouldHideMoreArticle, setShouldHideMoreArticle] = React.useState(false);
   let { locale } = useRouter();
 
-  React.useEffect(async () => {
-    if (previousIndex.current != pageIndex) {
-      previousIndex.current = pageIndex;
-      setLoadingMoreArticles(true);
-
+  React.useEffect(() => {
+    async function loadArticles() {
       try {
         const { data } = await axios.post("/api/load-more-articles", {
           locale: locale,
@@ -135,6 +132,11 @@ export default function Home({
         setLoadingMoreArticles(false);
       }
     }
+    if (previousIndex.current != pageIndex) {
+      previousIndex.current = pageIndex;
+      setLoadingMoreArticles(true);
+      loadArticles();
+    }
   }, [pageIndex, loadingMoreArticles, loadingError]);
 
   return (
@@ -148,27 +150,28 @@ export default function Home({
       <Navigation links={menu} />
 
       <div className="mt-24 max-w-screen-xl mx-auto px-4 pb-10">
-        <Link href={`/blog/${latestArticle.slug}`} passHref>
-          <a className="relative flex flex-row items-center gap-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg blog-featured-article cursor-pointer">
-            <Image
-              data={latestArticle.splash.responsiveImage}
-              className="rounded-lg hidden md:block dark:shadow-lg md:!w-[450px] lg:!w-[550px] xl:w-[650px] xl:h-[400px] flex-shrink-0"
-            />
+        <Link
+          href={`/blog/${latestArticle.slug}`}
+          className="relative flex flex-row items-center gap-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg blog-featured-article cursor-pointer"
+        >
+          <Image
+            data={latestArticle.splash.responsiveImage}
+            className="rounded-lg hidden md:block dark:shadow-lg md:!w-[450px] lg:!w-[550px] xl:w-[650px] xl:h-[400px] flex-shrink-0"
+          />
 
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-gray-100">
-                {latestArticle.title}
-              </h1>
-              <small className="text-base md:text-xs lg:text-base dark:text-gray-400">
-                {new Intl.DateTimeFormat(locale, {
-                  dateStyle: "full",
-                }).format(new Date(latestArticle._publishedAt))}
-              </small>
-              <p className="text-lg md:text-base text-gray-900 dark:text-gray-300  mt-4 lg:mt-10">
-                {latestArticle.description}
-              </p>
-            </div>
-          </a>
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-gray-100">
+              {latestArticle.title}
+            </h1>
+            <small className="text-base md:text-xs lg:text-base dark:text-gray-400">
+              {new Intl.DateTimeFormat(locale, {
+                dateStyle: "full",
+              }).format(new Date(latestArticle._publishedAt))}
+            </small>
+            <p className="text-lg md:text-base text-gray-900 dark:text-gray-300  mt-4 lg:mt-10">
+              {latestArticle.description}
+            </p>
+          </div>
         </Link>
 
         <h2 className="text-2xl md:text-5xl font-light dark:text-gray-200 my-8 md:my-12 lg:mt-28 lg:mb-36">
@@ -189,35 +192,35 @@ export default function Home({
             ) => {
               return (
                 <div key={slug} className={clsx("flex flex-col shadow-xl")}>
-                  <Link href={`/blog/${slug}`} passHref>
-                    <a
-                      className={
-                        "relative md:h-[500px] rounded-lg cursor-pointer blog-item z-10"
-                      }
-                      style={{
-                        backgroundImage: `url(${responsiveImage.base64})`,
-                        backgroundSize: "cover",
-                      }}
-                    >
-                      <Image
-                        data={responsiveImage}
-                        className="hidden md:block rounded-lg border dark:border-0 w-full h-full "
-                      />
+                  <Link
+                    href={`/blog/${slug}`}
+                    passHref
+                    className={
+                      "relative md:h-[500px] rounded-lg cursor-pointer blog-item z-10"
+                    }
+                    style={{
+                      backgroundImage: `url(${responsiveImage.base64})`,
+                      backgroundSize: "cover",
+                    }}
+                  >
+                    <Image
+                      data={responsiveImage}
+                      className="hidden md:block rounded-lg border dark:border-0 w-full h-full "
+                    />
 
-                      <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
-                        <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">
-                          {new Intl.DateTimeFormat(locale, {
-                            dateStyle: "full",
-                          }).format(new Date(_publishedAt))}
-                        </small>
-                        <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
-                          {title}
-                        </h3>
-                        <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
-                          {description}
-                        </p>
-                      </div>
-                    </a>
+                    <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
+                      <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">
+                        {new Intl.DateTimeFormat(locale, {
+                          dateStyle: "full",
+                        }).format(new Date(_publishedAt))}
+                      </small>
+                      <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
+                        {title}
+                      </h3>
+                      <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
+                        {description}
+                      </p>
+                    </div>
                   </Link>
                 </div>
               );

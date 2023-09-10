@@ -161,11 +161,12 @@ export default function Article({
       <Navigation links={menu} />
 
       <div className="max-w-screen-lg mx-auto mt-20 pb-20 px-4">
-        <Link href="/blog" passHref>
-          <a className="flex flex-row items-center gap-4 text-lg dark:text-gray-300 mb-10 hover:text-purple-500 dark:hover:text-purple-300 group">
-            <MdOutlineKeyboardBackspace className="border-2 rounded-full border-gray-800 dark:border-gray-200 block w-10 h-10 p-1 group-hover:border-purple-500 dark:group-hover:border-purple-300" />
-            <FormattedMessage id="blogDetail.back" />
-          </a>
+        <Link
+          href="/blog"
+          className="flex flex-row items-center gap-4 text-lg dark:text-gray-300 mb-10 hover:text-purple-500 dark:hover:text-purple-300 group"
+        >
+          <MdOutlineKeyboardBackspace className="border-2 rounded-full border-gray-800 dark:border-gray-200 block w-10 h-10 p-1 group-hover:border-purple-500 dark:group-hover:border-purple-300" />
+          <FormattedMessage id="blogDetail.back" />
         </Link>
         <h1 className="text-xl sm:text-2xl lg:text-4xl font-light leading-snug dark:text-gray-100">
           {title}
@@ -192,10 +193,9 @@ export default function Article({
               <Link
                 key={`tags-${i}`}
                 href={`/blog/tags/${encodeURIComponent(tag)}`}
+                className="bg-purple-500 dark:bg-purple-400 text-white rounded py-1 px-2 text-sm hover:bg-purple-400 dark:hover:bg-purple-500"
               >
-                <a className="bg-purple-500 dark:bg-purple-400 text-white rounded py-1 px-2 text-sm hover:bg-purple-400 dark:hover:bg-purple-500">
-                  {tag}
-                </a>
+                {tag}
               </Link>
             );
           })}

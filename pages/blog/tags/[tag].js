@@ -149,44 +149,43 @@ export default function Tag({ articles, menu, faviconUrl }) {
                       i > 0,
                   })}
                 >
-                  <Link href={`/blog/${slug}`} passHref>
-                    <a
-                      className={
-                        "relative md:h-[500px] rounded-lg cursor-pointer blog-item z-10"
-                      }
-                      style={{
-                        backgroundImage: `url(${responsiveImage.base64})`,
-                        backgroundSize: "cover",
-                      }}
-                    >
-                      <picture className="absolute left-0 top-0 w-full rounded-lg hidden md:block mb-4 h-full">
-                        <source
-                          srcSet={responsiveImage.webpSrcSet}
-                          type="image/webp"
-                        />
-                        <source srcSet={responsiveImage.srcSet} />
-                        <img
-                          src={responsiveImage.src}
-                          alt={responsiveImage.alt}
-                          loading="lazy"
-                          className="block rounded-lg border dark:border-0 w-full h-full "
-                        />
-                      </picture>
+                  <Link
+                    href={`/blog/${slug}`}
+                    className={
+                      "relative md:h-[500px] rounded-lg cursor-pointer blog-item z-10"
+                    }
+                    style={{
+                      backgroundImage: `url(${responsiveImage.base64})`,
+                      backgroundSize: "cover",
+                    }}
+                  >
+                    <picture className="absolute left-0 top-0 w-full rounded-lg hidden md:block mb-4 h-full">
+                      <source
+                        srcSet={responsiveImage.webpSrcSet}
+                        type="image/webp"
+                      />
+                      <source srcSet={responsiveImage.srcSet} />
+                      <img
+                        src={responsiveImage.src}
+                        alt={responsiveImage.alt}
+                        loading="lazy"
+                        className="block rounded-lg border dark:border-0 w-full h-full "
+                      />
+                    </picture>
 
-                      <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
-                        <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">
-                          {new Intl.DateTimeFormat(locale, {
-                            dateStyle: "full",
-                          }).format(new Date(_publishedAt))}
-                        </small>
-                        <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
-                          {title}
-                        </h3>
-                        <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
-                          {description}
-                        </p>
-                      </div>
-                    </a>
+                    <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
+                      <small className="text-base font-light text-gray-900 md:text-gray-300 dark:text-gray-100 mb-2 block">
+                        {new Intl.DateTimeFormat(locale, {
+                          dateStyle: "full",
+                        }).format(new Date(_publishedAt))}
+                      </small>
+                      <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100 dark:text-gray-100 order-first md:order-none">
+                        {title}
+                      </h3>
+                      <p className="md:hidden text-lg md:text-base text-gray-900 dark:text-gray-300">
+                        {description}
+                      </p>
+                    </div>
                   </Link>
                 </div>
               );
