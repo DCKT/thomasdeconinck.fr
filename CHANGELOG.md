@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.10.0...v1.11.0) (2023-09-12)
+
+
+### Features
+
+* add meeting api ([002b9a4](https://github.com/DCKT/thomasdeconinck.fr/commit/002b9a48ff9a7b0a03674c915a47c20457e28c9a))
+
 # [1.10.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.9.0...v1.10.0) (2023-09-10)
 
 
