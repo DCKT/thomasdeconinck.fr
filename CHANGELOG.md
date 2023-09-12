@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.11.0...v1.11.1) (2023-09-12)
+
+
+### Bug Fixes
+
+* remove meeting api ([403ea40](https://github.com/DCKT/thomasdeconinck.fr/commit/403ea407f7403a20367f568cd299a6cc8eece07b))
+
 # [1.11.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.10.0...v1.11.0) (2023-09-12)
 
 
