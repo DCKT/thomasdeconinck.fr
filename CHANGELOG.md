@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.11.1...v2.0.0) (2024-05-11)
+
+
+### Features
+
+* upgrade to Next 14 ([23b8b9c](https://github.com/DCKT/thomasdeconinck.fr/commit/23b8b9c970c1d988d397b8c60c4c5e081570adc3))
+
+
+### BREAKING CHANGES
+
+* migrate to app folder system
+
 ## [1.11.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v1.11.0...v1.11.1) (2023-09-12)
 
 
