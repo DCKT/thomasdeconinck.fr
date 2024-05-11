@@ -1,0 +1,24 @@
+{
+  "Index": {
+    "developer": "Developer"
+  },
+  "BlogIndex": {
+    "allArticles": "All articles"
+  },
+  "BlogArticle": {
+    "readingTime": "{time} min read",
+    "back": "Back",
+    "unsplashCredit": "Crédit: {name} on Unsplash",
+    "published": "Published on {date}"
+  },
+  "UpdatedArticleTag": {
+    "updated": "Updated {date}"
+  },
+  "LabsIndex": {
+    "projects": "Projects"
+  },
+  "NotFound": {
+    "title": "This page does not exist",
+    "back": "Back to the home"
+  }
+}

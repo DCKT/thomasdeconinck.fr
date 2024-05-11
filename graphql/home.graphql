@@ -1,0 +1,9 @@
+query HomePageSEO($locale: SiteLocale) {
+  homepage(locale: $locale) {
+    seo: pageTitle {
+      description
+      title
+      twitterCard
+    }
+  }
+}

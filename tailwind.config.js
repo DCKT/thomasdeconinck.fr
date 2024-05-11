@@ -1,5 +1,6 @@
 module.exports = {
   content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
     "./shared/**/*.{js,ts,jsx,tsx}",
@@ -8,12 +9,13 @@ module.exports = {
   theme: {
     extend: {
       serif: ["Rubik", "system-ui", "serif"],
+      lato: ["var(--font-lato)"],
       colors: {
         gray: {
           800: "#2e3039",
           900: "#1f2028",
         },
-        orange: "#ff8a65",
+        orangeLight: "#fcf5ec",
       },
       keyframes: {
         wiggle: {

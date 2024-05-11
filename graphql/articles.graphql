@@ -1,0 +1,158 @@
+query AllArticles {
+  articles: allArticles {
+    _updatedAt
+    slugs: _allSlugLocales {
+      locale
+      slug: value
+    }
+  }
+}
+
+query BlogIndexSEO($locale: SiteLocale) {
+  blogIndex(locale: $locale) {
+    seo {
+      title
+      description
+    }
+  }
+}
+
+query BlogIndex($locale: SiteLocale) {
+  blogIndex(locale: $locale) {
+    seo {
+      title
+      description
+    }
+  }
+
+  latestArticles: allArticles(
+    first: 3
+    locale: $locale
+    orderBy: _firstPublishedAt_DESC
+  ) {
+    title
+    description
+    slug
+    tags
+    _createdAt
+    _updatedAt
+    splash {
+      responsiveImage(imgixParams: { fm: jpg, w: 550, h: 310 }) {
+        srcSet
+        webpSrcSet
+        src
+        alt
+        width
+        height
+        aspectRatio
+        base64
+      }
+    }
+  }
+
+  nextArticles: allArticles(
+    skip: 3
+    locale: $locale
+    orderBy: _firstPublishedAt_DESC
+  ) {
+    title
+    description
+    slug
+    tags
+    _createdAt
+    _updatedAt
+    splash {
+      responsiveImage(imgixParams: { fm: jpg, w: 520, h: 310, fit: crop }) {
+        srcSet
+        webpSrcSet
+        src
+        alt
+        width
+        height
+        aspectRatio
+        base64
+      }
+    }
+  }
+  _site {
+    favicon {
+      url
+    }
+  }
+}
+
+query GetArticleBySlug($slug: String, $locale: SiteLocale) {
+  article(filter: { slug: { eq: $slug } }, locale: $locale) {
+    title
+    content
+    slug
+    tags
+    _createdAt
+    _updatedAt
+    splash {
+      author
+      copyright
+      responsiveImage(
+        imgixParams: { fit: crop, w: 1280, h: 600, auto: format }
+      ) {
+        srcSet
+        webpSrcSet
+        sizes
+        src
+
+        # size information (post-transformations)
+        width
+        height
+        aspectRatio
+
+        # SEO attributes
+        alt
+        title
+
+        # background color placeholder or...
+        bgColor
+
+        # blur-up placeholder, JPEG format, base64-encoded
+        base64
+      }
+    }
+  }
+}
+
+query GetArticleSEOBySlug($slug: String, $locale: SiteLocale) {
+  article(filter: { slug: { eq: $slug } }, locale: $locale) {
+    title
+    description
+  }
+}
+
+query AllArticlesTags {
+  allArticles {
+    tags
+  }
+}
+
+query PostsByTag($tag: String!, $locale: SiteLocale) {
+  allArticles(
+    filter: { tags: { matches: { pattern: $tag } } }
+    locale: $locale
+  ) {
+    title
+    description
+    slug
+    _createdAt
+    _updatedAt
+    splash {
+      responsiveImage(imgixParams: { fm: jpg, w: 450, h: 500, fit: crop }) {
+        srcSet
+        webpSrcSet
+        src
+        alt
+        width
+        height
+        aspectRatio
+        base64
+      }
+    }
+  }
+}

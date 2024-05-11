@@ -1,0 +1,30 @@
+query AboutPage($locale: SiteLocale) {
+  aboutPage(locale: $locale) {
+    description
+    pictureOfMe {
+      responsiveImage(
+        imgixParams: { fm: jpg, w: 256, h: 256, fit: crop, crop: faces }
+      ) {
+        srcSet
+        webpSrcSet
+        src
+        alt
+        title
+        width
+        height
+        aspectRatio
+        base64
+      }
+    }
+  }
+}
+
+query AboutPageSEO($locale: SiteLocale) {
+  aboutPage(locale: $locale) {
+    seo {
+      description
+      title
+      twitterCard
+    }
+  }
+}
