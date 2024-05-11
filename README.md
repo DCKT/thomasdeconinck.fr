@@ -7,11 +7,11 @@ Personal website
 - Install dependencies
 
 ```bash
-npm i
+bun install
 ```
 
 - Run dev mode
 
 ```bash
-npm run dev
+bun dev
 ```
