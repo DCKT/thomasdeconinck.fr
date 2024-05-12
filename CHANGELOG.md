@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.1...v2.0.2) (2024-05-12)
+
+
+### Bug Fixes
+
+* disable dark mode from tailwind config ([db9c2f9](https://github.com/DCKT/thomasdeconinck.fr/commit/db9c2f9dc5c4284932ee81ccb8c0b65345b4ef46))
+
 ## [2.0.1](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.0...v2.0.1) (2024-05-11)
 
 
