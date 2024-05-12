@@ -5,7 +5,7 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
     "./shared/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: "class", // or 'media' or 'class'
+  darkMode: "false", // or 'media' or 'class'
   theme: {
     extend: {
       serif: ["Rubik", "system-ui", "serif"],
