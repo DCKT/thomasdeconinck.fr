@@ -1,3 +1,10 @@
+## [2.0.3](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.2...v2.0.3) (2024-05-15)
+
+
+### Bug Fixes
+
+* show first published at instead of createdAt ([7bc38ac](https://github.com/DCKT/thomasdeconinck.fr/commit/7bc38aca47397ba21527fe3fb486709e413801d6))
+
 ## [2.0.2](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.1...v2.0.2) (2024-05-12)
 
 
