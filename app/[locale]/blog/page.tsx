@@ -77,9 +77,12 @@ export default async function Blog({
                 <p className="text-gray-600 text-sm first-letter:capitalize">
                   {new Intl.DateTimeFormat(locale, {
                     dateStyle: "full",
-                  }).format(new Date(firstArticle._createdAt!))}
+                  }).format(new Date(firstArticle._firstPublishedAt!))}
                 </p>
-                {isAfter(firstArticle._updatedAt, firstArticle._createdAt) ? (
+                {isAfter(
+                  firstArticle._updatedAt,
+                  firstArticle._firstPublishedAt!
+                ) ? (
                   <UpdatedArticleTag updatedAt={firstArticle._updatedAt} />
                 ) : null}
               </div>
@@ -88,7 +91,14 @@ export default async function Blog({
 
           <div className="md:w-1/2 flex flex-col justify-around gap-2">
             {otherLatestArticles.map(
-              ({ slug, splash, title, tags, description, _createdAt }) => {
+              ({
+                slug,
+                splash,
+                title,
+                tags,
+                description,
+                _firstPublishedAt,
+              }) => {
                 return (
                   <Link
                     href={`/blog/${slug}`}
@@ -114,7 +124,7 @@ export default async function Blog({
                       <small className="text-gray-600 text-sm first-letter:capitalize">
                         {new Intl.DateTimeFormat("fr-FR", {
                           dateStyle: "full",
-                        }).format(new Date(_createdAt!))}
+                        }).format(new Date(_firstPublishedAt!))}
                       </small>
                     </div>
                   </Link>
@@ -129,7 +139,7 @@ export default async function Blog({
 
         <div className="flex flex-col gap-8">
           {articles.map(
-            ({ slug, splash, title, tags, description, _createdAt }) => {
+            ({ slug, splash, title, tags, description, _firstPublishedAt }) => {
               return (
                 <Link
                   href={`/blog/${slug}`}
@@ -155,7 +165,7 @@ export default async function Blog({
                     <small className="text-gray-600 text-sm first-letter:capitalize">
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: "full",
-                      }).format(new Date(_createdAt!))}
+                      }).format(new Date(_firstPublishedAt!))}
                     </small>
                     <p className="mt-4 text-slate-800 hidden md:block">
                       {description}

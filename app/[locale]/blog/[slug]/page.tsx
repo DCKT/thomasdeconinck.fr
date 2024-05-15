@@ -62,7 +62,7 @@ async function getArticle(slug: string, locale: string) {
     tags: (data.article!.tags || "").split(",").map((tag) => tag.trim()),
     content,
     readingStats,
-    createdAt: data.article!._createdAt,
+    firstPublishedAt: data.article!._firstPublishedAt,
     updatedAt: data.article!._updatedAt,
     splash: data.article!.splash,
   };
@@ -80,8 +80,15 @@ export default async function Article({
   params: { locale: string; slug: string };
 }) {
   unstable_setRequestLocale(locale);
-  const { title, tags, createdAt, updatedAt, content, readingStats, splash } =
-    await getArticle(slug, locale);
+  const {
+    title,
+    tags,
+    firstPublishedAt,
+    updatedAt,
+    content,
+    readingStats,
+    splash,
+  } = await getArticle(slug, locale);
   const t = await getTranslations("BlogArticle");
 
   // const twitterImage = getAbsoluteURL(
@@ -105,16 +112,16 @@ export default async function Article({
                 {title}
               </h1>
               <div className="flex flex-col flex-wrap sm:flex-row md:gap-4 md:items-center">
-                {createdAt ? (
+                {firstPublishedAt ? (
                   <small className="text-lg text-gray-500 first-letter:capitalize">
                     {t("published", {
                       date: new Intl.DateTimeFormat("fr-FR", {
                         dateStyle: "full",
-                      }).format(new Date(createdAt)),
+                      }).format(new Date(firstPublishedAt)),
                     })}
                   </small>
                 ) : null}
-                {isAfter(updatedAt, createdAt) ? (
+                {isAfter(updatedAt, firstPublishedAt!) ? (
                   <UpdatedArticleTag updatedAt={updatedAt} />
                 ) : (
                   <span className="text-lg text-gray-500 ">-</span>

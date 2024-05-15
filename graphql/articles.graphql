@@ -34,7 +34,7 @@ query BlogIndex($locale: SiteLocale) {
     description
     slug
     tags
-    _createdAt
+    _firstPublishedAt
     _updatedAt
     splash {
       responsiveImage(imgixParams: { fm: jpg, w: 550, h: 310 }) {
@@ -59,7 +59,7 @@ query BlogIndex($locale: SiteLocale) {
     description
     slug
     tags
-    _createdAt
+    _firstPublishedAt
     _updatedAt
     splash {
       responsiveImage(imgixParams: { fm: jpg, w: 520, h: 310, fit: crop }) {
@@ -87,7 +87,7 @@ query GetArticleBySlug($slug: String, $locale: SiteLocale) {
     content
     slug
     tags
-    _createdAt
+    _firstPublishedAt
     _updatedAt
     splash {
       author
@@ -140,7 +140,7 @@ query PostsByTag($tag: String!, $locale: SiteLocale) {
     title
     description
     slug
-    _createdAt
+    _firstPublishedAt
     _updatedAt
     splash {
       responsiveImage(imgixParams: { fm: jpg, w: 450, h: 500, fit: crop }) {

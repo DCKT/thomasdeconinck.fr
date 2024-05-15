@@ -49,7 +49,7 @@ export default async function Tag({
 
         <div className="grid md:grid-flow-row sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
           {articles.map(
-            ({ title, description, _createdAt, slug, splash }, i) => {
+            ({ title, description, _firstPublishedAt, slug, splash }, i) => {
               return (
                 <div
                   key={slug}
@@ -83,10 +83,10 @@ export default async function Tag({
 
                     <div className="flex  flex-col md:bg-[rgba(24,24,24,0.7)] md:absolute bottom-0 p-4  rounded-t-lg md:rounded-t-none rounded-b-lg w-full">
                       <small className="text-base font-light text-gray-900 md:text-gray-300  mb-2 block">
-                        {_createdAt
+                        {_firstPublishedAt
                           ? new Intl.DateTimeFormat("fr-FR", {
                               dateStyle: "full",
-                            }).format(new Date(_createdAt))
+                            }).format(new Date(_firstPublishedAt))
                           : null}
                       </small>
                       <h3 className="text-xl font-semibold text-gray-900 md:text-gray-100  order-first md:order-none">
