@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ message: "Invalid token" }, { status: 401 });
   }
 
-  const entity: any = await req.json();
+  const { entity }: any = await req.json();
 
   if (entity?.attributes?.slug) {
     revalidatePath(`/[locale]/blog`, "page");
