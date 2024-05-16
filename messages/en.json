@@ -20,5 +20,8 @@
   "NotFound": {
     "title": "This page does not exist",
     "back": "Back to the home"
+  },
+  "Manifest": {
+    "name": "Thomas Deconinck"
   }
 }
