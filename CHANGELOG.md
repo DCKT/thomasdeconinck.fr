@@ -1,3 +1,10 @@
+## [2.0.4](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.3...v2.0.4) (2024-05-16)
+
+
+### Bug Fixes
+
+* fix api path middleware ([8f73357](https://github.com/DCKT/thomasdeconinck.fr/commit/8f7335704aab5657ce519180d1b33f9f8c6a476b))
+
 ## [2.0.3](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.2...v2.0.3) (2024-05-15)
 
 
