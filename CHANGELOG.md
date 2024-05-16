@@ -1,3 +1,10 @@
+## [2.0.6](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.5...v2.0.6) (2024-05-16)
+
+
+### Bug Fixes
+
+* fix robots.txt ([37ba830](https://github.com/DCKT/thomasdeconinck.fr/commit/37ba8306bcecccf8fcca2f3cd20bee6edc5fd423))
+
 ## [2.0.5](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.4...v2.0.5) (2024-05-16)
 
 
