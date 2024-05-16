@@ -1,3 +1,10 @@
+## [2.0.5](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.4...v2.0.5) (2024-05-16)
+
+
+### Bug Fixes
+
+* fix revalidate parsing ([5bec824](https://github.com/DCKT/thomasdeconinck.fr/commit/5bec82482e82e9ee4738377211b0e405505ed805))
+
 ## [2.0.4](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.3...v2.0.4) (2024-05-16)
 
 
