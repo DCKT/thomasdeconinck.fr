@@ -1,3 +1,10 @@
+## [2.0.7](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.6...v2.0.7) (2024-08-28)
+
+
+### Bug Fixes
+
+* fix style build ([55a0f01](https://github.com/DCKT/thomasdeconinck.fr/commit/55a0f01d144afe0af8548b3809848e261bec0816))
+
 ## [2.0.6](https://github.com/DCKT/thomasdeconinck.fr/compare/v2.0.5...v2.0.6) (2024-05-16)
 
 
