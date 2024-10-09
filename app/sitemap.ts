@@ -1,48 +1,17 @@
-import { AllArticlesDocument } from "graphql/generated";
-import { MetadataRoute } from "next";
-import { request } from "shared/datocms";
-import { defaultLocale, locales } from "shared/navigation";
+import { getBlogPosts } from 'app/blog/utils'
 
-// const LABS_FOLDER_PATH = path.resolve("./app", "labs");
+export const baseUrl = 'https://portfolio-blog-starter.vercel.app'
 
-function getUrl(pathname: string, locale: string) {
-  return `https://thomasdeconinck.fr/${locale}${pathname}`;
-}
+export default async function sitemap() {
+  let blogs = getBlogPosts().map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: post.metadata.publishedAt,
+  }))
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base: MetadataRoute.Sitemap = [
-    {
-      url: getUrl("/", defaultLocale),
-      lastModified: new Date(),
-      alternates: {
-        languages: Object.fromEntries(
-          locales.map((locale) => [locale, getUrl("/", locale)])
-        ),
-      },
-    },
-    {
-      url: getUrl("/about", defaultLocale),
-      lastModified: new Date(),
-      alternates: {
-        languages: Object.fromEntries(
-          locales.map((locale) => [locale, getUrl("/about", locale)])
-        ),
-      },
-    },
-  ];
+  let routes = ['', '/blog'].map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date().toISOString().split('T')[0],
+  }))
 
-  const { articles } = await request({
-    query: AllArticlesDocument,
-  });
-
-  const sitemapArticles: MetadataRoute.Sitemap = articles
-    .map((article) =>
-      article.slugs!.map((slug) => ({
-        url: getUrl(`/blog/${slug?.slug}`, slug.locale!),
-        lastModified: article._updatedAt,
-      }))
-    )
-    .flat();
-
-  return [...base, ...sitemapArticles];
+  return [...routes, ...blogs]
 }

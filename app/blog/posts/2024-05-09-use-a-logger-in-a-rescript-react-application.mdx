@@ -1,0 +1,109 @@
+---
+title: "Use a logger in a ReScript React application"
+publishedAt: "2024-05-09"
+summary: "Like many front-end developers, I already have forgotten by the past to remove my debugging logs until the production deployement done."
+---
+
+Like many front-end developers, I already have forgotten by the past to remove my debugging logs until the production deployement done 😖.
+
+Therefore, since I develop my applications with ReScript, it's never happened again thanks to [rescript-logger](https://github.com/MinimaHQ/rescript-logger) library.
+
+## The benefits
+
+Here is a list of features of this library :
+
+- No runtime execution in production
+- Many logs levels
+- Custom logs levels based on environment variable
+- [ReScript React](https://rescript-lang.org/docs/react/latest/introduction) integration
+
+The logs levels will allow us to display different kinds of informations, there are 4 :
+
+- debug
+- info
+- warn
+- error
+
+Each of these will have a different display in the console (screenshot coming from the github repo) :
+![log](https://www.datocms-assets.com/41839/1613602070-example.png)
+
+Theses levels have hierarchy, from debug to error, thanks to that, we can choose the log level based on an environement variable set before the compilation, little example with this code :
+
+```rescript
+%log.debug("hello world");
+%log.warn("Warning !");
+%log.error("An error occured");
+```
+
+```shell
+BS_LOG=warn bsb -clean-world -make-world
+```
+
+Once the code is compiled, if we execute our program, it doesn't display our `log.debug`.
+
+## An useful log
+
+Log is cool, but in production, we need a way to track our applications errors efficiently. In that purpose, you can use a bug tracker like [Sentry](https://sentry.io/) which has a JavaScript SDK.
+
+This kind of tracker set listeners on our application that are raised when some JavaScript errors occures, but, it can also allow us to declare by ourself our own kind of events. Here is a subject example :
+
+```js
+const fetchApi = () => {
+  return axios
+    .get("/mon-api")
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      Sentry.captureException(err);
+    });
+};
+```
+
+In this code, we can find 2 problems :
+
+- in dev mode, a Sentry exception will be raised
+- in production, the log will be displayed
+
+You can always handle this with environments variables and conditionals but there is better solution with [rescript-logger](https://github.com/MinimaHQ/rescript-logger), **combine both with a custom logger**.
+
+## A custom logger
+
+In order to create a custom logger, you have to create a file and override the functions we want to use, here is an example :
+
+```rescript title="SentryTracker.res"
+open BsSentryReactNative;
+
+let error = (__module__, event) => Sentry.captureMessage(event);
+
+let errorWithData = (__module__, event, (label, data)) =>
+  Sentry.(
+    withScope(scope => {
+      scope->Scope.setExtra(label, data);
+      captureMessage(event);
+    })
+  );
+
+let errorWithData2 = (__module__, event, (label1, data1), (label2, data2)) =>
+  Sentry.(
+    withScope(scope => {
+      scope->Scope.setExtra(label1, data1);
+      scope->Scope.setExtra(label2, data2);
+      captureMessage(event);
+    })
+  );
+```
+
+Now, we just need to ensure to have 2 differents scripts, one for the production mode who will take our SentryTracker and an other without :
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "bsb -make-world -w",
+    "build": "BS_LOGGER=SentryTracker bsb -make-world"
+  }
+}
+```
+
+## Conclusion
+
+Now, you don't have any apologies to let logs in production

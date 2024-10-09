@@ -1,0 +1,178 @@
+---
+title: "Create an expo ReScript template"
+publishedAt: "2024-05-13"
+summary: "Like many front-end developers, I already have forgotten by the past to remove my debugging logs until the production deployement done."
+---
+
+For many developers (of which I am a part), as soon as I met a repetable pattern, I have an irresistible urge to automate it.
+
+Lately, I realized that was no expo template with ReScript up-to date that allow me to quickly start a sideproject or a POC. That's why I was interested in expo template creation.
+
+Let's check out together the steps to realize [the same template I made](https://github.com/DCKT/expo-rescript-template) !
+
+## How it works
+
+An Expo template is just an Expo app hosted on [npm](https://www.npmjs.com/) ! We just need to create a new Expo app with our criteria and publish our package !
+
+## Creation of our basic application
+
+If it's not the case, you need to install [expo-cli](https://docs.expo.dev/workflow/expo-cli/) :
+
+```bash
+yarn global add expo-cli
+# or
+npm i -g expo-cli
+```
+
+We can now create our application :
+
+```shell
+expo init TemplateApp
+```
+
+We will choose the `blank` template for a minimal confguration.
+
+### Project configuration
+
+It's important to configure correctly our `package.json` in order to publish our template on npm.
+
+You need to make sure of several things:
+
+- Remove the filed `private: true`
+- Put an available package name
+- Add a licence
+- Fill the informations like the author, the description and some keywords
+
+Now, let's setup [ReScript](https://rescript-lang.org/).
+
+### ReScript Configuration
+
+Let's install the essential package of a ReScript application. We need the [React Native](https://rescript-react-native.github.io/) and [React](https://rescript-lang.org/docs/react/latest/introduction#sidebar) bindings.
+
+```shell
+yarn add rescript @rescript/react rescript-react-native
+# or
+npm i -S rescript @rescript/react rescript-react-native
+```
+
+Add to our `package.json` some handy scripts :
+
+```json title="package.json"
+{
+  "scripts": {
+    "start": "expo start",
+    "rescript:watch": "rescript build -with-deps -w",
+    "rescript:build": "rescript build -with-deps",
+    "rescript:clean": "rescript clean",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject"
+  }
+}
+```
+
+The ReScript scripts will must run on another terminal instance (in addition to the expo server).
+
+Then let's continue with the configuration file `bsconfig.json` that every ReScript project has :
+
+```json title="rescript.json"
+{
+  "name": "expo-rescript-template",
+  "reason": {
+    "react-jsx": 3
+  },
+  "bs-dependencies": ["@rescript/react", "rescript-react-native"],
+  "bs-dev-dependencies": [],
+  "package-specs": [
+    {
+      "module": "es6-global",
+      "in-source": true
+    }
+  ],
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    }
+  ],
+  "suffix": ".bs.js",
+  "namespace": true,
+  "bsc-flags": ["-bs-super-errors", "-bs-no-version-header", "-open Belt"],
+  "ppx-flags": [],
+  "warnings": {
+    "number": "-44-30",
+    "error": "+5"
+  }
+}
+```
+
+As I wrote in the `bsconfig.json` file, the main source will be the folder `src` that we need to create. To that, we can add our entry point, the `App.res` file :
+
+```rescript
+open ReactNative
+
+module StatusBar = {
+  @module("expo-status-bar") @react.component
+  external make: (~style: string) => React.element = "StatusBar"
+}
+
+let styles = {
+  open Style
+
+  StyleSheet.create({
+    "container": viewStyle(
+      ~flex=1.,
+      ~backgroundColor="#fff",
+      ~alignItems=#center,
+      ~justifyContent=#center,
+      (),
+    ),
+  })
+}
+
+@react.component
+let make = () => {
+  <View style={styles["container"]}>
+    <Text> {"Open up App.res to start working on your app!"->React.string} </Text>
+    <StatusBar style="auto" />
+  </View>
+}
+
+let default = make
+```
+
+All that remains is to modify the `App.js` file to expose our ReScript compiled code :
+
+```js title="App.js"
+export { default } from "./src/App.bs.js";
+```
+
+### Clean and publication
+
+Our template is ready ! But before publishing it, we need to create `.npmignore` file so as not to publish useless elements in our template :
+
+```txt title=".npmignore"
+.merlin
+lib/
+.expo/
+.expo-shared/
+```
+
+Finally, let's get to publishing ! If it's the first time you publish a module, you will have to login :
+
+```shell
+npm login
+```
+
+Then you'll be able to publish the project
+
+```shell
+npm publish
+```
+
+And voila ! You can now use this template when you create a new expo application :
+
+```shell
+expo init MyApp --template expo-rescript-template
+```

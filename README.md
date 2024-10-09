@@ -1,17 +1,15 @@
-# thomasdeconinck.fr
+# Personal website
 
-Personal website
+## Development
 
-## Setup
-
-- Install dependencies
+Install dependencies
 
 ```bash
-bun install
+pnpm install
 ```
 
-- Run dev mode
+Run the server
 
 ```bash
-bun dev
+pnpm run dev
 ```

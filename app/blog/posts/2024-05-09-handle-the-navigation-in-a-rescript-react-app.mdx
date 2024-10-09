@@ -1,0 +1,284 @@
+---
+title: "Handle the navigation in a ReScript React app"
+publishedAt: "2024-05-09"
+summary: 'ReScriptReact has his own navigation system that is pretty simple and performant. In that way, we can write our own "framework" to make our navigation type-safe.'
+---
+
+Generaly, in a modern web application, the navigation is handled by the front-end side. In a React project, we will tend to favorise a library like [React Router](https://github.com/ReactTraining/react-router).
+
+[ReScript React](https://rescript-lang.org/docs/react/latest/introduction) has his own navigation system that is pretty simple and performant. In that way, we can write our own "framework" to make our navigation type-safe.
+
+# Take a look to the API
+
+> At the time this article is written, the ReScript documentation doesn't yet be converted, so I will use the Reason one which is identical.
+
+First, let's see what the [API](https://reasonml.org/docs/reason-react/latest/router) gave us.
+There are only 6 functions whose 1 hook :
+
+- `push(string)` take a path and update the URL
+- `replace(string)` replace the current URL without being added to the history
+- `watchUrl(f)` take a callback which is an event listener, when the URL change, will be raised by adding some informations.
+- `unwatchUrl(watcherID)` delete the event listener set
+- `dangerouslyGetInitialUrl()` will get the URL informations like the path, hash or search params
+- `useUrl` is a React hook which give us the current URL
+
+Here is a basic usage example :
+
+```rescript title='App.res'
+module PageHome = {
+  @react.component
+  let make = () => <h1> {"Home"->React.string} </h1>
+}
+
+module PageProducts = {
+  @react.component
+  let make = () => <h1> {"Products"->React.string} </h1>
+}
+
+module PageProductDetails = {
+  @react.component
+  let make = (~productId) => <h1> {("Product " ++ productId)->React.string} </h1>
+}
+
+@react.component
+let make = () => {
+  let route = ReasonReactRouter.useUrl()
+
+  switch route.path {
+  | list{} => <PageHome />
+  | list{"products"} => <PageProducts />
+  | list{"products", productId} => <PageProductDetails productId />
+  | _ => <strong> {"This page does not exist !"->React.string} </strong>
+  }
+}
+```
+
+Everything is handled by [the ReScript pattern matching](https://rescript-lang.org/docs/manual/latest/pattern-matching-destructuring) which allow us to spread the `path` list.
+
+## A type-safe navigation
+
+This way to do is fine for a small application of few pages, but after some times, you will have to handle different levels of navigation with authentication.
+
+Why did I put `type safe` in the title you may ask. If you look closely our example above, our code can easly break if someone rename a route or made a typo. This can be solved by creating a specific type for our routes and avoid the `string` type which is too permissive !
+
+### Developing our type
+
+I think the better way to represent a route is an enumeration, in that way, we can use a `variant` type.
+
+We can represent our routes list like this :
+
+```rescript
+type route =
+  | Home
+  | Products
+  | NotFound;
+```
+
+You may ask, how do we handle URL with dynamic informations like IDs ?
+Variants in ReScript can own a [**constructor** argument](https://rescript-lang.org/docs/manual/latest/variant#constructor-arguments) which can be any type.
+
+```rescript
+type route =
+  | Home
+  | Products
+  | ProductDetails(string)
+  | NotFound;
+```
+
+> I don't like to use the string type for this kind of information but I will make an other article to keep focus on the navigation subject.
+
+Our routes enumeration is done, we have to write a function which convert a string to a `route` and vice versa.
+
+### Convert our type
+
+As we said above, we have 2 needs :
+
+- transform the URL we get from the ReScript React API to a route type
+- transform a route type into an URL
+
+There's no magic ! We are gonna make a function for each case and will use the [pattern matching](https://rescript-lang.org/docs/manual/latest/pattern-matching-destructuring).
+
+**Transform the URL from ReScript React to a route type :**
+
+```rescript
+let routeFromUrl = (url: ReasonReact.Router.url) =>
+  switch url.path {
+  | list{} => Home
+  | list{"products"} => Products
+  | list{"products", productId} => ProductDetails(productId)
+  | _ => NotFound
+  }
+```
+
+Note : The root index is an empty list.
+
+**Transform a route type in URL**
+
+```rescript
+let routeToUrl = switch (route) {
+    | Home => ""
+    | Products => "/products"
+    | ProductDetails(productId) => "products/"++productId
+    | NotFound => "/404"
+  };
+```
+
+Commonly, I regroup everything in a file named`Navigation.re` :
+
+```rescript title='Navigation.res'
+type route =
+  | Home
+  | Products
+  | ProductDetails(string)
+  | NotFound;
+
+let routeFromUrl = (url: ReasonReact.Router.url) => switch (url.path) {
+  | [] => Home
+  | ["products"] => Products
+  | ["products", productId] => ProductDetails(productId)
+  | _ => NotFound
+};
+let routeToUrl = route =>
+  switch (route) {
+    | Home => ""
+    | Products => "/products"
+    | ProductDetails(productId) => "/products/"++productId
+    | NotFound => "/404"
+  };
+```
+
+### Use our type
+
+Now, we can use our type in our first example :
+
+```rescript
+open Navigation;
+
+/* ... */
+
+[@react.component]
+let make = () => {
+  let route = ReasonReactRouter.useUrl();
+
+  switch (route->routeFromUrl) {
+    | Home => <PageHome />
+    | Products => <Products />
+    | ProductDetails(productId) => <PageProductDetails productId />
+    | NotFound => <strong>"This page does not exist !"->React.string</strong>
+  };
+};
+```
+
+Now, if we need to add a new route, you will have to add it to our enumeration and converters if not the compiler will raise a warning or an error saying that we don't handle a case.
+
+### Generate links
+
+We miss an example, the usage of links in our application. For this use case, we can use our function `routeToUrl` to convert a route into a string and use a HTML `<a>` tag.
+
+```rescript
+open Navigation;
+
+module PageHome = {
+  [@react.component]
+  let make = () => {
+    <>
+      <h1>"Home"->React.string</h1>
+      <a href=Products->routeToUrl onClick={event => {
+        event->ReactEvent.Synthetic.preventDefault;
+        ReasonReact.Router.push(Products->routeToUrl);
+      }}>
+        "Products"->React.string
+      </a>
+    </>
+  }
+};
+```
+
+We must set an `onClick` method to avoid a browser navigation and have a full reload and set the `href` tag to allow the user to copy / see the URL.
+
+We are not going to lie, this is very fastidious for a simple link...
+That's why we will going to make it a component and append this to our `Navigation.re` file.
+
+```rescript title='Navigation.res'
+
+...
+
+module Link = {
+  [@react.component]
+  let make = (~route, ~children) => {
+    <a href=route->routeToUrl onClick={event => {
+        event->ReactEvent.Synthetic.preventDefault;
+        ReasonReact.Router.push(route->routeToUrl);
+      }}>
+      children
+    </a>
+  };
+};
+```
+
+This became much more simpler to use ! And mostly, **type-safe** ! It's impossible to put a route that doesn't exist or make a typo without breaking the compilation !
+
+```rescript
+open Navigation;
+
+module PageHome = {
+  [@react.component]
+  let make = () => {
+    <>
+      <h1>"Home"->React.string</h1>
+      <Link route=Products>
+        "Products"->React.string
+      </Link>
+    </>
+  }
+};
+```
+
+## Handle nested routes
+
+After some times, you will have to handle several levels of navigaiton. With our code, we don't need to change anything because we can use variants as their own arguments.
+Look a this example below :
+
+```rescript
+type routeAdmin =
+  | Dashboard
+  | DashboardProducts
+  | DashboardProductDetails(string)
+
+type route =
+  | Home
+  | Products
+  | ProductDetails(string)
+  | Admin(route);
+
+
+let routeFromUrl = (url: ReasonReact.Router.url) =>
+  switch url.path {
+  | list{} => Home
+  | list{"products"} => Products
+  | list{"products", productId} => ProductDetails(productId)
+  | list{"admin", ...rest} =>
+    switch rest {
+    | list{} => Dashboard
+    | list{"products"} => DashboardProducts
+    | list{"products", productId} => DashboardProductDetails(productId)
+    }
+  | _ => NotFound
+  }
+
+let routeToUrl = switch (route) {
+  | Home => ""
+  | Products => "/products"
+  | ProductDetails(productId) => "/products/"++productId
+  | Admin(Home) => "/admin"
+  | Admin(DashboardProducts) => "/admin/products"
+  | Admin(DashboardProductDetails(productId)) => "/admin/products/" ++ productId
+  | NotFound => "/404"
+};
+```
+
+Like in JavaScript, we can use the [spread operator](https://rescript-lang.org/docs/manual/latest/array-and-list#immutable-prepend) to decompose our list.
+
+## Conclusion
+
+Now we have a simplistic but strong navigation solution ! In the next article, we will make the navigation even more type-safe by replacing our string type for our IDs to a dedicated one !

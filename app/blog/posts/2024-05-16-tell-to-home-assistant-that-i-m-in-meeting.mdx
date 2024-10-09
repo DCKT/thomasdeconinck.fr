@@ -1,0 +1,325 @@
+---
+title: "Tell to Home Assistant that I'm in meeting"
+publishedAt: "2024-05-16"
+summary: "Recently, I found a way to detect when I'm in a meeting and give this information to my Home Assistant by developing a Chrome extension !"
+---
+
+I work remotely 4 days a week, including Wednesday, children's day!
+And in order to avoid being disturbed, I found a way to detect when I'm in a meeting and give this information to my Home Assistant by developing a Chrome extension!
+
+To give a little more context, our remote meetings are done via Google Meet at Colisweb and I always use the web version in the browser.
+
+So I asked myself the question if it was possible to know if a tab with a specific address is open.
+Spoiler: yes, with [the Chrome tabs API](https://developer.chrome.com/docs/extensions/reference/api/tabs?hl=fr) !
+
+![Final result](https://www.datocms-assets.com/41839/1715634219-conversion-reussie.gif)
+
+TLDR: you can found the extension [on my Github](https://github.com/DCKT/home-assistant-meeting).
+
+## Chrome Tabs API
+
+It turns out that the API is quite simple to use, it is possible for us to know if a tab is open from a URL:
+
+```js
+chrome.tabs.query({ url: "https://meet.google.com/*" });
+```
+
+And detect the opening and closing of tabs via an event system:
+
+```js
+chrome.tabs.onCreated.addListener((tab) => {
+  // do something...
+});
+chrome.tabs.onRemoved.addListener((tab) => {
+  // do something...
+});
+```
+
+## Mettre à jour une entité Home Assistant
+
+In my Home Assistant, I created a "switch" entity, corresponding to a Boolean state. I discovered that it was possible [to activate and expose an API](https://developers.home-assistant.io/docs/api/rest/).
+
+> Remember to authorize the URL of the extension in order to avoid CORS (Cross Origin Resource Sharing) problems.
+
+By searching the documentation a little, I found the api `/api/states/:entityID` which via a POST allows you to update the state of an entity. For the case of a "switch", simply give the value `on` for the active state and `off` for the inactive state. Here is an example of a basic bodysuit:
+
+```json
+{
+  "state": "on"
+}
+```
+
+## Let's take it all back
+
+Here is a small basic diagram of how it works
+
+![Basic implementation](https://www.datocms-assets.com/41839/1715500367-schema.svg)
+
+Each time a tab is opened or closed, we check if a meet tab is open and we update the Home Assistant entity. It is only when opening a tab that we will activate our entity, and only when closing that we will deactivate it. This avoids unnecessary HTTP calls and the case where we exit the browser directly without leaving the tab seems extremely rare to me (and non-existent for my part), so I omitted updating the entity.
+
+## Create a Chrome extension
+
+The central point of a Chrome extension is its `manifest.json` file which contains all of our extension's settings. In these settings, we will be able to configure access to the different Chrome APIs, the targeted sites where our extension will be executed, etc...
+
+### Code location
+
+The code for our extension will be executed in the background, via [a service worker](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/basics?hl=fr). We must therefore specify our file in the config file via the field `background` :
+
+```json title="manifest.json"
+{
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
+```
+
+### Permissions and hosts configuration
+
+As stated previously, to access the Chrome APIs, it is mandatory to explicitly provide the permissions that our extension will use as well as the hosts (sites) targeted.
+
+The `permissions` field accepts [an array of strings](https://developer.chrome.com/docs/extensions/reference/permissions-list?hl=fr) just like the `host_permissions` field, which has a nuance must respect [a matching pattern](https://developer.chrome.com/docs/extensions/develop/concepts/match-patterns?hl=fr).
+
+```json title="manifest.json"
+{
+  "permissions": ["tabs", "activeTab", "storage"],
+  "host_permissions": ["https://meet.google.com/*"]
+}
+```
+
+The `tabs` and `activeTab` permissions will allow us to retrieve informations about our tabs. `storage` will allow us to store information in the Chrome user session in order to make this extension configurable for everyone.
+
+### Make the extension configurable
+
+To make the extension more dynamic, it is possible to define an HTML page which will contain a form with the fields required for the extension to function properly. This is always configured in the manifest via the `options_ui` field:
+
+```json title="manifest.json"
+{
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  }
+}
+```
+
+Our file `options.html` is basic HTML page :
+
+```html title="options.html"
+<!doctype html>
+<html>
+  <head>
+    <title>Meeting options</title>
+  </head>
+  <body>
+    <script defer src="options.js" type="module"></script>
+    <form
+      id="optionsForm"
+      style="display: flex; flex-direction: column; gap: 4px"
+    >
+      <div>
+        <label for="homeAssistantApiUrl"> Home Assistant API URL </label>
+        <input
+          type="text"
+          name="homeAssistantApiUrl"
+          id="homeAssistantApiUrl"
+          required
+        />
+      </div>
+      <div>
+        <label for="homeAssistantApiToken"> Home Assistant API token </label>
+        <input
+          type="text"
+          name="homeAssistantApiToken"
+          id="homeAssistantApiToken"
+          required
+        />
+      </div>
+      <div>
+        <label for="homeAssistantEntity"> Home Assistant entity ID </label>
+        <input
+          type="text"
+          name="homeAssistantEntity"
+          id="homeAssistantEntity"
+          required
+        />
+      </div>
+      <div>
+        <button>Save</button>
+      </div>
+    </form>
+  </body>
+</html>
+```
+
+It's in `options.js` where we can use [Chrome's storage API](https://developer.chrome.com/docs/extensions/reference/api/storage) in order to link configuration to the user profile.
+
+```js title="options.js"
+const options = {};
+const optionsForm = document.getElementById("optionsForm");
+const data = await chrome.storage.sync.get("options");
+
+Object.assign(options, data.options);
+optionsForm.homeAssistantApiUrl.value = options.homeAssistantApiUrl;
+optionsForm.homeAssistantApiToken.value = options.homeAssistantApiToken;
+optionsForm.homeAssistantEntity.value = options.homeAssistantEntity;
+
+optionsForm.addEventListener("submit", (event) => {
+  options.homeAssistantApiUrl = optionsForm.homeAssistantApiUrl.value;
+  options.homeAssistantApiToken = optionsForm.homeAssistantApiToken.value;
+  options.homeAssistantEntity = optionsForm.homeAssistantEntity.value;
+  chrome.storage.sync.set({ options });
+});
+```
+
+We can now retrieve this information in our main file.
+
+```js title="background.js"
+(async function () {
+  const { options } = await chrome.storage.sync.get("options");
+
+  let HA_API_URL = options.homeAssistantApiUrl;
+  let HA_ENTITY = options.homeAssistantEntity;
+  let HA_API_TOKEN = options.homeAssistantApiToken;
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && changes.options?.newValue?.homeAssistantApiUrl) {
+      HA_API_URL = changes.options.newValue.homeAssistantApiUrl;
+    }
+    if (area === "sync" && changes.options?.newValue?.homeAssistantApiToken) {
+      HA_API_TOKEN = changes.options.newValue.homeAssistantApiToken;
+    }
+    if (area === "sync" && changes.options?.newValue?.homeAssistantEntity) {
+      HA_ENTITY = changes.options.newValue.homeAssistantEntity;
+    }
+  });
+})();
+```
+
+By listening to the storage change event, we directly update the values concerned.
+
+## Tab detection
+
+Let's go back to our `background.js` file and focus on the management of tab creation and deletion events:
+
+```js title="background.js" {3-5}
+(async function () {
+  const hasActiveTab = async () => {
+    const meetTab = await chrome.tabs.query({
+      url: "https://meet.google.com/*",
+    });
+
+    return meetTab.length;
+  };
+
+  const onTabCreation = async (tab) => {
+    const isActive = await hasActiveTab();
+
+    if (isActive) {
+      // call HA
+    }
+  };
+
+  chrome.tabs.onCreated.addListener(onTabCreation);
+})();
+```
+
+When a tab is created, our `hasActiveTab` function will check if at least 1 Google Meet tab is open using the `chrome.tabs.query` function. And if this is the case, we can make a call to Home Assistant.
+
+For the deletion part, it's the same thing but via the event`onRemoved` :
+
+```js title="background.js" {18}
+(async function () {
+  const hasActiveTab = async () => {
+    const meetTab = await chrome.tabs.query({
+      url: "https://meet.google.com/*",
+    });
+
+    return meetTab.length;
+  };
+
+  const onTabDeletion = async (tab) => {
+    const isActive = await hasActiveTab();
+    if (!isActive) {
+      // call HA
+    }
+  };
+
+  chrome.tabs.onRemoved.addListener(onTabDeletion);
+})();
+```
+
+## Send a request to Home Assistant
+
+All that remains is to replace our comment `// call HA` with our API call to Home Assistant!
+
+```js {20-31} {46} {52}
+(async function () {
+  const { options } = await chrome.storage.sync.get("options");
+
+  let HA_API_URL = options.homeAssistantApiUrl;
+  let HA_ENTITY = options.homeAssistantEntity;
+  let HA_API_TOKEN = options.homeAssistantApiToken;
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && changes.options?.newValue?.homeAssistantApiUrl) {
+      HA_API_URL = changes.options.newValue.homeAssistantApiUrl;
+    }
+    if (area === "sync" && changes.options?.newValue?.homeAssistantApiToken) {
+      HA_API_TOKEN = changes.options.newValue.homeAssistantApiToken;
+    }
+    if (area === "sync" && changes.options?.newValue?.homeAssistantEntity) {
+      HA_ENTITY = changes.options.newValue.homeAssistantEntity;
+    }
+  });
+
+  async function updateEntity(state) {
+    const body = { state: state };
+
+    return await fetch(`${HA_API_URL}/api/states/${HA_ENTITY}`, {
+      credentials: "omit",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${HA_API_TOKEN}`,
+      },
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  const hasActiveTab = async () => {
+    const meetTab = await chrome.tabs.query({
+      url: "https://meet.google.com/*",
+    });
+
+    return meetTab.length;
+  };
+
+  const onTabCreation = async (tab) => {
+    const isActive = await hasActiveTab();
+
+    if (isActive) {
+      await updateEntity("on");
+    }
+  };
+  const onTabDeletion = async (tab) => {
+    const isActive = await hasActiveTab();
+    if (!isActive) {
+      await updateEntity("off");
+    }
+  };
+
+  chrome.tabs.onCreated.addListener(onTabCreation);
+  chrome.tabs.onRemoved.addListener(onTabDeletion);
+})();
+```
+
+As a reminder, the state of a switch entity on Home Assistant is represented by an enumeration which can be:
+
+- "on"
+- "off"
+
+We can use [fetch](https://developer.mozilla.org/fr/docs/Web/API/Fetch_API) to make our HTTP request by passing the plugin options with stored previously !
+
+## Conclusion
+
+The Home Assistant REST API opens up a vast field of possibilities for us, with this entity, we can imagine ourselves sending an SMS or a notification, or even turning on a specific light! In any case, this project was very fun to put together!

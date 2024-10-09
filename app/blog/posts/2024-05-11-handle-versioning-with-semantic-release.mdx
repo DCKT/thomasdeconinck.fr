@@ -1,0 +1,171 @@
+---
+title: "Handle versioning  with semantic-release"
+publishedAt: "2024-05-11"
+summary: "Like many front-end developers, I already have forgotten by the past to remove my debugging logs until the production deployement done."
+---
+
+When you have a npm package, it requires to provide a version number. It can be pretty tedious to edit it, that's why I tend to use a tool like semantic-release to automate this process.
+
+## Why using a tool ?
+
+When you have to handle manually the version, I need to think about several things :
+
+1. Is this project follow specific convention ? (ex: [semantic versioning](https://semver.org/))
+2. If yes, do my changes correspond to a fix, a feature or a breaking change ?
+3. Update the places where the version is used (here, `package.json`)
+4. Maitain a changelog with the changes
+5. Publish the package on npm
+6. Create a git tag
+7. Create a Github release (or Gitlab depending where you put the source code)
+
+All of this add an useless "mental overhead" after the end of the development phase. It's also why I tend to use the same convention on every project I start that need a version number.
+
+## The semantic versioning convention
+
+It's a principle with few rules :
+
+> Given a version number MAJOR.MINOR.PATCH, increment the:
+> MAJOR version when you make incompatible API changes,
+> MINOR version when you add functionality in a backwards compatible manner, and
+> PATCH version when you make backwards compatible bug fixes.
+> Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format.
+
+## Use a formatted commit message
+
+By using a specific format in our commits messages, it allows 2 things :
+
+- Have an explicit git history
+- Use a tool that analyze the commits (if you know what I mean 😏)
+
+Since few years now, the [Angular message format](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-format) has become really popular.
+
+The basic usage is :
+
+```markdown
+<type>(<scope>): <short summary>
+│ │ │
+│ │ └─⫸ Summary in present tense. Not capitalized. No period at the end.
+│ │
+│ └─⫸ Commit Scope: animations|bazel|benchpress|common|compiler|compiler-cli|core|
+│ elements|forms|http|language-service|localize|platform-browser|
+│ platform-browser-dynamic|platform-server|router|service-worker|
+│ upgrade|zone.js|packaging|changelog|docs-infra|migrations|ngcc|ve
+│
+└─⫸ Commit Type: build|ci|docs|feat|fix|perf|refactor|test
+```
+
+With that, a tool like semantic-release will able to analyze our commits and determine the version.
+
+## Setup
+
+To add semantic-release to our project, we must first create a `.releaserc.json` file at the root of our project which held our desired configuration.
+
+For our example, we will start from the principle that our project is a [npm](https://npmjs.com/) on [Github](https://github.com/). We want to have a CI that is triggered everytime we push something on our main branch in order to analyze our commits and do theses actions :
+
+- generate a CHANGELOG.md file
+- publish a release on npm
+- create a tag on git
+- publish a release on Github
+
+Without going too much further in detail, and [being very well documented](https://github.com/semantic-release/semantic-release#documentation), here is the default configuration without adding any plugin :
+
+```json title='.releaserc.json'
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/npm",
+    "@semantic-release/github"
+  ]
+}
+```
+
+Plugins are executed in the declaration order, keep that in mind if you would like to customize this later !
+
+With theses defaults plugins, we can already publish a release on npm and Github. For the rest, we have to use dedicated plugins :
+
+- `@semantic-release/changelog` : will generate the CHANGELOG.md file
+- `@semantic-release/git` : will generate a commit with the version on our main branch and create a tag
+
+By the end, it would look like this :
+
+```json title='.releaserc.json'
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    "@semantic-release/git",
+    "@semantic-release/github"
+  ]
+}
+```
+
+Our configuration file is ready, all that's left is to setup the CI in Github.
+
+## Create a Github action
+
+To create a Github action, we need to add a config file in the `.github/workflows` folder (if it doesn't exist, you have to create them)
+
+> It's entirely possible to execute semantic-release in our local environment. But, it would be a shame to not profit about a complete automation of the process.
+
+Luckily, there already exist a [Github Action](https://github.com/marketplace/actions/action-for-semantic-release) facilitating us our task because this image take care of the plugins and dependencies installation.
+
+We just have to take care of the exta plugins used and create a `release.yaml` file :
+
+```yaml title='.github/release.yaml'
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v2
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+In order to make this action working, it needs 2 paramounts things :
+
+- a `GITHUB_TOKEN` that will allow semantic-release to execute Github actions (like release creation).
+
+> NOTE : this `GITHUB_TOKEN` is automatically generated for each CI run
+
+- a `NPM_TOKEN` to publish our module on npm from the action
+
+> NOTE : during the npm token creation, lors de la création de votre token npm, choose the `Automation` type so you will not have trouble if you had enabled the 2FA on your npm account.
+
+If your package is in an organization or behind your username, and you want to make it public, you have to put this in your `.npmrc`
+
+```
+access=public
+```
+
+Without that, you'll have an authentication error in your workflow.
+
+Once your `NPM_TOKEN` added as a secret in your Github repo, you can do your first commit :
+
+```bash
+git add .
+git commit -m "feat: Add semantic-release :tada:"
+git push origin main
+```
+
+## Endnotes
+
+Each plugins has is own configuration, and there are [a lot](https://github.com/semantic-release/semantic-release/blob/master/docs/extending/plugins-list.md#plugins-list) ! I invite you to read the documentation and do some adjustements to make it perfect for your use case.

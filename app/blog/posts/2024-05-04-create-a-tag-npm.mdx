@@ -1,0 +1,47 @@
+---
+title: "Create a tag for a npm package"
+publishedAt: "2024-05-04"
+summary: "Simple and short article about the tag creation for a npm module."
+---
+
+Recently, I had a specific need on one of [my npm modules](https://gitlab.com/colisweb-open-source/rescript-toolkit) for the mobile app of [Colisweb](https://www.colisweb.com/fr).
+
+The latest version of [rescript-logger](https://github.com/shakacode/rescript-logger) use a GLIB_C version which is not available on our mobile app CI image and I can't change this image, so I didn't had any other choice than downgrade the version.
+
+To do this, I created a npm tag `-mobile` in which I published the supported version with the CI.
+
+## Create a tag
+
+To create a tag, you need to add as suffix the name you want in the `version` field in of your `package.json`. For example :
+
+```json title="package.json"
+{
+  "version": "2.1.2-mobile"
+}
+```
+
+When you will publish your module, you will have to specify the tag in the command.
+
+```bash
+npm publish --tag mobile
+```
+
+## Use the tag
+
+In the project requiring the tag, you can add it by an install command :
+
+```bash
+yarn add my-module@mobile
+# or
+npm i my-module@mobile
+```
+
+Or manually in your package.json :
+
+```json title="package.json"
+{
+  "dependencies": {
+    "my-module": "2.1.2-mobile"
+  }
+}
+```
