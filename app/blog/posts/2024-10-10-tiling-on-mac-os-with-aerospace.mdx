@@ -1,0 +1,55 @@
+---
+title: "AeroSpace, a tiling window manager for macOS"
+publishedAt: "2024-10-10"
+summary: "Control your workspaces and your windows through your keyboard"
+---
+
+I'm on macOS since more than a decade now, and I always used a tool like [Rectangle](https://rectangleapp.com/)
+(before that: [Spectacle](https://github.com/eczarny/spectacle)) for managing my applications
+windows and the built-in workspace system of macOS.
+
+Therefore, after many years, I've always be a bit jalous of the tiling experience of Linux, feeling "snappy".
+And I take so much time to just make a quick Google search to find this kind of experience for macOS...
+
+## Introducing AeroSpace
+
+And here it is, the alternative I was looking about: [AeroSpace](https://github.com/nikitabobko/AeroSpace).
+Some key features :
+
+- Use a tree paradigm for managing the window
+- custom emulation of virtual workspaces
+- configuration through TOML file
+
+I've been using it on my work laptop for a month now and I could not going back.
+
+### Simple configuration
+
+All is pretty well documented, the default file config has a lot of helpful commands and links to the documentation.
+
+It's pretty straight forward, you bind a set of keymaps to an action like this :
+
+```TOML
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+```
+
+You can also add shortcuts to run a command line :
+
+```toml
+alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
+```
+
+Switch the window focus through Vim keymap:
+
+```toml
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+```
+
+### The hardest part: memorization
+
+Like when you start using Vim, you have a lot of shortcuts to learn and remember.
+
+I had the same feeling but by using the features you need, you will force your brain to memorize these shortcuts !
