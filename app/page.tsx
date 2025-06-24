@@ -6,7 +6,7 @@ export default function Page() {
       <h1 className="mb-8 text-2xl font-semibold tracking-tighter">Hi there</h1>
       <div className="flex flex-col gap-4">
         <p>
-          {`Developer enthusiast from more than a decade, I like learning new languages, my favorites being moslty functional. `}
+          {`Developer enthusiast from more than a decade, I like learning new languages, my favorites being mostly functional. `}
           <a href="https://rescript-lang.org/" className="underline">
             ReScript
           </a>{" "}
