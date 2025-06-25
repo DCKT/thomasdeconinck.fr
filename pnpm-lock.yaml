@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@fontsource/rubik-doodle-shadow':
+        specifier: 5.2.6
+        version: 5.2.6
       '@tailwindcss/postcss':
         specifier: 4.1.10
         version: 4.1.10
@@ -74,6 +77,9 @@ packages:
 
   '@emnapi/runtime@1.3.1':
     resolution: {integrity: sha512-kEBmG8KyqtxJZv+ygbEim+KCGtIq1fC22Ms3S4ziXmYKm8uyoLX0MHONVKwp+9opg390VaKRNt4a7A9NwmpNhw==}
+
+  '@fontsource/rubik-doodle-shadow@5.2.6':
+    resolution: {integrity: sha512-M/oedSDMDibXtG4k7xlk+xsiLYiybiivg9vSrYH0mZ/8eW5TVhdKNAZ+vDqC4UsUC+0rFA/UxtpD7IVAeliINQ==}
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -1047,6 +1053,8 @@ snapshots:
     dependencies:
       tslib: 2.6.2
     optional: true
+
+  '@fontsource/rubik-doodle-shadow@5.2.6': {}
 
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:

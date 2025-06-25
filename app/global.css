@@ -7,6 +7,7 @@
 @theme {
   --color-black: #1e1e2e;
   --color-primary-100: #fbf4ec;
+  --font-title: "Rubik Doodle Shadow";
 }
 :root {
   --sh-class: #fab387;
