@@ -1,5 +1,3 @@
-import { BlogPosts } from "app/components/posts";
-
 export const metadata = {
   title: "Blog",
   description: "Read my blog.",
@@ -8,8 +6,9 @@ export const metadata = {
 export default function Page() {
   return (
     <section>
-      <h1 className="font-semibold text-3xl mb-8 tracking-tighter">My Blog</h1>
-      <BlogPosts />
+      <h1 className="font-semibold text-3xl mb-8 tracking-tighter">
+        Pixel art
+      </h1>
     </section>
   );
 }

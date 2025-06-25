@@ -3,7 +3,7 @@ import { BlogPosts } from "app/components/posts";
 export default function Page() {
   return (
     <section>
-      <h1 className="mb-8 text-2xl font-semibold tracking-tighter">Hi there</h1>
+      <h1 className="mb-8 text-3xl font-semibold tracking-tighter">Hi there</h1>
       <div className="flex flex-col gap-4">
         <p>
           {`Developer enthusiast from more than a decade, I like learning new languages, my favorites being mostly functional. `}
@@ -24,7 +24,10 @@ export default function Page() {
         </p>
       </div>
       <div className="my-8">
-        <BlogPosts />
+        <h2 className="text-xl font-semibold tracking-tighter mb-4">
+          Latest posts
+        </h2>
+        <BlogPosts limit={5} />
       </div>
     </section>
   );
