@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "pixel:new": "bun run scripts/new-pixel-post.ts"
   },
   "dependencies": {
     "@fontsource/rubik-doodle-shadow": "5.2.6",

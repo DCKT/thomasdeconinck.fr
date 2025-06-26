@@ -45,7 +45,6 @@ function CustomLink(props) {
 }
 
 function RoundedImage(props) {
-  console.log(props);
   return <Image alt={props.alt} className="rounded-lg" {...props} />;
 }
 
