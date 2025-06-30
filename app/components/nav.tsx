@@ -12,6 +12,9 @@ const navItems = {
   "/pixel-art": {
     name: "pixel art",
   },
+  "/games": {
+    name: "games",
+  },
 };
 
 export function Navbar() {
