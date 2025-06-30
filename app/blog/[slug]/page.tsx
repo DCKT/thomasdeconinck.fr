@@ -95,7 +95,10 @@ export default async function Blog({ params }: { params: Params }) {
         </p>
       </div>
       <article className="prose">
-        <CustomMDX source={post.content} />
+        <CustomMDX
+          source={post.content}
+          options={{ scope: { filename: post.slug } }}
+        />
       </article>
     </section>
   );
