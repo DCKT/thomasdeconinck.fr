@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -28,6 +29,13 @@ export function Navbar() {
           id="nav"
         >
           <div className="flex flex-row space-x-0 pr-10">
+            <Image
+              alt=""
+              src="/Cat.png"
+              width={38}
+              height={32}
+              className="mr-4"
+            />
             {Object.entries(navItems).map(([path, { name }]) => {
               return (
                 <Link
