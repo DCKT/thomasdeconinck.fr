@@ -4,7 +4,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "path";
 
 const now = new Date();
-const formattedDate = `${now.getFullYear()}-${now.getMonth() + 1 < 10 ? "0" : ""}${now.getMonth() + 1}-${now.getDate()}`;
+const month = now.getMonth() + 1;
+const day = now.getDate();
+const formattedDate = `${now.getFullYear()}-${month < 10 ? "0" : ""}${month}-${day < 10 ? "0" : ""}${day}`;
 const pixelPostsDir = path.resolve(process.cwd(), "./app/pixel-art/posts/");
 const blogPostsDir = path.resolve(process.cwd(), "./app/blog/posts/");
 const publicDir = path.resolve(process.cwd(), "./public/");
