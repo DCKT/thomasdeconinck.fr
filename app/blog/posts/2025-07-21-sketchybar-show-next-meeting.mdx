@@ -1,0 +1,155 @@
+---
+title: "Show the next meeting with Sketchybar"
+publishedAt: "2025-07-21"
+summary: "I'm using Sketchybar on my office laptop and wanted to have a quick view of the next meeting incoming"
+---
+
+import Image from "next/image";
+
+So, I'm using Sketchybar on my office laptop for a while and I wanted a way to have a quick view
+of my next meeting incoming for the current day.
+
+<Image
+  src={`/${filename}/example.png`}
+  alt="Example"
+  width={445}
+  height={780}
+/>
+
+## Get the meetings
+
+As you may know, Sketchybar is based on bash script, so I needed a tool that expose the data.
+
+After some research, I found [meeting bar](https://meetingbar.app/), combined with Apple Shortcut I can format a JSON
+with the informations I need.
+
+<Image
+  src={`/${filename}/shortcuts.png`}
+  alt="The meeting shortcut"
+  width={445}
+  height={780}
+/>
+
+Then in the terminal, you can run the command :
+
+```bash
+shortcuts run "Get Nearest Event Details"
+```
+
+## Use the data
+
+I'm not a bash expert so I chose a convenient method for me using [bun.sh](https://bun.sh/).
+I wrote a small script in TypeScript and created a single-file executable that will be executed by sketchybar !
+
+First, I run the command by spawning it :
+
+```ts
+type nextEvent = {
+  title: string;
+  start: string;
+  end: string;
+  link: string;
+};
+const proc = Bun.spawn(["shortcuts", "run", "Get Nearest Event Details"]);
+const nextEvent: nextEvent = await new Response(proc.stdout).json();
+```
+
+Then I check if the title is empty, meaning there are no meetings in the future.
+It's a personal choice but I prefer to avoid empty blocks to keep it readable.
+
+```ts
+if (nextEvent.title === "") {
+  Bun.spawn([
+    "sketchybar",
+    "--set",
+    "meeting",
+    "label.drawing=off",
+    "icon.drawing=off",
+  ]);
+}
+```
+
+Next, we can handle the display of our meeting.
+I chose 2 styles of display, emphasizing :
+
+- the title when the meeting is in progress
+- the hour when it's coming
+
+I used [date-fns](https://date-fns.org/) to do the date check in order to keep it
+clear and maintainable. I also shrinked the size of the title to avoid
+some UI surprise when the title is quite long.
+
+```ts
+if ...
+else if (isBefore(now, nextEvent.start)) {
+  Bun.spawn([
+    "sketchybar",
+    "--set",
+    "meeting",
+    "label.drawing=on",
+    "icon.drawing=on",
+    `label=${nextEvent.title.slice(0, 60)}`,
+    `icon=${format(nextEvent.start, "HH'h'mm")}`,
+    "icon.background.height=26",
+    `icon.background.color=${FLAMINGO}`,
+    "icon.font.size=14.0",
+    "icon.padding_right=8",
+    "icon.padding_left=8",
+    `icon.color=${BASE}`,
+    "icon.background.corner_radius=2",
+    "label.background.corner_radius=2",
+    "label.background.height=24",
+    "label.padding_left=8",
+    "label.padding_right=8",
+    `label.background.color=${SURFACE}`,
+    `label.color=${WHITE}`,
+    `click_script=open ${nextEvent.link}`,
+  ]);
+} else {
+  Bun.spawn([
+    "sketchybar",
+    "--set",
+    "meeting",
+    "label.drawing=on",
+    "icon.drawing=off",
+    `label=${nextEvent.title.slice(0, 60)}`,
+    "label.padding_left=8",
+    `label.color=${BASE}`,
+    `label.background.color=${FLAMINGO}`,
+    "label.background.height=24",
+    "label.background.corner_radius=4",
+    "label.font.size=14.0",
+    `click_script=open ${nextEvent.link}`,
+  ]);
+}
+```
+
+Here you can find the color I used :
+
+```ts
+const WHITE = "0xffffffff";
+const FLAMINGO = "0xFFf2cdcd"; // #f2cdcd
+const BASE = "0xe61e1e2e"; // #1e1e2e
+const SURFACE = "0x9c623b20"; // #313244
+```
+
+## Create and use the executable
+
+Creating an executable with Bun is straighforward, just by running a command you will have an executable binary for
+your platform :
+
+```bash
+bun build ./index.ts --compile --outfile getnextmeeting
+```
+
+Now our executable is ready, we can give it to sketchybar !
+
+I created a file `meeting.sh` as I like to separate concerns but you can append it to the `skechybarrc` file of course :
+
+```bash
+#!/bin/bash
+
+sketchybar --add item meeting center \
+  --set meeting update_freq=30 \
+  script="$PLUGIN_DIR/meeting/getnextmeeting"
+```
