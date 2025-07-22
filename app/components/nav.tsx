@@ -31,6 +31,7 @@ export function Navbar() {
           <div className="flex flex-row space-x-0 pr-10">
             <Image
               alt=""
+              unoptimized
               src="/Cat.gif"
               width={38}
               height={32}
