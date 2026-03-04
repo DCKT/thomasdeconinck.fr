@@ -26,7 +26,7 @@ pub struct Board {
 
 Next, the heart of the game: `move_board`. This is the most complex function in the project. For each direction (up, down, left, right), you need to traverse rows or columns, slide tiles, and merge identical ones.
 
-The trick I used is having two cursors — a `destination_cursor` that marks where the next tile should land, and an `iterator_index` that traverses the row. The traversal direction changes depending on the movement:
+The trick I used is having two cursors — a `destination_cursor` that marks where the next tile should land and an `iterator_index` that traverses the row. The traversal direction changes depending on the movement:
 
 ```rust
 let (mut destination_cursor, mut iterator_index): (usize, isize) = match movement {
@@ -41,7 +41,7 @@ Then we iterate and handle three cases:
 - **Two identical tiles** → merge (the destination takes the sum, the origin becomes empty)
 - **Two different tiles** → advance the destination cursor
 
-I wrote unit tests right away to validate each direction. It's essential here — this kind of logic is very easy to break.
+I wrote unit tests right away to validate each direction. This is essential — this kind of logic is very easy to break.
 
 For rendering, Ratatui works with `Widget`s. I implemented the trait directly on `Board`:
 
@@ -64,7 +64,7 @@ enum AppEvent {
 }
 ```
 
-Controls are `hjkl` (Vim-style). At this point, the game displays an empty grid that can be manipulated, but nothing happens visually yet — no tiles spawning.
+Controls are `hjkl` (Vim-style). At this point, the game displays an empty grid that responds to input, but nothing happens visually yet — no tiles spawn.
 
 ## Step 2: The Score
 
@@ -134,7 +134,7 @@ pub fn spawn_random_cell(&mut self) -> Result<(), ()> {
 }
 ```
 
-90% chance of generating a 2, 10% a 4 — faithful to the original rules. The `Result` lets us know whether there was room left on the board.
+A 90% chance of generating a 2, 10% a 4 — faithful to the original rules. The `Result` lets us know whether there was room left on the board.
 
 On the `main.rs` side, after each move we spawn a tile:
 
@@ -164,7 +164,7 @@ pub fn is_board_movable(&mut self) -> bool {
 }
 ```
 
-It's not the most optimal solution (we clone and simulate 4 moves), but it's simple and correct. For a 4×4 game, performance isn't a concern.
+It's not the most efficient solution (we clone and simulate 4 moves), but it's simple and correct. For a 4×4 game, performance isn't a concern.
 
 I also modified `move_board` to return a `bool` — did the board change? This matters: if a move changes nothing, we shouldn't spawn a new tile.
 
@@ -190,7 +190,7 @@ fn get_cell_style(&self, x: usize, y: usize) -> Style {
 }
 ```
 
-The game over screen displays a message with keys to restart (`r`) or quit (`q`). I also added arrow key support alongside `hjkl`, and a first tile is spawned at launch.
+The game over screen displays a message with keys to restart (`r`) or quit (`q`). I also added arrow key support alongside `hjkl`, and the first tile is now spawned at launch.
 
 ## Bonus: Porting to the Web with Ratzilla
 
@@ -228,7 +228,7 @@ The `Rc<RefCell<App>>` is necessary because the callback closures need to share 
 
 ## Takeaways
 
-The project is around 300 lines of Rust (excluding tests), spread across 3 files.
+The project is around 300 lines of Rust (excluding tests), spread across three files.
 
 What I appreciated:
 
