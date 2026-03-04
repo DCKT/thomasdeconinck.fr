@@ -1,0 +1,240 @@
+---
+title: "Building a 2048 Game in Rust with Ratatui"
+publishedAt: "2026-03-04"
+summary: "I've always wanted to code a small game in the terminal. 2048 is a great candidate: the rules are simple, but the implementation touches on many interesting topics — state management, rendering, game logic."
+---
+
+I've always wanted to code a small game in the terminal. 2048 is a great candidate: the rules are simple, but the implementation touches on many interesting topics — state management, rendering, game logic. And [Ratatui](https://ratatui.rs/), the Rust TUI framework, is perfect for this.
+
+Here's how I built this project, step by step.
+
+## Step 1: The Board and Movement Logic
+
+The first thing to set up is the data structure. A 2048 board is a 4×4 grid where each cell is either empty or an integer:
+
+```rust
+type Cell = Option<i32>;
+type Row = [Cell; 4];
+
+#[derive(Default, Clone)]
+pub struct Board {
+    state: [Row; 4],
+}
+```
+
+`Option<i32>` is a natural fit here — `None` for an empty cell, `Some(2)`, `Some(4)`, etc. for tiles.
+
+Next, the heart of the game: `move_board`. This is the most complex function in the project. For each direction (up, down, left, right), you need to traverse rows or columns, slide tiles, and merge identical ones.
+
+The trick I used is having two cursors — a `destination_cursor` that marks where the next tile should land, and an `iterator_index` that traverses the row. The traversal direction changes depending on the movement:
+
+```rust
+let (mut destination_cursor, mut iterator_index): (usize, isize) = match movement {
+    Movement::Up | Movement::Left => (0, 0),
+    Movement::Down | Movement::Right => (3, 3),
+};
+```
+
+Then we iterate and handle three cases:
+
+- **Empty cell + tile** → move the tile
+- **Two identical tiles** → merge (the destination takes the sum, the origin becomes empty)
+- **Two different tiles** → advance the destination cursor
+
+I wrote unit tests right away to validate each direction. It's essential here — this kind of logic is very easy to break.
+
+For rendering, Ratatui works with `Widget`s. I implemented the trait directly on `Board`:
+
+```rust
+impl Widget for Board {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let col_constraints = (0..4).map(|_| Constraint::Length(8));
+        let row_constraints = (0..4).map(|_| Constraint::Length(4));
+        // ...
+    }
+}
+```
+
+On the `main.rs` side, a classic event loop with Crossterm: read keys, dispatch `AppEvent`s, redraw.
+
+```rust
+enum AppEvent {
+    MoveBoard(Movement),
+    Quit,
+}
+```
+
+Controls are `hjkl` (Vim-style). At this point, the game displays an empty grid that can be manipulated, but nothing happens visually yet — no tiles spawning.
+
+## Step 2: The Score
+
+A quick addition: calculating the score. In 2048, the score is simply the sum of all tiles on the board:
+
+```rust
+pub fn get_score(&self) -> i32 {
+    self.state.iter().flatten().flatten().sum()
+}
+```
+
+The double `flatten()` is elegant here — first we flatten the 2D array into an iterator of `Row`s, then each `Option<i32>` (the second `flatten` skips the `None`s).
+
+## Step 3: The Score Widget and Refactoring
+
+At this point, I did a small refactor: renamed `board.rs` to `game.rs` and created a dedicated `score.rs` module. The score becomes its own Ratatui widget:
+
+```rust
+#[derive(Default, Clone)]
+pub struct Score {
+    pub value: i32,
+}
+
+impl Widget for &Score {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new(format!("{}", self.value))
+            .block(Block::default()
+                .title("Score")
+                .borders(Borders::all())
+                .border_type(BorderType::Rounded))
+            .render(area, buf);
+    }
+}
+```
+
+The main layout switches to two columns: the board on the left, the score on the right.
+
+I also changed the `Widget` implementation for `Board`: instead of `impl Widget for Board`, it's now `impl Widget for &Board`. This avoids cloning the board on every render.
+
+Cell rendering now displays the actual tile value rather than a simple index.
+
+## Step 4: Spawning Tiles
+
+The game wouldn't be 2048 without new tiles appearing. I added the `rand` dependency and two functions:
+
+```rust
+fn get_empty_cells(&self) -> Vec<Coordinates> {
+    let mut empty_cells: Vec<Coordinates> = vec![];
+    for x in 0..4 {
+        for y in 0..4 {
+            if self.state[x][y].is_none() {
+                empty_cells.push(Coordinates { x, y });
+            }
+        }
+    }
+    empty_cells
+}
+
+pub fn spawn_random_cell(&mut self) -> Result<(), ()> {
+    if let Some(random_cell) = self.get_empty_cells().choose(&mut rand::rng()) {
+        let new_cell_value = if rand::random::<f32>() < 0.9 { 2 } else { 4 };
+        self.state[random_cell.x][random_cell.y] = Some(new_cell_value);
+        Ok(())
+    } else {
+        Err(())
+    }
+}
+```
+
+90% chance of generating a 2, 10% a 4 — faithful to the original rules. The `Result` lets us know whether there was room left on the board.
+
+On the `main.rs` side, after each move we spawn a tile:
+
+```rust
+AppEvent::MoveBoard(movement) => {
+    self.board.move_board(movement);
+    self.board.update_score();
+    match self.board.spawn_random_cell() {
+        Ok(_) => (),
+        Err(_) => { /* TODO: game over */ }
+    }
+}
+```
+
+The game is starting to be playable!
+
+## Step 5: Detecting Game Over
+
+It's not enough to check whether the board is full — you also need to verify that no move is possible. My solution: clone the board and test each direction:
+
+```rust
+pub fn is_board_movable(&mut self) -> bool {
+    let mut board = self.clone();
+    [Movement::Up, Movement::Left, Movement::Down, Movement::Right]
+        .iter()
+        .any(|m| board.move_board(m.clone()))
+}
+```
+
+It's not the most optimal solution (we clone and simulate 4 moves), but it's simple and correct. For a 4×4 game, performance isn't a concern.
+
+I also modified `move_board` to return a `bool` — did the board change? This matters: if a move changes nothing, we shouldn't spawn a new tile.
+
+## Step 6: Game Over Screen and Polish
+
+Final step for a complete game: the game over screen, colors, and the ability to restart.
+
+For colors, each tile value has its own style, faithful to the original game:
+
+```rust
+fn get_cell_style(&self, x: usize, y: usize) -> Style {
+    self.state[x][y].map_or(Style::default(), |value| {
+        let (bg, fg) = match value {
+            2 => (Color::Rgb(238, 228, 218), dark_text),
+            4 => (Color::Rgb(237, 224, 200), dark_text),
+            8 => (Color::Rgb(242, 177, 121), light_text),
+            // ...
+            2048 => (Color::Rgb(237, 194, 46), light_text),
+            _ => (Color::Rgb(0, 0, 0), light_text),
+        };
+        Style::default().bg(bg).fg(fg)
+    })
+}
+```
+
+The game over screen displays a message with keys to restart (`r`) or quit (`q`). I also added arrow key support alongside `hjkl`, and a first tile is spawned at launch.
+
+## Bonus: Porting to the Web with Ratzilla
+
+Once the terminal game was done, I ported it to the web using [Ratzilla](https://github.com/orhun/ratzilla), a library that provides a web backend for Ratatui.
+
+The refactoring consisted of:
+
+- Extracting shared logic (`handle_event`, `render`) from platform-specific logic
+- Using Cargo feature flags (`terminal` and `web`)
+- Conditionally importing with `#[cfg(feature = "...")]`
+
+```toml
+[features]
+default = ["terminal"]
+terminal = ["dep:crossterm", "dep:color-eyre", "ratatui/crossterm"]
+web = ["dep:ratzilla", "dep:getrandom"]
+```
+
+The web entry point uses a different event model — instead of a blocking loop, you register callbacks:
+
+```rust
+#[cfg(feature = "web")]
+fn main() -> std::io::Result<()> {
+    let backend = DomBackend::new()?;
+    let terminal = ratatui::Terminal::new(backend)?;
+    let app = Rc::new(RefCell::new(App::default()));
+
+    terminal.on_key_event({ /* ... */ });
+    terminal.draw_web({ /* ... */ });
+    Ok(())
+}
+```
+
+The `Rc<RefCell<App>>` is necessary because the callback closures need to share ownership of the application.
+
+## Takeaways
+
+The project is around 300 lines of Rust (excluding tests), spread across 3 files.
+
+What I appreciated:
+
+- **Rust's type system** makes modeling natural
+- **Ratatui** is pleasant to use — the constraint-based layout system is flexible, and the `Widget` trait allows for clean separation of concerns
+- **Unit tests** on the movement logic saved me several times — this is the kind of code where you easily break one case while fixing another
+- **The web port** with Ratzilla was surprisingly straightforward thanks to Ratatui's abstraction over the rendering backend
+
+If you want to give it a try, start with the movement logic and its tests — that's the real challenge of the project. Everything else builds naturally on top of it.
