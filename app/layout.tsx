@@ -4,10 +4,15 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "@fontsource/rubik-doodle-shadow";
 import "@fontsource/rubik-doodle-shadow/400.css";
+import "@fontsource/rye";
+import "@fontsource/rye/400.css";
+import "@fontsource/special-elite";
+import "@fontsource/special-elite/400.css";
 import { Navbar } from "./components/nav";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Footer from "./components/footer";
+import FilmOverlay from "./components/film-overlay";
 import { baseUrl } from "./sitemap";
 
 export const metadata: Metadata = {
@@ -38,7 +43,18 @@ export const metadata: Metadata = {
   },
 };
 
-const cx = (...classes) => classes.filter(Boolean).join(" ");
+const cx = (...classes: (string | undefined | false)[]) =>
+  classes.filter(Boolean).join(" ");
+
+/* Prevents flash of unstyled typewriter font on first load */
+const fontModeScript = `
+(function(){
+  try{
+    var m=localStorage.getItem('fontMode');
+    if(m==='typewriter') document.documentElement.classList.add('body-typewriter');
+  }catch(e){}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -49,11 +65,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={cx(
-        "text-black bg-primary-100",
+        "text-ink bg-cream",
         GeistSans.variable,
         GeistMono.variable,
       )}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: fontModeScript }} />
+      </head>
       <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
         <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
           <Navbar />
@@ -62,6 +81,7 @@ export default function RootLayout({
           <Analytics />
           <SpeedInsights />
         </main>
+        <FilmOverlay />
       </body>
     </html>
   );

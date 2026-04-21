@@ -2,55 +2,68 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import FontToggle from "./font-toggle";
 
 const navItems = {
-  "/": {
-    name: "home",
-  },
-  "/blog": {
-    name: "blog",
-  },
-  "/pixel-art": {
-    name: "pixel art",
-  },
-  "/games": {
-    name: "games",
-  },
+  "/": { name: "Home" },
+  "/blog": { name: "Blog" },
+  "/pixel-art": { name: "Pixel Art" },
+  "/games": { name: "Games" },
 };
 
 export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <aside className="-ml-[8px] mb-16 tracking-tight">
-      <div className="lg:sticky lg:top-20">
-        <nav
-          className="flex flex-row items-start relative px-0 pb-0 fade md:overflow-auto scroll-pr-6 md:relative"
-          id="nav"
-        >
-          <div className="flex flex-row space-x-0 pr-10">
-            <Image
-              alt=""
-              unoptimized
-              src="/Cat.gif"
-              width={38}
-              height={32}
-              className="mr-4"
-            />
-            {Object.entries(navItems).map(([path, { name }]) => {
-              return (
-                <Link
-                  key={path}
-                  href={path}
-                  className={`transition-all hover:text-neutral-900 hover:underline flex align-middle relative py-1 px-2 m-1 ${pathname === path ? "underline" : ""}`}
+    <aside className="mb-12">
+      <nav
+        className="flex flex-row items-center px-3 py-2"
+        style={{
+          backgroundColor: "#c0392b",
+          border: "3px solid #2a1810",
+          boxShadow: "3px 3px 0 #2a1810",
+        }}
+        id="nav"
+      >
+        <Image
+          alt=""
+          unoptimized
+          src="/Cat.gif"
+          width={36}
+          height={30}
+          className="mr-3 shrink-0"
+          style={{ imageRendering: "pixelated" }}
+        />
+        <div className="flex flex-row items-center flex-wrap gap-1">
+          {Object.entries(navItems).map(([path, { name }], i, arr) => (
+            <span key={path} className="flex items-center">
+              <Link
+                href={path}
+                className="text-cream text-sm font-bold tracking-wide py-0.5 px-2 transition-colors"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  backgroundColor:
+                    pathname === path ? "#d4a84b" : "transparent",
+                  color: pathname === path ? "#2a1810" : "#f4e8d0",
+                  border: pathname === path ? "2px solid #2a1810" : "2px solid transparent",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                {name}
+              </Link>
+              {i < arr.length - 1 && (
+                <span
+                  className="mx-1 text-mustard font-bold text-xs select-none"
+                  style={{ color: "#d4a84b" }}
                 >
-                  {name}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      </div>
+                  ✦
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
+        <FontToggle />
+      </nav>
     </aside>
   );
 }

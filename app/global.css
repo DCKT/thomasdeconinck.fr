@@ -1,29 +1,109 @@
 @import "tailwindcss";
 
 ::selection {
-  background-color: #47a3f3;
-  color: #fefefe;
+  background-color: #c0392b;
+  color: #f4e8d0;
 }
+
 @theme {
-  --color-black: #1e1e2e;
-  --color-primary-100: #fbf4ec;
-  --font-title: "Rubik Doodle Shadow";
+  --color-cream: #f4e8d0;
+  --color-ink: #2a1810;
+  --color-rouge: #c0392b;
+  --color-mustard: #d4a84b;
+  --color-teal: #2d6b6b;
+  --color-primary-100: #f4e8d0;
+  --color-black: #2a1810;
+  --font-display: "Rye", serif;
+  --font-title: "Rubik Doodle Shadow", cursive;
+  --font-typewriter: "Special Elite", monospace;
 }
+
+/* ── Paper noise background ── */
+body {
+  background-color: #f4e8d0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  color: #2a1810;
+}
+
+/* ── Font toggle classes ── */
+html.body-typewriter body,
+html.body-typewriter p,
+html.body-typewriter li,
+html.body-typewriter td {
+  font-family: "Special Elite", monospace;
+}
+
+/* ── Old movie keyframes ── */
+@keyframes grain {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-3%, -4%); }
+  20%  { transform: translate(2%, 3%); }
+  30%  { transform: translate(-4%, 2%); }
+  40%  { transform: translate(3%, -1%); }
+  50%  { transform: translate(-1%, 4%); }
+  60%  { transform: translate(4%, -3%); }
+  70%  { transform: translate(-2%, 1%); }
+  80%  { transform: translate(1%, -2%); }
+  90%  { transform: translate(-3%, 3%); }
+  100% { transform: translate(2%, -4%); }
+}
+
+@keyframes flicker {
+  0%   { opacity: 1; }
+  5%   { opacity: 0.88; }
+  10%  { opacity: 0.95; }
+  15%  { opacity: 0.92; }
+  25%  { opacity: 1; }
+  50%  { opacity: 0.93; }
+  55%  { opacity: 0.88; }
+  60%  { opacity: 0.98; }
+  75%  { opacity: 1; }
+  85%  { opacity: 0.91; }
+  90%  { opacity: 0.96; }
+  100% { opacity: 1; }
+}
+
+@keyframes scratch1 {
+  0%   { opacity: 0; top: -10%; }
+  4%   { opacity: 0.6; }
+  6%   { opacity: 0.4; }
+  8%   { opacity: 0; top: 110%; }
+  100% { opacity: 0; top: 110%; }
+}
+
+@keyframes scratch2 {
+  0%   { opacity: 0; top: 110%; }
+  50%  { opacity: 0; top: 110%; }
+  53%  { opacity: 0.5; top: -10%; }
+  56%  { opacity: 0.3; }
+  59%  { opacity: 0; top: 110%; }
+  100% { opacity: 0; top: 110%; }
+}
+
+@keyframes jitter {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(1px, 0); }
+  50%  { transform: translate(0, 1px); }
+  75%  { transform: translate(-1px, 0); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ── Syntax highlighting ── */
 :root {
-  --sh-class: #fab387;
-  --sh-identifier: #354150;
-  --sh-sign: #8996a3;
-  --sh-string: #a6e3a1;
-  --sh-keyword: #f47067;
-  --sh-comment: #a19595;
-  --sh-jsxliterals: #cba6f7;
-  --sh-property: #cdd6f4;
-  --sh-entity: #b4befe;
+  --sh-class: #c0392b;
+  --sh-identifier: #2a1810;
+  --sh-sign: #7a6b5a;
+  --sh-string: #2d6b6b;
+  --sh-keyword: #8b1a1a;
+  --sh-comment: #9a8b7a;
+  --sh-jsxliterals: #8b6914;
+  --sh-property: #2a1810;
+  --sh-entity: #2d6b6b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sh-class: #cba6f7;
+    --sh-class: #fab387;
     --sh-identifier: white;
     --sh-keyword: #f47067;
     --sh-string: #a6e3a1;
@@ -37,9 +117,9 @@ html {
   min-width: 360px;
 }
 
+/* ── Prose ── */
 .prose .anchor {
   @apply absolute invisible no-underline;
-
   margin-left: -1em;
   padding-right: 0.5em;
   width: 80%;
@@ -52,7 +132,7 @@ html {
 }
 
 .prose a {
-  @apply underline transition-all decoration-neutral-600  underline-offset-2 decoration-[0.1em];
+  @apply underline transition-all decoration-rouge underline-offset-2 decoration-[0.1em];
 }
 
 .prose .anchor:after {
@@ -91,32 +171,41 @@ code:not([class]) > .sh__line {
 }
 
 .prose img {
-  /* Don't apply styles to next/image */
   @apply m-0;
 }
 
 .prose p {
-  @apply my-4 text-neutral-800;
+  @apply my-4;
+  color: #2a1810;
 }
 
 .prose h1 {
+  font-family: var(--font-display);
   @apply text-4xl font-bold tracking-tight mt-6 mb-2;
+  color: #2a1810;
 }
 
 .prose h2 {
+  font-family: var(--font-display);
   @apply text-xl font-semibold tracking-tight mt-6 mb-2;
+  color: #2a1810;
 }
 
 .prose h3 {
+  font-family: var(--font-display);
   @apply text-xl font-semibold tracking-tight mt-6 mb-2;
+  color: #2a1810;
 }
 
 .prose h4 {
+  font-family: var(--font-title);
   @apply text-lg font-semibold tracking-tight mt-6 mb-2;
+  color: #2a1810;
 }
 
 .prose strong {
   @apply font-medium;
+  color: #2a1810;
 }
 
 .prose ul {
@@ -128,7 +217,6 @@ code:not([class]) > .sh__line {
 }
 
 .prose > :first-child {
-  /* Override removing top margin, causing layout shift */
   margin-top: 1.25em !important;
   margin-bottom: 1.25em !important;
 }
@@ -138,11 +226,10 @@ pre::-webkit-scrollbar {
 }
 
 pre {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Remove Safari input shadow on mobile */
 input[type="text"],
 input[type="email"] {
   -webkit-appearance: none;
@@ -159,4 +246,16 @@ table {
 
 .title {
   text-wrap: balance;
+}
+
+/* ── Vintage card hover ── */
+.vintage-card {
+  border: 3px solid #2a1810;
+  background-color: #f4e8d0;
+  box-shadow: 3px 3px 0 #2a1810;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.vintage-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #2a1810;
 }
