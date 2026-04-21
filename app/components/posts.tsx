@@ -4,34 +4,44 @@ import { formatDate, getBlogPosts } from "app/blog/utils";
 type BlogPostsProps = {
   limit?: number;
 };
+
 export function BlogPosts(props: BlogPostsProps) {
   let allBlogs = getBlogPosts();
 
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       {allBlogs
-        .sort((a, b) => {
-          if (
-            new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
-          ) {
-            return -1;
-          }
-          return 1;
-        })
+        .sort((a, b) =>
+          new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
+            ? -1
+            : 1,
+        )
         .slice(0, props.limit ?? allBlogs.length)
         .map((post) => (
           <Link
             key={post.slug}
-            className="flex flex-col space-y-1 mb-4 hover:underline"
             href={`/blog/${post.slug}`}
+            className="block"
+            style={{ textDecoration: "none" }}
           >
-            <div className="w-full flex flex-col md:grid md:grid-cols-3 space-x-0 md:space-x-2">
-              <p className="text-neutral-600 tabular-nums">
+            <div className="vintage-card flex flex-col md:flex-row md:items-center gap-2 p-3">
+              <span
+                className="text-xs font-bold px-2 py-0.5 shrink-0 min-w-32 text-center"
+                style={{
+                  backgroundColor: "#c0392b",
+                  color: "#f4e8d0",
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: "0.05em",
+                }}
+              >
                 {formatDate(post.metadata.publishedAt, false)}
-              </p>
-              <p className="text-neutral-900 col-span-2 tracking-tight">
+              </span>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "#2a1810" }}
+              >
                 {post.metadata.title}
-              </p>
+              </span>
             </div>
           </Link>
         ))}
