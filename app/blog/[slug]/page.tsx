@@ -74,6 +74,7 @@ export default async function Blog({ params }: { params: Params }) {
             fontFamily: "var(--font-display)",
             color: "#2a1810",
             letterSpacing: "0.04em",
+            viewTransitionName: `post-title-${post.slug}`,
           }}
         >
           {post.metadata.title}
@@ -90,6 +91,7 @@ export default async function Blog({ params }: { params: Params }) {
             fontFamily: "var(--font-display)",
             border: "2px solid #2a1810",
             letterSpacing: "0.06em",
+            viewTransitionName: `post-date-${post.slug}`,
           }}
         >
           {formatDate(post.metadata.publishedAt)}

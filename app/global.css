@@ -90,15 +90,15 @@ html.body-typewriter td {
 
 /* ── Syntax highlighting ── */
 :root {
-  --sh-class: #c0392b;
-  --sh-identifier: #2a1810;
-  --sh-sign: #7a6b5a;
-  --sh-string: #2d6b6b;
-  --sh-keyword: #8b1a1a;
-  --sh-comment: #9a8b7a;
-  --sh-jsxliterals: #8b6914;
-  --sh-property: #2a1810;
-  --sh-entity: #2d6b6b;
+  --sh-class: #e07060;
+  --sh-identifier: #f4e8d0;
+  --sh-sign: #a89b8c;
+  --sh-string: #5bbcb0;
+  --sh-keyword: #e07060;
+  --sh-comment: #7a6b5a;
+  --sh-jsxliterals: #d4a84b;
+  --sh-property: #f4e8d0;
+  --sh-entity: #5bbcb0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -268,3 +268,5 @@ table {
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 #2a1810;
 }
+
+.film-overlay { view-transition-name: none; }

@@ -9,7 +9,7 @@ export function BlogPosts(props: BlogPostsProps) {
   let allBlogs = getBlogPosts();
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
       {allBlogs
         .sort((a, b) =>
           new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
@@ -32,13 +32,17 @@ export function BlogPosts(props: BlogPostsProps) {
                   color: "#f4e8d0",
                   fontFamily: "var(--font-display)",
                   letterSpacing: "0.05em",
+                  viewTransitionName: `post-date-${post.slug}`,
                 }}
               >
                 {formatDate(post.metadata.publishedAt, false)}
               </span>
               <span
                 className="text-sm font-semibold"
-                style={{ color: "#2a1810" }}
+                style={{
+                  color: "#2a1810",
+                  viewTransitionName: `post-title-${post.slug}`,
+                }}
               >
                 {post.metadata.title}
               </span>
