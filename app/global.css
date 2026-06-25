@@ -35,57 +35,143 @@ html.body-typewriter td {
 
 /* ── Old movie keyframes ── */
 @keyframes grain {
-  0%   { transform: translate(0, 0); }
-  10%  { transform: translate(-3%, -4%); }
-  20%  { transform: translate(2%, 3%); }
-  30%  { transform: translate(-4%, 2%); }
-  40%  { transform: translate(3%, -1%); }
-  50%  { transform: translate(-1%, 4%); }
-  60%  { transform: translate(4%, -3%); }
-  70%  { transform: translate(-2%, 1%); }
-  80%  { transform: translate(1%, -2%); }
-  90%  { transform: translate(-3%, 3%); }
-  100% { transform: translate(2%, -4%); }
+  0% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-3%, -4%);
+  }
+  20% {
+    transform: translate(2%, 3%);
+  }
+  30% {
+    transform: translate(-4%, 2%);
+  }
+  40% {
+    transform: translate(3%, -1%);
+  }
+  50% {
+    transform: translate(-1%, 4%);
+  }
+  60% {
+    transform: translate(4%, -3%);
+  }
+  70% {
+    transform: translate(-2%, 1%);
+  }
+  80% {
+    transform: translate(1%, -2%);
+  }
+  90% {
+    transform: translate(-3%, 3%);
+  }
+  100% {
+    transform: translate(2%, -4%);
+  }
 }
 
 @keyframes flicker {
-  0%   { opacity: 1; }
-  5%   { opacity: 0.88; }
-  10%  { opacity: 0.95; }
-  15%  { opacity: 0.92; }
-  25%  { opacity: 1; }
-  50%  { opacity: 0.93; }
-  55%  { opacity: 0.88; }
-  60%  { opacity: 0.98; }
-  75%  { opacity: 1; }
-  85%  { opacity: 0.91; }
-  90%  { opacity: 0.96; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  5% {
+    opacity: 0.88;
+  }
+  10% {
+    opacity: 0.95;
+  }
+  15% {
+    opacity: 0.92;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.93;
+  }
+  55% {
+    opacity: 0.88;
+  }
+  60% {
+    opacity: 0.98;
+  }
+  75% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.91;
+  }
+  90% {
+    opacity: 0.96;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes scratch1 {
-  0%   { opacity: 0; top: -10%; }
-  4%   { opacity: 0.6; }
-  6%   { opacity: 0.4; }
-  8%   { opacity: 0; top: 110%; }
-  100% { opacity: 0; top: 110%; }
+  0% {
+    opacity: 0;
+    top: -10%;
+  }
+  4% {
+    opacity: 0.6;
+  }
+  6% {
+    opacity: 0.4;
+  }
+  8% {
+    opacity: 0;
+    top: 110%;
+  }
+  100% {
+    opacity: 0;
+    top: 110%;
+  }
 }
 
 @keyframes scratch2 {
-  0%   { opacity: 0; top: 110%; }
-  50%  { opacity: 0; top: 110%; }
-  53%  { opacity: 0.5; top: -10%; }
-  56%  { opacity: 0.3; }
-  59%  { opacity: 0; top: 110%; }
-  100% { opacity: 0; top: 110%; }
+  0% {
+    opacity: 0;
+    top: 110%;
+  }
+  50% {
+    opacity: 0;
+    top: 110%;
+  }
+  53% {
+    opacity: 0.5;
+    top: -10%;
+  }
+  56% {
+    opacity: 0.3;
+  }
+  59% {
+    opacity: 0;
+    top: 110%;
+  }
+  100% {
+    opacity: 0;
+    top: 110%;
+  }
 }
 
 @keyframes jitter {
-  0%   { transform: translate(0, 0); }
-  25%  { transform: translate(1px, 0); }
-  50%  { transform: translate(0, 1px); }
-  75%  { transform: translate(-1px, 0); }
-  100% { transform: translate(0, 0); }
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(1px, 0);
+  }
+  50% {
+    transform: translate(0, 1px);
+  }
+  75% {
+    transform: translate(-1px, 0);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
 }
 
 /* ── Syntax highlighting ── */
@@ -141,7 +227,7 @@ html {
 }
 
 code:not([class]) > .sh__line {
-  @apply bg-neutral-600 p-1 rounded text-sm;
+  @apply bg-neutral-700 px-1.5 py-0.5 rounded text-sm;
 }
 
 .prose *:hover > .anchor {
@@ -153,7 +239,17 @@ code:not([class]) > .sh__line {
 }
 
 .prose pre {
-  @apply bg-neutral-800 rounded-lg overflow-x-auto border border-neutral-600 py-2 px-3 text-sm;
+  @apply block bg-neutral-800 rounded-lg overflow-x-auto border border-neutral-600 px-6 py-4 text-sm;
+  width: auto;
+  margin-left: 0;
+}
+
+@media screen and (min-width: 760px) {
+  .prose pre {
+    --containerWidth: 740px;
+    width: var(--containerWidth);
+    margin-left: calc((var(--containerWidth) - 572px) / 2 * -1);
+  }
 }
 
 .prose code {
@@ -262,11 +358,15 @@ table {
   border: 3px solid #2a1810;
   background-color: #f4e8d0;
   box-shadow: 3px 3px 0 #2a1810;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 .vintage-card:hover {
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 #2a1810;
 }
 
-.film-overlay { view-transition-name: none; }
+.film-overlay {
+  view-transition-name: none;
+}

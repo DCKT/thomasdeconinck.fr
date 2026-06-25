@@ -8,7 +8,7 @@
     "new": "bun run scripts/new-post.ts"
   },
   "dependencies": {
-    "@fontsource/rubik-doodle-shadow": "5.2.6",
+    "@fontsource/rubik-doodle-shadow": "5.2.7",
     "@fontsource/rye": "5.2.7",
     "@fontsource/special-elite": "5.2.8",
     "@tailwindcss/postcss": "4.1.11",
@@ -17,15 +17,15 @@
     "@types/react-dom": "19.1.6",
     "@vercel/analytics": "1.5.0",
     "@vercel/speed-insights": "1.2.0",
-    "geist": "1.4.2",
-    "next": "16.1.6",
+    "geist": "1.7.2",
+    "next": "16.2.9",
     "next-mdx-remote": "6.0.0",
-    "postcss": "8.5.8",
+    "postcss": "8.5.15",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sugar-high": "1.1.0",
-    "tailwindcss": "4.1.11",
-    "typescript": "5.9.3"
+    "sugar-high": "1.2.1",
+    "tailwindcss": "4.3.1",
+    "typescript": "6.0.3"
   },
   "version": "3.0.0"
 }

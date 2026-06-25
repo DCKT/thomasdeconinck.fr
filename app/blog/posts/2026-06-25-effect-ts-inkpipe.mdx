@@ -1,0 +1,354 @@
+---
+title: "Building a backend with Effect-TS: 6 patterns from Inkpipe"
+publishedAt: "2026-06-25"
+summary: "I rewrote the backend of Inkpipe — a manga pipeline manager — with Effect-TS. Here are the 6 patterns that made me want to use it again: typed errors, service layers, route handler boundaries, dependency composition, resource safety, and parallelism."
+---
+
+[Inkpipe](https://github.com/DCKT/Inkpipe) is a manga pipeline manager: search via Prowlarr, download torrents via AllDebrid, convert via KCC, upload to Copyparty, browse on Komga. It's a monorepo with a React frontend and a Bun backend — all built with [Effect-TS](https://effect.website/).
+
+I'd been hearing about Effect for a while. People describe it as "ZIO for TypeScript" (for Scalaist) or "a standard library for TypeScript that happens to solve dependency injection and error handling." I wanted to try it on something real — not a todo app.
+
+Here's what I learned, with concrete patterns from the codebase.
+
+## 1. Errors are values, not surprises
+
+In most TypeScript backends, error handling looks like this:
+
+```typescript
+try {
+  const result = await externalService.fetch();
+} catch (err) {
+  // err is `unknown`. Good luck.
+  if (err instanceof FetchError) {
+    /* ... */
+  }
+}
+```
+
+Effect flips this: errors are part of the return type. You don't catch; you pattern-match. Here's every domain error in Inkpipe:
+
+```typescript
+// packages/shared/src/errors.ts
+import { Schema } from "effect";
+
+export class ProwlarrNotConfigured extends Schema.TaggedError<ProwlarrNotConfigured>()(
+  "ProwlarrNotConfigured",
+  { message: Schema.String },
+) {}
+
+export class ProwlarrHttpError extends Schema.TaggedError<ProwlarrHttpError>()(
+  "ProwlarrHttpError",
+  { message: Schema.String, status: Schema.optional(Schema.Number) },
+) {}
+
+export class MagnetUploadError extends Schema.TaggedError<MagnetUploadError>()(
+  "MagnetUploadError",
+  { message: Schema.String },
+) {}
+
+// 17 more: AllDebridNotConfigured, AllDebridHttpError, KccError,
+// PipelineError, WatchNotFoundError, NotFoundError, ValidationError...
+```
+
+Each error is a class with a string tag and typed fields. The magic: because they're `Schema.TaggedError`, you get `instanceof` checks, Schema validation, and a discriminated union at the type level — all from that one line.
+
+A Prowlarr search function then returns:
+
+```typescript
+search(query: string): Effect<ProwlarrResult[], ProwlarrNotConfigured | ProwlarrHttpError>
+```
+
+The error types are **in the signature**. You can't forget to handle them — the compiler won't let you call the function without dealing with both error cases. If you later add a `ProwlarrRateLimitError`, every call site becomes a compile error until you handle it. This is the killer feature.
+
+## 2. Services are just tags, layers are just wiring
+
+There's no `@Injectable()` decorator, no IoC container, no reflection. Services in Effect are two things: a **Tag** (the name) and a **Layer** (the construction).
+
+```typescript
+// packages/server/src/layers/Config.ts
+import { Effect, Layer } from "effect";
+import { SqlClient } from "@effect/sql";
+import { ConfigLoadError, ConfigSaveError } from "@inkpipe/shared";
+
+export class ConfigService extends Effect.Tag("ConfigService")<
+  ConfigService,
+  {
+    readonly loadConfig: Effect.Effect<AppConfig, ConfigLoadError>;
+    readonly saveConfig: (
+      config: AppConfig,
+    ) => Effect.Effect<void, ConfigSaveError>;
+  }
+>() {}
+
+export const ConfigServiceLive = Layer.effect(
+  ConfigService,
+  Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+
+    const loadConfig = Effect.gen(function* () {
+      const [prowlarrRows, alldebridRows, kccRows, komgaRows, copypartyRows] =
+        yield* Effect.all(
+          [
+            sql`SELECT url, api_key FROM prowlarr_config WHERE id = 1`,
+            sql`SELECT api_key FROM alldebrid_config WHERE id = 1`,
+            sql`SELECT * FROM kcc_config WHERE id = 1`,
+            sql`SELECT url, api_key, default_library FROM komga_config WHERE id = 1`,
+            sql`SELECT url, path, password FROM copyparty_config WHERE id = 1`,
+          ],
+          { concurrency: "inherit" },
+        );
+
+      return {
+        prowlarr: {
+          url: prowlarrRows[0]?.url ?? "",
+          apiKey: prowlarrRows[0]?.api_key ?? "",
+        },
+        // ...
+      };
+    }).pipe(
+      Effect.mapError((e) => new ConfigLoadError({ message: String(e) })),
+    );
+
+    return { loadConfig, saveConfig };
+  }),
+);
+```
+
+What's happening here:
+
+- `ConfigService` is a **Tag** — it declares "this service exists" and what its interface looks like.
+- `ConfigServiceLive` is a **Layer** — it declares how to build the service. It depends on `SqlClient` (pulled via `yield*`).
+- `Effect.gen(function* () { ... })` is the generator syntax. `yield*` unwraps effects — it's like `await` but with full type inference.
+- `Effect.mapError` transforms any error into a `ConfigLoadError`. The error channel is always typed.
+
+Compare this to a typical NestJS service with `@Injectable()`, constructor DI, and catch blocks. The Effect version is fewer lines, fully typed end-to-end, and requires no decorators or module system.
+
+## 3. HTTP routes are just Effects with an error boundary
+
+The cleanest pattern in the whole project is how route handlers work:
+
+```typescript
+// packages/server/src/routes/search.ts
+import { Effect } from "effect";
+import { ProwlarrService } from "../layers/Prowlarr";
+
+export const searchHandler = (query: string) =>
+  Effect.gen(function* () {
+    const prowlarr = yield* ProwlarrService;
+    const results = yield* prowlarr.search(query);
+    return Response.json(results);
+  }).pipe(
+    Effect.catchAll((e: { message: string }) =>
+      Effect.succeed(Response.json({ error: e.message }, { status: 502 })),
+    ),
+  );
+```
+
+The handler itself is an **Effect generator**. It pulls `ProwlarrService` from the environment with `yield*`. If everything works, it returns a `Response`. If anything fails — `ProwlarrNotConfigured`, `ProwlarrHttpError` — the `catchAll` at the bottom converts it to a JSON error response.
+
+The handler never throws. Every error path is an `Effect.succeed` returning a `Response`. This pattern repeats in every route: the error boundary is explicit, at the edge, in one place.
+
+Even better, you can selectively suppress errors when it makes sense. In the watch trigger handler:
+
+```typescript
+const results =
+  yield *
+  prowlarr.search(watch.query).pipe(Effect.catchAll(() => Effect.succeed([])));
+```
+
+If Prowlarr is down, the watch trigger continues gracefully with an empty result set — no crash, no try/catch, just a one-liner that says "fall back to empty."
+
+## 4. Layer composition reads like a dependency graph
+
+The `main.ts` entry point builds the full service graph bottom-up:
+
+```typescript
+// packages/server/src/main.ts
+import { Layer, ManagedRuntime } from "effect";
+import { DbMigratedLayer } from "@inkpipe/db";
+
+// Bottom layer: database, logging, filesystem
+const BaseLayer = Layer.mergeAll(
+  DbMigratedLayer,
+  Layer.provideMerge(PushServiceLive, LogServiceLive),
+  FileManagerServiceLive,
+);
+
+// Services that only need the database
+const ConfigLayer = Layer.provide(ConfigServiceLive, BaseLayer);
+const JobStoreLayer = Layer.provide(JobStoreServiceLive, BaseLayer);
+
+// Services that need Config + Base
+const ProwlarrLayer = Layer.provide(
+  ProwlarrServiceLive,
+  Layer.mergeAll(BaseLayer, ConfigLayer),
+);
+const AllDebridLayer = Layer.provide(
+  AllDebridServiceLive,
+  Layer.mergeAll(BaseLayer, ConfigLayer),
+);
+
+// Pipeline needs everything
+const PipelineLayer = Layer.provide(
+  PipelineServiceLive,
+  Layer.mergeAll(
+    BaseLayer,
+    ConfigLayer,
+    JobStoreLayer,
+    AllDebridLayer,
+    KccLayer,
+    CopypartyLayer,
+  ),
+);
+
+// Final composition — all services available
+const MainLayer = Layer.mergeAll(
+  BaseLayer,
+  ConfigLayer,
+  JobStoreLayer,
+  ProwlarrLayer,
+  AllDebridLayer,
+  KomgaLayer,
+  CopypartyLayer,
+  KccLayer,
+  PipelineLayer,
+  WatchStoreLayer,
+);
+
+const runtime = ManagedRuntime.make(MainLayer);
+
+// Bun HTTP server — every request runs through the runtime
+Bun.serve({
+  fetch(req) {
+    return runtime.runPromise(router(req));
+  },
+});
+```
+
+What I love about this:
+
+- **No hidden dependencies.** Every service declares its dependencies at the `yield*` level. The layer wiring in `main.ts` mirrors exactly what each service needs.
+- **`Layer.mergeAll` flattens layers together.** `Layer.provide(ServiceLive, Deps)` says "build ServiceLive, giving it Deps."
+- **Dependency order is enforced.** If `ProwlarrServiceLive` needs `ConfigService`, you must provide it. Forgetting a dependency is a **compile error**, not a runtime null.
+- **One runtime for the whole app.** `ManagedRuntime.make(MainLayer)` creates a runtime that holds all services. Every HTTP request calls `runtime.runPromise(handler)` — the handler's `yield*` pulls services from that runtime's environment.
+
+This is the inversion of control that DI containers promise but rarely deliver this cleanly.
+
+## 5. Resource cleanup that can't be skipped
+
+The pipeline — download torrent, poll AllDebrid, download files, convert via KCC, upload to Copyparty — is the most failure-prone code in the project. Five external services, Docker commands, filesystem operations. Things **will** go wrong.
+
+Here's how cleanup works:
+
+```typescript
+// packages/server/src/layers/Pipeline.ts
+const runPipeline = (result: ProwlarrResult) =>
+  Effect.gen(function* () {
+    const job = yield* jobStore.createJob(result.title);
+    const log = yield* LogService.withJob(job.id);
+    const jobDir = yield* fileManager.ensureJobDir(job.id);
+
+    const pipelineBody = Effect.gen(function* () {
+      // Stage 1: Upload magnet to AllDebrid
+      yield* jobStore.updateJob(job.id, { stage: "UPLOADING", progress: 10 });
+      const magnet = yield* alldebrid.uploadMagnet(result.magnetUrl);
+
+      // Stage 2: Poll until ready
+      yield* jobStore.updateJob(job.id, {
+        stage: "DEBRID_PROCESSING",
+        progress: 30,
+      });
+      const files = yield* alldebrid.pollUntilReady(magnet.id);
+
+      // Stage 3: Download
+      yield* jobStore.updateJob(job.id, { stage: "DOWNLOADING", progress: 50 });
+      yield* alldebrid.downloadFiles(files, jobDir);
+
+      // Stage 4: Convert with KCC
+      yield* jobStore.updateJob(job.id, { stage: "CONVERTING", progress: 70 });
+      const outputFile = yield* kcc.convert(jobDir, outputDir);
+
+      // Stage 5: Upload to Copyparty
+      yield* jobStore.updateJob(job.id, {
+        stage: "COPARTY_UPLOAD",
+        progress: 90,
+      });
+      yield* copyparty.upload(outputFile);
+
+      yield* jobStore.updateJob(job.id, { stage: "DONE", progress: 100 });
+    });
+
+    const cleanup = Effect.gen(function* () {
+      yield* fileManager.cleanupJobDir(job.id).pipe(
+        Effect.catchAll(() => Effect.void), // cleanup failures are ok
+      );
+    });
+
+    yield* pipelineBody.pipe(
+      Effect.catchAllCause((cause) => {
+        const error = Cause.squash(cause);
+        yield *
+          jobStore.updateJob(job.id, { stage: "FAILED", error: String(error) });
+      }),
+      Effect.ensuring(cleanup),
+    );
+  });
+```
+
+The key parts:
+
+- `pipelineBody` is the happy path — the five stages, each updating the job progress.
+- `cleanup` removes the temp directory, swallowing any errors (the temp dir might already be gone).
+- `Effect.catchAllCause` catches **everything** — both typed domain errors and unexpected defects — and marks the job as FAILED.
+- `Effect.ensuring(cleanup)` is the functional equivalent of `finally {}`. It runs cleanup regardless of success, failure, or defect. You can't forget it, you can't skip it, and it's part of the effect composition rather than a separate block.
+
+A traditional try/catch/finally would scatter this logic across three blocks. Here, it's a pipeline of transformations on a single value.
+
+## 6. Parallel queries without Promise.all chaos
+
+The config loading function needs to fetch 5 tables. With raw SQL, you'd do:
+
+```typescript
+const [prowlarr, alldebrid, kcc, komga, copyparty] = await Promise.all([
+  db.query("SELECT ... FROM prowlarr_config"),
+  db.query("SELECT ... FROM alldebrid_config"),
+  db.query("SELECT ... FROM kcc_config"),
+  db.query("SELECT ... FROM komga_config"),
+  db.query("SELECT ... FROM copyparty_config"),
+]);
+```
+
+Effect gives you the same thing with `Effect.all`:
+
+```typescript
+const [prowlarrRows, alldebridRows, kccRows, komgaRows, copypartyRows] =
+  yield *
+  Effect.all(
+    [
+      sql`SELECT url, api_key FROM prowlarr_config WHERE id = 1`,
+      sql`SELECT api_key FROM alldebrid_config WHERE id = 1`,
+      sql`SELECT * FROM kcc_config WHERE id = 1`,
+      sql`SELECT url, api_key, default_library FROM komga_config WHERE id = 1`,
+      sql`SELECT url, path, password FROM copyparty_config WHERE id = 1`,
+    ],
+    { concurrency: "inherit" },
+  );
+```
+
+The difference: `Effect.all` preserves the type of each element in the tuple. If the first query returns `ProwlarrRow[]` and the second returns `AlldebridRow[]`, destructuring gives you the exact types — no `as` casts, no generic `Promise<unknown[]>`.
+
+It also handles errors at the Effect level: if any query fails, the whole `Effect.all` fails with a typed error, and you can `mapError` or `catchAll` on the combined result. With `Promise.all`, a single rejection loses the type information of all other promises.
+
+## What I'd do differently
+
+Effect-TS is not without rough edges:
+
+**The learning curve is real.** Concepts like `Cause`, `Fiber`, `Scope`, and the difference between `catchAll` and `catchAllCause` take time to internalize. The docs are good but dense. I spent my first week just reading the source code of `@effect/sql` to understand how queries compose.
+
+**Type errors can be cryptic.** When you get a layer composition wrong, TypeScript's error message can be a wall of text. The compiler knows exactly what's missing — it just struggles to explain it in 200 characters. A helper like `Layer.expect` or better error messages would help.
+
+**The ecosystem is growing but small.** `@effect/sql` covers SQLite and PostgreSQL well, but for third-party APIs (Prowlarr, AllDebrid, Komga), I had to write my own service layers. This is fine — the pattern is straightforward once you've done it once — but don't expect a nestjs/axios-level ecosystem of pre-built integrations.
+
+**Bridging to impure code is awkward.** Effect's runtime manages all async execution. When you need to call `child_process.spawn` or stream a download with progress callbacks, you end up with `Effect.runSync` / `Effect.runFork` inside callbacks. It works, but it's a leak in the abstraction.
+
+Despite these, I'd use Effect again. The type safety is real — I've caught more bugs at compile time with Effect than with any other TypeScript backend framework. The dependency injection is the simplest I've used. And the error handling model — errors as values in the type signature — is something I now miss in every other language.
