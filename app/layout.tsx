@@ -2,18 +2,18 @@ import "./global.css";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import "@fontsource/rubik-doodle-shadow";
-import "@fontsource/rubik-doodle-shadow/400.css";
-import "@fontsource/rye";
-import "@fontsource/rye/400.css";
-import "@fontsource/special-elite";
-import "@fontsource/special-elite/400.css";
 import { Navbar } from "./components/nav";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Footer from "./components/footer";
 import FilmOverlay from "./components/film-overlay";
 import { baseUrl } from "./sitemap";
+import "@fontsource/rubik-doodle-shadow";
+import "@fontsource/rubik-doodle-shadow/400.css";
+import "@fontsource/rye";
+import "@fontsource/rye/400.css";
+import "@fontsource/special-elite";
+import "@fontsource/special-elite/400.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
