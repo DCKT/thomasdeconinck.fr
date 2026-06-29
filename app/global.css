@@ -300,7 +300,7 @@ code:not([class]) > .sh__line {
 }
 
 .prose strong {
-  @apply font-medium;
+  @apply font-semibold;
   color: #2a1810;
 }
 

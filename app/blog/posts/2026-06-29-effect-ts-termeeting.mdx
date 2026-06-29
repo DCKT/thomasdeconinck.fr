@@ -1,0 +1,344 @@
+---
+title: "Building a CLI with Effect-TS: 5 patterns from Termeeting"
+publishedAt: "2026-06-29"
+summary: "Termeeting is a Google Calendar CLI built with Effect-TS. Here are 5 patterns that make Effect work surprisingly well for command-line tools: typed argument parsing, schema-validated boundaries, declarative retry, platform-as-dependency, and testable terminal output."
+---
+
+[Termeeting](https://github.com/DCKT/termeeting) is a Google Calendar CLI that I built in order to integrate my next meeting with [sketchybar](https://github.com/felixkratz/sketchybar).
+Here is a small example:
+
+```bash
+termeeting
+
+📅 Today — Wednesday, June 25, 2026
+─────────────────────────────────────
+09:00–10:00  Standup              (Room 3)
+14:00–15:00  Design review        Google Meet
+```
+
+By default, it provides all events of the day, but it can also just show the next event based on the current datetime and also can be displayed as JSON:
+
+```bash
+termeeting next -j
+
+{
+  "id": "5aoaemi2hvelj1pq52fvtq2m9l_20260629T120000Z",
+  "title": "Hebdo",
+  "start": "2026-06-29T14:00:00+02:00",
+  "end": "2026-06-29T14:30:00+02:00",
+  "htmlLink": "https://www.google.com/calendar/event?eid=NWFvYWVtaTJodmVsajFwcTUyZnZ0cTJtOWxfMjAyNjA2MjlUMTIwMDAwWiB0aG9tYXMuZGVjb25pbmNrQGNvbGlzd2ViLmNvbQ&ctz=Europe/Paris",
+  "conferenceLink": "https://meet.google.com/ccc-exin-ets"
+}
+```
+
+I built it with [Effect-TS](https://effect.website/). Not the obvious choice. CLI tools are traditionally bash scripts, Python's [argparse](https://docs.python.org/3/library/argparse.html), or Node's [commander](https://github.com/tj/commander.js/). Effect is marketed as a backend framework. But after writing [Inkpipe's backend](https://thomasdeconinck.fr/blog/2026-06-25-effect-ts-inkpipe) with Effect, I wanted to see if it held up for a different kind of program.
+
+It does. Here are five patterns you don't get from traditional CLI frameworks.
+
+## 1. CLI commands are typed data, not string parsing
+
+**commander** and **yargs** parse strings. You write `.option("--date <date>")`, get back `opts.date as string`, and cast your way through the rest. If you rename an option, you update the string but forget to update the handler — nothing catches it.
+
+**[@effect/cli](https://www.npmjs.com/package/@effect/cli)** works differently. Commands, options, and args are typed data structures:
+
+```typescript
+import { Command, Options } from "@effect/cli";
+
+const jsonOption = Options.boolean("json").pipe(
+  Options.withAlias("j"),
+  Options.withDescription("Output as JSON"),
+);
+
+const accountOption = Options.text("account").pipe(
+  Options.withAlias("a"),
+  Options.withDescription("Account nickname"),
+  Options.optional,
+);
+
+const dateOption = Options.text("date").pipe(
+  Options.withAlias("d"),
+  Options.withDescription("Date (YYYY-MM-DD)"),
+  Options.optional,
+);
+
+const events = Command.make(
+  "events",
+  { json: jsonOption, account: accountOption, date: dateOption },
+  (opts) => {
+    // opts.json is boolean
+    // opts.account is Option<string>
+    // opts.date is Option<string>
+    // The types follow from the Options definitions — no casts.
+  },
+);
+```
+
+Three things happen here that you don't get with string-based parsers:
+
+**Option types propagate to handlers.**
+
+- `Options.boolean("json")` produces `boolean` in the handler's options type.
+- `Options.text("account")` produces `string`.
+- `Options.optional` wraps it in `Option<string>`.
+- `Options.text("date")` type looks the same as `"account"`, but you have autocomplete telling you exactly which field is `Option<string>.None` vs `Option<string>.Some("2026-07-01")`.
+
+**Subcommands compose.** `next`, `setup`, and `account` are separate `Command` values composed with `Command.withSubcommands`:
+
+```typescript
+const app = events.pipe(
+  Command.withSubcommands([next, setup, account]),
+  Command.provideSync(AccountStore, accountStore),
+  Command.provideSync(CalendarApi, calendarApi),
+);
+```
+
+Each subcommand declares its own dependencies via `Command.provideSync`. If `setup` needs `AuthService` but `next` doesn't, you wire that at the subcommand level. The final `app` command is a tree of typed commands, each with its own dependency requirements, all checked at compile time.
+
+**Help text is derived from the structure.** You never write `command.helpInformation()` or manually format usage strings. The command tree generates help from the option descriptions, arg definitions, and subcommand names.
+
+The practical effect: when I renamed `--nickname` to `--account`, the compiler flagged every command handler that referenced the old option name. I fixed them all before running the program once.
+
+## 2. Validate at the boundary, trust internally
+
+Termeeting has three kinds of external data crossing the boundary:
+
+- **JSON files on disk** — `config.json`, `accounts.json`, `tokens/*.json`
+- **Google Calendar API responses** — a deeply nested event list
+- **Date strings from CLI arguments** — `--date 2026-07-01`
+
+All three go through Schema validation the moment they enter the effect world:
+
+```typescript
+// Reading config.json
+const content = yield * fs.readFileString(configPath);
+const json =
+  yield * Schema.decodeUnknown(Schema.parseJson(ConfigSchema))(content);
+// json is { clientId: string, clientSecret: string } — fully typed
+
+// Reading accounts.json
+const raw = yield * fs.readFileString(accountsPath);
+const parsed =
+  yield * Schema.decodeUnknown(Schema.parseJson(AccountsSchema))(raw);
+// parsed is { accounts: Array<{ nickname: string, email: string }>, default?: string }
+```
+
+This pattern repeats everywhere. The Google Calendar API response is a 500-line Schema.Struct definition. Every event field is validated:
+
+```typescript
+const EventSchema = Schema.Struct({
+  id: Schema.String,
+  summary: Schema.optional(Schema.String),
+  start: Schema.Struct({
+    dateTime: Schema.optional(Schema.String),
+    date: Schema.optional(Schema.String),
+    timeZone: Schema.optional(Schema.String),
+  }),
+  end: Schema.Struct({
+    dateTime: Schema.optional(Schema.String),
+    date: Schema.optional(Schema.String),
+  }),
+  location: Schema.optional(Schema.String),
+  description: Schema.optional(Schema.String),
+  // ...more fields
+});
+
+const decoded =
+  yield * Schema.decodeUnknown(GoogleCalendarResponseSchema)(rawResponse);
+```
+
+The difference from traditional validation: this isn't a separate "validate then cast" step. `Schema.decodeUnknown` returns the fully typed value, and the compiler knows the shape from that point on. If the API adds a field I don't care about, it's ignored. If it removes a required field, the Schema decode fails with a parse error that includes the exact path where the data didn't match — no `Cannot read property 'summary' of undefined` five functions deep.
+
+## 3. Retry as a schedule, not a callback
+
+Google's OAuth device flow works like this: you request a device code, the user visits a URL and enters the code, then you poll Google's token endpoint until the user completes the flow — or until the code expires.
+
+In most languages, this means `setInterval` or a while loop with `await new Promise(r => setTimeout(r, 5000))`. You need to handle the interval cleanup, the expiry timeout, and the error classification.
+
+Effect gives you `Effect.retry` with `Schedule`:
+
+```typescript
+const pollForTokens = (
+  clientId: string,
+  clientSecret: string,
+  deviceCode: string,
+) =>
+  attemptToFetchTokens(clientId, clientSecret, deviceCode).pipe(
+    Effect.retry({
+      schedule: Schedule.spaced("5 seconds"),
+      while: (error) => {
+        if (Schema.is(AuthError)(error)) {
+          return (
+            error.message.includes("authorization_pending") ||
+            error.message.includes("slow_down")
+          );
+        }
+        return false;
+      },
+    }),
+    Effect.catchAll((error) => {
+      if (
+        Schema.is(AuthError)(error) &&
+        error.message.includes("expired_token")
+      ) {
+        return Effect.fail(
+          new AuthError({ message: "Device code expired. Run setup again." }),
+        );
+      }
+      return Effect.fail(error);
+    }),
+  );
+```
+
+What's happening:
+
+- `Schedule.spaced("5 seconds")` produces delays between retries. No `setTimeout`, no `clearTimeout`.
+- The `while` predicate controls which errors cause a retry. `authorization_pending` means the user hasn't entered the code yet. `slow_down` means Google wants longer intervals. Both are legitimate retry states — not failures.
+- `expired_token` means the code timed out. This is a hard failure, handled once at the `catchAll` level.
+- If the user enters the wrong code and Google returns a different error, the `while` predicate returns `false` and the error propagates immediately. No waiting 5 seconds for an unrecoverable error.
+
+The retry logic is part of the effect description — it composes with the rest of the pipeline. The caller of `pollForTokens` doesn't know or care about the retry schedule. It just gets back tokens or an error.
+
+## 4. The filesystem is a dependency
+
+A CLI app touches the filesystem constantly. Config files, token files, account registries — every operation reads or writes to disk. The conventional approach: `const data = JSON.parse(fs.readFileSync(path, "utf-8"))` and move on.
+
+Effect treats the filesystem as a service. Every storage layer depends on `FileSystem` and `Path`:
+
+```typescript
+// ConfigStore.ts
+export const make = Layer.effect(
+  ConfigStore,
+  Effect.gen(function* () {
+    const fs = yield* FileSystem;
+    const path = yield* Path;
+    const home = yield* Config.string("HOME");
+
+    const read = Effect.gen(function* () {
+      const configPath = path.join(
+        home,
+        ".config",
+        "termeeting",
+        "config.json",
+      );
+      const exists = yield* fs.exists(configPath);
+      if (!exists) {
+        return yield* Effect.fail(
+          new ConfigStoreError({
+            message: "Config file not found. Run `termeeting setup`.",
+          }),
+        );
+      }
+      const content = yield* fs.readFileString(configPath);
+      return yield* Schema.decodeUnknown(Schema.parseJson(ConfigSchema))(
+        content,
+      );
+    });
+
+    return { read } as const;
+  }),
+);
+```
+
+The benefit isn't in the production code — it's in testing. You can test every storage operation without creating temp directories:
+
+```typescript
+const mockFs = Layer.succeed(FileSystem, {
+  exists: (filePath: string) =>
+    Effect.succeed(filePath.includes("config.json")),
+  readFileString: (filePath: string) =>
+    Effect.succeed(
+      filePath.includes("accounts.json")
+        ? JSON.stringify({ accounts: [], default: undefined })
+        : JSON.stringify({ clientId: "id", clientSecret: "secret" }),
+    ),
+  writeFileString: () => Effect.succeed(undefined),
+  makeDirectory: () => Effect.succeed(undefined),
+  // ... other FileSystem methods
+} as FileSystem);
+```
+
+Every file operation — reading config, writing tokens, checking if a directory exists — is a pure function in tests.
+
+No `beforeEach(() => fs.mkdirSync("/tmp/test-dir"))` nor `afterEach(() => fs.rmSync("/tmp/test-dir", { recursive: true }))`, no race conditions from parallel test runs.
+
+The platform abstraction goes deeper. Termeeting uses [@effect/platform-bun](https://github.com/Effect-TS/effect/tree/main/packages/platform) which provides `BunContext.layer` — a single layer bundling `FileSystem`, `Path`, `Terminal`, and other platform primitives.
+
+We could replace `BunContext.layer` for `NodeContext.layer` and the same code runs on Node.js. The CLI code never imports `fs` or `process` directly.
+
+## 5. Your terminal output is testable
+
+`console.log` is a side effect. You can't assert on it without monkey-patching globals. Effect makes `Console` a service — your code yields it instead of calling `console.log` directly:
+
+```typescript
+const handleEvents = (timeZone: string) => (opts: { json: boolean; account: Option<string>; date: Option<string> }) =>
+  Effect.gen(function* () {
+    const calendar = yield* CalendarApi;
+    const accountStore = yield* AccountStore;
+    const console = yield* Console;
+
+    const nickname = yield* resolveNickname(accountStore, opts.account);
+    const date = /* parse date from opts... */;
+    const { events, workingLocations } = yield* calendar.getEvents(nickname, timeMin, timeMax, timeZone);
+
+    if (opts.json) {
+      yield* console.log(JSON.stringify(events, null, 2));
+    } else {
+      yield* console.log("📅 Today — Wednesday, June 25, 2026");
+      yield* console.log("────────────────────────────────────");
+      for (const event of events) {
+        yield* console.log(`09:00–10:00  ${event.title}  (${event.location})`);
+      }
+    }
+
+    if (events.length === 0) {
+      yield* console.log("No events scheduled for this day.");
+    }
+  });
+```
+
+Tests capture output with `Console.withConsole`:
+
+```typescript
+const captured: string[] = [];
+const capturedConsole = makeCapturedConsole(captured);
+
+yield *
+  handleEvents("Europe/Paris")({
+    json: false,
+    account: Option.none(),
+    date: Option.none(),
+  }).pipe(
+    Console.withConsole(capturedConsole),
+    Effect.provide(mockCalendarApi),
+    Effect.provide(mockAccountStore),
+  );
+
+expect(captured.join("\n")).toContain("📅 Today");
+expect(captured.join("\n")).toContain("Standup");
+expect(captured.join("\n")).toContain("No events scheduled for this day.");
+```
+
+Your entire CLI handler is a function that takes dependencies and returns `Effect<void, Error>`. The output is a string you can assert on. The dependencies are mocks you control. There's no `process.exit(1)` hiding in a branch — errors propagate through the Effect error channel and you test them the same way:
+
+```typescript
+const error =
+  yield *
+  handler().pipe(
+    Console.withConsole(capturedConsole),
+    Effect.provide(mockLayers),
+    Effect.flip,
+  );
+expect(error).toBeInstanceOf(CalendarError);
+```
+
+## What I'd do differently
+
+Effect-TS for CLI apps has rough edges that don't show up in backend work:
+
+**The platform layer is a commitment.** Once you depend on `FileSystem` and `Path` from the environment, every function that touches a file needs those in its dependency context. This is architecturally clean but adds boilerplate compared to `import fs from "node:fs"`. In a 500-line CLI, this overhead is real. In a 5,000-line CLI, the testability pays for itself.
+
+Despite these, I'd use Effect for CLI tools again. The argument parsing alone — typed options that survive refactoring — has caught bugs I've shipped in other CLI tools. The schema validation has caught malformed API responses and corrupted token files during development, before they could surface as cryptic runtime errors. And the ability to test the entire CLI from option parsing to terminal output, without spawning a subprocess or mocking `process.stdout`, is something I didn't know I wanted until I had it.
+
+---
+
+_Termeeting is open source at [github.com/DCKT/termeeting](https://github.com/DCKT/termeeting). Install it with `npm i -g termeeting`._
