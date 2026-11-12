@@ -34,7 +34,7 @@ yarn-error.log*
 .vercel
 
 # rescript
-lib/
+/lib/
 *.bs.js
 
 certificates/

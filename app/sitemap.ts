@@ -8,11 +8,11 @@ export default async function sitemap() {
     lastModified: post.metadata.publishedAt,
   }));
   let pixels = getPixelArtPosts().map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
+    url: `${baseUrl}/pixel-art/${post.slug}`,
     lastModified: post.metadata.publishedAt,
   }));
 
-  let routes = ["", "/blog", "/pixel-art"].map((route) => ({
+  let routes = ["", "/blog", "/pixel-art", "/pixel-editor", "/games"].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString().split("T")[0],
   }));

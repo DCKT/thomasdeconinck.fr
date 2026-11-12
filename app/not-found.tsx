@@ -1,10 +1,15 @@
+import Link from "next/link";
+import { PageHead } from "app/components/page-head";
+
 export default function NotFound() {
   return (
-    <section>
-      <h1 className="mb-8 text-2xl font-semibold tracking-tighter">
-        404 - Page Not Found
-      </h1>
-      <p className="mb-4">The page you are looking for does not exist.</p>
-    </section>
-  )
+    <main className="page">
+      <PageHead jp="売り切れ · Sold out" title="404">
+        This shelf is empty: the page you are looking for does not exist.
+      </PageHead>
+      <Link href="/" className="back">
+        ← Back to the store
+      </Link>
+    </main>
+  );
 }

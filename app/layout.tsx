@@ -1,19 +1,13 @@
 import "./global.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Navbar } from "./components/nav";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Header } from "./components/header";
 import Footer from "./components/footer";
-import FilmOverlay from "./components/film-overlay";
 import { baseUrl } from "./sitemap";
-import "@fontsource/rubik-doodle-shadow";
-import "@fontsource/rubik-doodle-shadow/400.css";
-import "@fontsource/rye";
-import "@fontsource/rye/400.css";
-import "@fontsource/special-elite";
-import "@fontsource/special-elite/400.css";
+import { DEFAULT_SKIN, SKIN_IDS } from "./lib/skins";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -43,58 +37,33 @@ export const metadata: Metadata = {
   },
 };
 
-const cx = (...classes: (string | undefined | false)[]) =>
-  classes.filter(Boolean).join(" ");
+export const viewport: Viewport = {
+  themeColor: "#090b17",
+};
 
-/* Prevents flash of unstyled typewriter font on first load */
-const fontModeScript = `
-(function(){
-  try{
-    var m=localStorage.getItem('fontMode');
-    if(m==='typewriter') document.documentElement.classList.add('body-typewriter');
-  }catch(e){}
-})();
-`;
+/* Applies saved skin / sound / motion preferences before first paint (no flash, no hydration mismatch).
+   Motion defaults to the OS "reduce motion" setting until the visitor picks one. */
+const skinScript = `try{var d=document.documentElement,s=localStorage.getItem("skin");if(${JSON.stringify(SKIN_IDS)}.indexOf(s)>-1)d.dataset.skin=s;if(localStorage.getItem("sound")==="off")d.dataset.sound="off";var m=localStorage.getItem("motion");d.dataset.motion=m==="on"||m==="off"?m:matchMedia("(prefers-reduced-motion: reduce)").matches?"off":"on"}catch(e){}`;
 
-/* Applies film animation preference before first paint to avoid flash */
-const filmModeScript = `
-(function(){
-  try{
-    var stored=localStorage.getItem('filmAnimation');
-    var prefersReduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var enabled = stored === null ? !prefersReduced : stored === 'true';
-    if(!enabled) document.documentElement.classList.add('no-film');
-  }catch(e){}
-})();
-`;
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
-      className={cx(
-        "text-ink bg-cream",
-        GeistSans.variable,
-        GeistMono.variable,
-      )}
+      data-skin={DEFAULT_SKIN}
+      data-sound="on"
+      data-motion="on"
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: fontModeScript }} />
-        <script dangerouslySetInnerHTML={{ __html: filmModeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: skinScript }} />
       </head>
-      <body className="antialiased max-w-xl mt-8 mx-auto">
-        <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
-          <Navbar />
-          {children}
-          <Footer />
-          <Analytics />
-          <SpeedInsights />
-        </main>
-        <FilmOverlay />
+      <body>
+        <Header />
+        {children}
+        <Footer />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

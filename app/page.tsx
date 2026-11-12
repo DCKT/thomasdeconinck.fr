@@ -1,80 +1,109 @@
+import Image from "next/image";
+import Link from "next/link";
 import { BlogPosts } from "app/components/posts";
+import KonbiniScene from "app/components/konbini/konbini-scene";
+import { DoorChime } from "app/components/konbini/door-chime";
+import { getBlogPosts, getPixelArtPosts, shortDate, sortByDate } from "app/blog/utils";
+import { getShelfGames } from "app/lib/steam";
+import { SPOTS } from "app/lib/skins";
 
-export default function Page() {
+/** Just what the walk-mode shelves need (titles + links), not the post bodies. */
+function shelf(posts: ReturnType<typeof getBlogPosts>) {
+  return sortByDate(posts).map((p) => ({ slug: p.slug, title: p.metadata.title, date: shortDate(p.metadata.publishedAt) }));
+}
+
+export default async function Page() {
+  const games = await getShelfGames();
+  const aisles = [
+    { href: "/blog", jp: "雑誌", title: "Blog", text: `${getBlogPosts().length} articles, mostly technical` },
+    { href: "/pixel-art", jp: "ガチャ", title: "Pixel Art", text: `${getPixelArtPosts().length} tiny drawings` },
+    { href: "/pixel-editor", jp: "コピー機", title: "Pixel Editor", text: "Draw your own, in the browser" },
+    { href: "/games", jp: "自販機", title: "Games", text: "Mini games, insert coin" },
+  ];
+
   return (
-    <section>
-      {/* Hero title card */}
-      <div
-        className="mb-10 p-6"
-        style={{
-          backgroundColor: "#d4a84b",
-          border: "4px solid #2a1810",
-          outline: "2px solid #c0392b",
-          outlineOffset: "-8px",
-          boxShadow: "5px 5px 0 #2a1810",
-        }}
-      >
-        <h1
-          className="text-5xl text-center"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "#2a1810",
-            letterSpacing: "0.08em",
-            textShadow: "2px 2px 0 rgba(192,57,43,0.3)",
-          }}
-        >
-          Hi there
-        </h1>
-      </div>
+    <main>
+      <section className="hero">
+        <KonbiniScene data={{ posts: shelf(getBlogPosts()), pixelArt: shelf(getPixelArtPosts()), games }} />
+        <div className="hero-scrim" aria-hidden="true" />
+        <nav className="tags" aria-label="Store sections">
+          {SPOTS.map((spot, i) => (
+            <Link key={spot.id} href={spot.href} className="tag" data-spot={spot.id} title={spot.hint}>
+              <span className="tag-body" style={{ "--i": i } as React.CSSProperties}>
+                <small>{spot.jp}</small>
+                {spot.label}
+              </span>
+            </Link>
+          ))}
+          <DoorChime index={SPOTS.length} />
+        </nav>
+        <div className="hero-copy">
+          <p className="eyebrow">24時間営業 · Open 24/7</p>
+          <h1>Thomas Deconinck</h1>
+          <p className="hero-lede">
+            Developer, functional programming fan, serial side-project starter. Step inside, the shelves are stocked
+            with articles.
+          </p>
+        </div>
+      </section>
 
-      {/* Intro card */}
-      <div
-        className="p-5 flex flex-col gap-4 mb-10"
-        style={{
-          border: "3px solid #2a1810",
-          backgroundColor: "#f4e8d0",
-          boxShadow: "4px 4px 0 #2a1810",
-        }}
-      >
-        <p>
-          {`Developer enthusiast from more than a decade, I like learning new languages, my favorites being mostly functional. `}
-          <a
-            href="https://rescript-lang.org/"
-            className="underline font-bold"
-            style={{ color: "#c0392b", textDecorationColor: "#c0392b" }}
-          >
-            ReScript
-          </a>{" "}
-          is the favorite and the one that I use the most (side projects and day
-          to day work).
-        </p>
-        <p>
-          Like many developers, I really enjoy doing side projects and not
-          finishing them. After using an IDE like Sublime Text and VSCode, I
-          recently switched to Neovim, embracing the Vim motions!
-        </p>
-        <p>
-          Sometimes, I like to write articles about things I discovered or
-          learned but it&apos;s not recurrent.
-        </p>
-      </div>
+      <div className="page page-wide">
+        <section id="about" className="about">
+          <Image
+            src="/Cat.png"
+            alt="Pixel art cat, the store mascot"
+            width={96}
+            height={96}
+            unoptimized
+            className="about-cat"
+          />
+          <div>
+            <p className="eyebrow">店長 · Store manager</p>
+            <h2>Hi there</h2>
+            <p>
+              Developer enthusiast from more than a decade, I like learning new languages, my favorites being mostly
+              functional. <a href="https://rescript-lang.org/">ReScript</a> is the favorite and the one that I use the
+              most (side projects and day to day work).
+            </p>
+            <p>
+              Like many developers, I really enjoy doing side projects and not finishing them. After using an IDE like
+              Sublime Text and VSCode, I recently switched to Neovim, embracing the Vim motions!
+            </p>
+            <p>
+              Sometimes, I like to write articles about things I discovered or learned but it&apos;s not recurrent.
+            </p>
+          </div>
+        </section>
 
-      {/* Latest posts */}
-      <div>
-        <h2
-          className="text-2xl mb-4"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "#2a1810",
-            letterSpacing: "0.06em",
-            borderBottom: "3px solid #2a1810",
-            paddingBottom: "6px",
-          }}
-        >
-          Latest Posts
-        </h2>
-        <BlogPosts limit={5} />
+        <section className="aisle">
+          <h2 className="aisle-sign">
+            <span>
+              New arrivals <small>新商品</small>
+            </span>
+            <Link href="/blog" className="aisle-count">
+              All posts →
+            </Link>
+          </h2>
+          <BlogPosts limit={5} />
+        </section>
+
+        <section className="aisle">
+          <h2 className="aisle-sign">
+            <span>
+              Aisles <small>売り場</small>
+            </span>
+          </h2>
+          <div className="aisles">
+            {aisles.map((aisle) => (
+              <Link key={aisle.href} href={aisle.href} className="aisle-card">
+                <small>{aisle.jp}</small>
+                <strong>{aisle.title}</strong>
+                <span>{aisle.text}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
-    </section>
+    </main>
   );
 }

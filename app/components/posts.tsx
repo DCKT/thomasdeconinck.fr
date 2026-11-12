@@ -1,54 +1,58 @@
 import Link from "next/link";
-import { formatDate, getBlogPosts } from "app/blog/utils";
+import { getBlogPosts, getPixelArtPosts, readingTime, shortDate, sortByDate } from "app/blog/utils";
 
-type BlogPostsProps = {
-  limit?: number;
-};
+type Post = ReturnType<typeof getBlogPosts>[number];
 
-export function BlogPosts(props: BlogPostsProps) {
-  let allBlogs = getBlogPosts();
-
+/** A shelf of posts: date, title, summary and a "price tag" with the reading time. */
+export function PostShelf({ posts, basePath }: { posts: Post[]; basePath: string }) {
   return (
-    <div className="flex flex-col gap-6">
-      {allBlogs
-        .sort((a, b) =>
-          new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
-            ? -1
-            : 1,
-        )
-        .slice(0, props.limit ?? allBlogs.length)
-        .map((post) => (
-          <Link
-            key={post.slug}
-            href={`/blog/${post.slug}`}
-            className="block"
-            style={{ textDecoration: "none" }}
-          >
-            <div className="vintage-card flex flex-col md:flex-row md:items-center gap-2 p-3">
-              <span
-                className="text-xs font-bold px-2 py-0.5 shrink-0 min-w-32 text-center"
-                style={{
-                  backgroundColor: "#c0392b",
-                  color: "#f4e8d0",
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "0.05em",
-                  viewTransitionName: `post-date-${post.slug}`,
-                }}
-              >
-                {formatDate(post.metadata.publishedAt, false)}
-              </span>
-              <span
-                className="text-sm font-semibold"
-                style={{
-                  color: "#2a1810",
-                  viewTransitionName: `post-title-${post.slug}`,
-                }}
-              >
+    <ul className="shelf">
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link href={`${basePath}/${post.slug}`} className="shelf-item">
+            <time dateTime={post.metadata.publishedAt}>{shortDate(post.metadata.publishedAt)}</time>
+            <span className="shelf-text">
+              <span className="shelf-title" style={{ viewTransitionName: `post-title-${post.slug}` }}>
                 {post.metadata.title}
               </span>
-            </div>
+              {post.metadata.summary && post.metadata.summary !== post.metadata.title && (
+                <span className="shelf-summary">{post.metadata.summary}</span>
+              )}
+            </span>
+            <span className="price">{readingTime(post.content)} min</span>
           </Link>
-        ))}
-    </div>
+        </li>
+      ))}
+    </ul>
   );
+}
+
+/** Posts grouped by year, like aisles. */
+export function PostAisles({ posts, basePath }: { posts: Post[]; basePath: string }) {
+  const years = new Map<string, Post[]>();
+  for (const post of sortByDate(posts)) {
+    const year = post.metadata.publishedAt.slice(0, 4);
+    years.set(year, [...(years.get(year) ?? []), post]);
+  }
+  return (
+    <>
+      {Array.from(years, ([year, list]) => (
+        <section key={year} className="aisle">
+          <h2 className="aisle-sign">
+            <span>{year}</span>
+            <span className="aisle-count">{list.length} items</span>
+          </h2>
+          <PostShelf posts={list} basePath={basePath} />
+        </section>
+      ))}
+    </>
+  );
+}
+
+export function BlogPosts({ limit }: { limit?: number }) {
+  return <PostShelf posts={sortByDate(getBlogPosts()).slice(0, limit)} basePath="/blog" />;
+}
+
+export function PixelArtPosts() {
+  return <PostAisles posts={getPixelArtPosts()} basePath="/pixel-art" />;
 }
