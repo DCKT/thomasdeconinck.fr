@@ -43,3 +43,6 @@ export const FAVORITE_GAMES: FavoriteGame[] = [
     label: "#d4a84b",
   },
 ];
+
+/** Steam games that never go on the shelf, even when they are among the most played. */
+export const HIDDEN_STEAM_GAMES: string[] = ["Disney Dreamlight Valley", "Geometry Dash"];

@@ -1,5 +1,5 @@
 import "server-only";
-import { FAVORITE_GAMES, type FavoriteGame } from "./favorite-games";
+import { FAVORITE_GAMES, HIDDEN_STEAM_GAMES, type FavoriteGame } from "./favorite-games";
 import type { IconName } from "app/components/konbini/pixel-icons";
 
 /**
@@ -85,6 +85,7 @@ export async function getShelfGames(limit = 8): Promise<ShelfGame[]> {
   const byId = new Map(owned.map((g) => [g.appid, g]));
   const byName = new Map(owned.map((g) => [normalize(g.name), g]));
   const used = new Set<number>();
+  const hidden = new Set(HIDDEN_STEAM_GAMES.map(normalize));
 
   const picked: ShelfGame[] = FAVORITE_GAMES.map(({ steamAppId, ...game }) => {
     const match = (steamAppId && byId.get(steamAppId)) || byName.get(normalize(game.title));
@@ -94,7 +95,7 @@ export async function getShelfGames(limit = 8): Promise<ShelfGame[]> {
   });
 
   const mostPlayed = owned
-    .filter((g) => !used.has(g.appid) && g.playtime_forever >= 120)
+    .filter((g) => !used.has(g.appid) && !hidden.has(normalize(g.name)) && g.playtime_forever >= 120)
     .sort((a, b) => b.playtime_forever - a.playtime_forever)
     .slice(0, Math.max(0, limit - picked.length))
     .map((g, i): ShelfGame => ({
