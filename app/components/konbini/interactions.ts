@@ -1,6 +1,7 @@
 /** Things you can use inside the store. Shared by the walk controller and the HUD. */
 export type InteractionId =
   | "blog"
+  | "manga"
   | "editor"
   | "games"
   | "about"
@@ -15,11 +16,12 @@ export type InteractionId =
 
 export const INTERACTION_LABELS: Record<InteractionId, string> = {
   blog: "Read the blog",
+  manga: "Browse my favorite manga",
   editor: "Use the copy machine · Pixel editor",
   games: "Use the ATM · My games",
   about: "Talk to the clerk",
   "pixel-art": "Look at my pixel art",
-  favorites: "Browse the games I love",
+  favorites: "Browse my favorite games",
   drinks: "Grab a drink",
   fried: "Order fried chicken",
   oden: "Get some oden",
@@ -37,6 +39,10 @@ export const TOASTS: Partial<Record<InteractionId, string[]>> = {
   onigiri: ["Tuna mayo onigiri. Pull tab 1, then 2, then 3.", "Salmon onigiri. Nori still crispy."],
   snacks: ["A bag of chips for the walk home.", "Chocolate biscuit sticks. Obviously."],
 };
+
+/** Same-origin, resized manga cover (proxied from Komga by app/api/komga/cover). */
+export const mangaCoverUrl = (id: string, width = 128) =>
+  `/_next/image?url=${encodeURIComponent(`/api/komga/cover/${id}`)}&w=${width}&q=75`;
 
 /** Pixel art hung on the gondola in walk mode (small files only: they load on entry). */
 export const PRINTS = [

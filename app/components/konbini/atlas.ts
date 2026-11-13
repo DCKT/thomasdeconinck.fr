@@ -2,7 +2,7 @@ import type { Skin } from "app/lib/skins";
 
 /** One 2D canvas holds every texture of the scene: a single upload, a single bind. */
 export const ATLAS_W = 2048;
-export const ATLAS_H = 1024;
+export const ATLAS_H = 1280;
 
 type Rect = readonly [x: number, y: number, w: number, h: number];
 
@@ -22,7 +22,8 @@ const R = {
   steam: [1688, 300, 352, 96],
   staff: [1688, 400, 192, 96],
 } as const satisfies Record<string, Rect>;
-// y 720+ is left free for the walk-mode artwork painted lazily (see walk.ts).
+/** From here down, the atlas holds walk-mode artwork, painted lazily and uploaded on its own. */
+export const EXTRA_Y = 720;
 
 export const rectUv = ([x, y, w, h]: Rect) => [
   (x + 1) / ATLAS_W,

@@ -5,6 +5,7 @@ import KonbiniScene from "app/components/konbini/konbini-scene";
 import { DoorChime } from "app/components/konbini/door-chime";
 import { getBlogPosts, getPixelArtPosts, shortDate, sortByDate } from "app/blog/utils";
 import { getShelfGames } from "app/lib/steam";
+import { getMangaShelf } from "app/lib/komga";
 import { SPOTS } from "app/lib/skins";
 
 /** Just what the walk-mode shelves need (titles + links), not the post bodies. */
@@ -13,7 +14,7 @@ function shelf(posts: ReturnType<typeof getBlogPosts>) {
 }
 
 export default async function Page() {
-  const games = await getShelfGames();
+  const [games, manga] = await Promise.all([getShelfGames(), getMangaShelf()]);
   const aisles = [
     { href: "/blog", jp: "雑誌", title: "Blog", text: `${getBlogPosts().length} articles, mostly technical` },
     { href: "/pixel-art", jp: "ガチャ", title: "Pixel Art", text: `${getPixelArtPosts().length} tiny drawings` },
@@ -24,7 +25,7 @@ export default async function Page() {
   return (
     <main>
       <section className="hero">
-        <KonbiniScene data={{ posts: shelf(getBlogPosts()), pixelArt: shelf(getPixelArtPosts()), games }} />
+        <KonbiniScene data={{ posts: shelf(getBlogPosts()), pixelArt: shelf(getPixelArtPosts()), games, manga }} />
         <div className="hero-scrim" aria-hidden="true" />
         <nav className="tags" aria-label="Store sections">
           {SPOTS.map((spot, i) => (

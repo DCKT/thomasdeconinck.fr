@@ -1,5 +1,5 @@
 import { SKINS, type SkinId } from "app/lib/skins";
-import { paintAtlas } from "./atlas";
+import { ATLAS_H, ATLAS_W, EXTRA_Y, paintAtlas } from "./atlas";
 import { buildWorld, LAMP_POS, STRIDE } from "./world";
 
 /**
@@ -45,6 +45,8 @@ export type SceneHandle = {
   /** The wet-ground reflection pass is useless indoors: skip it there. */
   setReflection: (on: boolean) => void;
   setExtra: (extra: SceneExtra | null) => void;
+  /** Repaints only the extra artwork (e.g. once images have loaded): no geometry upload. */
+  refreshExtraArt: () => void;
   destroy: () => void;
 };
 
@@ -61,6 +63,7 @@ uniform mat4 uVP;
 uniform float uTime;
 uniform float uMirror;
 uniform float uDoor;
+uniform float uPlane;
 out vec3 vW;
 out vec3 vN;
 out vec4 vCol;
@@ -103,7 +106,7 @@ void main() {
   vKind = iMisc.y;
   vTex = (aNor.z > 0.5 && iUv.z > 0.0) ? 1.0 : 0.0;
   vUv = mix(iUv.xy, iUv.zw, vec2(aPos.x + 0.5, 0.5 - aPos.y));
-  w.y *= uMirror;
+  if (uMirror < 0.0) w.y = 2.0 * uPlane - w.y; // reflect through the floor plane
   gl_Position = uVP * vec4(w, 1.0);
 }`;
 
@@ -140,8 +143,14 @@ void main() {
     o = vec4(vec3(0.11, 0.13, 0.19), 1.0);
     return;
   }
+  if (vKind >= 6.0) {                           // glass (additive): sheen grows at grazing angles
+    vec3 V = normalize(uCam - vW);
+    float f = pow(1.0 - abs(dot(normalize(vN), V)), 2.0);
+    o = vec4(vCol.rgb * vCol.a * (0.35 + 2.2 * f), 1.0);
+    return;
+  }
   vec3 base = vTex > 0.5 ? t.rgb : vCol.rgb;
-  if (vKind >= 4.0) { o = vec4(base, 1.0); return; }
+  if (vKind >= 4.0 && vKind < 5.0) { o = vec4(base, 1.0); return; }
 
   vec3 n = normalize(vN);
   float em = vCol.a;
@@ -159,8 +168,22 @@ void main() {
   float shade = 0.74 + 0.26 * clamp(dot(n, normalize(vec3(0.25, 0.8, 0.55))), 0.0, 1.0);
   vec3 col = mix(lit, base * shade, min(em, 1.0)) * max(em, 1.0);
 
+  // Indoors: soft contact shadow towards the floor, darker corners
+  if (abs(vW.x) < 6.0 && vW.z < 0.0 && vW.z > -7.0 && vW.y < 4.0) {
+    float wall = min(min(5.95 - abs(vW.x), vW.z + 6.95), 2.0);
+    col *= mix(0.72, 1.0, smoothstep(0.1, 0.85, vW.y)) * mix(0.86, 1.0, smoothstep(0.0, 1.2, wall));
+  }
+
   float a = 1.0;
-  if (vKind >= 2.0) {                           // wet asphalt: puddles let the reflection through
+  if (vKind >= 5.0 && vKind < 6.0) {            // polished tiles: let the reflection through
+    vec3 V = normalize(uCam - vW);
+    float fresnel = pow(1.0 - max(V.y, 0.0), 4.0);
+    vec2 tile = fract(vW.xz / 0.6);
+    float grout = step(0.985, max(tile.x, tile.y));
+    col *= 0.92 + 0.08 * hash(floor(vW.xz / 0.6));
+    a = mix(mix(0.8, 0.5, fresnel), 1.0, grout);
+  }
+  if (vKind >= 2.0 && vKind < 3.0) {                           // wet asphalt: puddles let the reflection through
     float puddle = noise(vW.xz * 0.33) + 0.5 * noise(vW.xz * 1.3 + 7.0);
     vec3 V = normalize(uCam - vW);
     float fresnel = pow(1.0 - max(V.y, 0.0), 3.0);
@@ -256,6 +279,7 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string) {
 }
 
 const FOV = (40 * Math.PI) / 180;
+const MAX_PIXELS = 7_000_000;
 /** World width that must stay visible whatever the aspect ratio. */
 const FRAME_WIDTH = 21;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -281,7 +305,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
       throw new Error(gl!.getProgramInfoLog(program) ?? "program link failed");
     }
     gl!.useProgram(program);
-    for (const name of ["uVP", "uTime", "uMirror", "uAtlas", "uLight", "uLamp", "uCam", "uDoor"]) {
+    for (const name of ["uVP", "uTime", "uMirror", "uAtlas", "uLight", "uLamp", "uCam", "uDoor", "uPlane"]) {
       uniforms[name] = gl!.getUniformLocation(program, name);
     }
 
@@ -319,12 +343,31 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
   let extra: SceneExtra | null = null;
   let extraRange = { first: 0, count: 0 };
 
+  const extraCanvas = document.createElement("canvas");
+
+  /** Paints + uploads only the walk-mode part of the atlas (cheap: a sub-image, not 2048×1280). */
+  function paintExtra() {
+    if (!extra) return;
+    extraCanvas.width = ATLAS_W;
+    extraCanvas.height = ATLAS_H - EXTRA_Y;
+    const ctx = extraCanvas.getContext("2d")!;
+    ctx.setTransform(1, 0, 0, 1, 0, -EXTRA_Y); // the painter works in atlas coordinates
+    extra.paint(extraCanvas, skin);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    gl!.texSubImage2D(gl!.TEXTURE_2D, 0, 0, EXTRA_Y, gl!.RGBA, gl!.UNSIGNED_BYTE, extraCanvas);
+    gl!.generateMipmap(gl!.TEXTURE_2D);
+  }
+
   /** (Re)uploads geometry + textures for the current skin. */
   function upload() {
     paintAtlas(atlasCanvas, skin);
-    extra?.paint(atlasCanvas, skin);
     gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, atlasCanvas);
     gl!.generateMipmap(gl!.TEXTURE_2D);
+    paintExtra();
+    uploadGeometry();
+  }
+
+  function uploadGeometry() {
     let data = world.data;
     if (extra) {
       const more = extra.build(skin);
@@ -366,12 +409,18 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
   let ticker: ((dt: number, now: number) => void) | null = null;
   let door = 0;
   let reflection = true;
+  /** Dynamic resolution: drops when frames are consistently slow (weak GPU, huge screen). */
+  let resScale = 1;
+  let slowFrames = 0, sampledFrames = 0;
   let orbitPose: CameraPose = { eye: [0, 3, 17], target: [0, 1.9, 0], fov: FOV, near: 0.5 };
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     width = canvas.clientWidth || 1;
     height = canvas.clientHeight || 1;
+    // Pixel budget: ~7 MP is indistinguishable from full Retina at this size, and half the work
+    const native = Math.min(window.devicePixelRatio || 1, 2);
+    const budget = Math.min(1, Math.sqrt(MAX_PIXELS / (width * height * native * native)));
+    const dpr = native * budget * resScale;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     spotWidths = options.spots.map((s) => s.el.offsetWidth);
@@ -381,6 +430,18 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     ticker?.(dt, now);
+    // Adapt resolution: if >15% of the last 90 frames took longer than 22 ms, render 15% fewer pixels
+    if (moving || ticker) {
+      sampledFrames++;
+      if (dt > 0.022) slowFrames++;
+      if (sampledFrames >= 90) {
+        if (slowFrames > 13 && resScale > 0.55) {
+          resScale *= 0.85;
+          resize();
+        }
+        sampledFrames = slowFrames = 0;
+      }
+    }
     const still = !moving;
     if (!still) rainTime += dt;
     const intro = still ? 1 : easeOut(Math.min((now - start) / 2200, 1));
@@ -413,6 +474,9 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     gl!.uniform3fv(uniforms.uCam, pose.eye);
     gl!.uniform1f(uniforms.uTime, rainTime);
     gl!.uniform1f(uniforms.uDoor, door);
+    // Reflect through the shop floor when the camera is inside, the street otherwise
+    const indoors = pose.eye[2] < 0.05 && Math.abs(pose.eye[0]) < 6;
+    gl!.uniform1f(uniforms.uPlane, indoors ? 0.16 : 0);
     gl!.depthMask(true);
     gl!.disable(gl!.BLEND);
     gl!.clear(gl!.COLOR_BUFFER_BIT | gl!.DEPTH_BUFFER_BIT);
@@ -422,6 +486,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
       gl!.uniform1f(uniforms.uMirror, -1);
       gl!.frontFace(gl!.CW);
       draw(world.mirrored);
+      if (extraRange.count) draw(extraRange);
       gl!.frontFace(gl!.CCW);
       gl!.clear(gl!.DEPTH_BUFFER_BIT);
     }
@@ -558,7 +623,12 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     },
     setExtra(value) {
       extra = value;
-      upload();
+      paintExtra();
+      uploadGeometry();
+      invalidate();
+    },
+    refreshExtraArt() {
+      paintExtra();
       invalidate();
     },
     destroy() {

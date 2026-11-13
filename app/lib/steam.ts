@@ -6,11 +6,13 @@ import type { IconName } from "app/components/konbini/pixel-icons";
  * Steam Web API, server side only: the key never reaches the browser.
  *   NEXT_STEAM_API_KEY → https://steamcommunity.com/dev/apikey
  *   NEXT_STEAM_ID      → your SteamID64 (17 digits) or your custom profile URL name
- * Your profile's "Game details" must be public. Results are cached for a day.
+ * Your profile's "Game details" must be public. Results are cached for a day, under the
+ * "steam" cache tag: POST /api/revalidate refreshes them immediately.
  */
 const KEY = process.env.NEXT_STEAM_API_KEY;
 const ID = process.env.NEXT_STEAM_ID;
 const DAY = 60 * 60 * 24;
+export const STEAM_TAG = "steam";
 const API = "https://api.steampowered.com";
 const CDN = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps";
 
@@ -27,7 +29,7 @@ type OwnedGame = { appid: number; name: string; playtime_forever: number; rtime_
 async function steam<T>(path: string, params: Record<string, string>): Promise<T | null> {
   const query = new URLSearchParams({ key: KEY!, format: "json", ...params });
   try {
-    const res = await fetch(`${API}/${path}?${query}`, { next: { revalidate: DAY } });
+    const res = await fetch(`${API}/${path}?${query}`, { next: { revalidate: DAY, tags: [STEAM_TAG] } });
     return res.ok ? ((await res.json()) as T) : null;
   } catch {
     return null;

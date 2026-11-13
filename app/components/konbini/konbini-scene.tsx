@@ -73,7 +73,7 @@ export default function KonbiniScene({ data }: { data: WalkData }) {
       setHud(() => hud.default);
       current = startWalk(handle, canvas, {
         reducedMotion: root.dataset.motion === "off",
-        games: data.games,
+        content: { games: data.games, manga: data.manga },
         onPrompt: setPrompt,
         onInteract: (id) => window.dispatchEvent(new CustomEvent(USE_EVENT, { detail: id })),
         onControl: () => setControl(true),
@@ -82,7 +82,11 @@ export default function KonbiniScene({ data }: { data: WalkData }) {
       });
       setWalk(current);
     };
-    const onPrefetch = () => void loadWalk();
+    // Hovering the door box: fetch walk mode and build the interior now, not during the flight
+    const onPrefetch = () =>
+      void loadWalk().then(([walkModule]) => {
+        if (handle && !cancelled) walkModule.prepareWalk(handle, { games: data.games, manga: data.manga });
+      });
 
     const onSkin = (e: Event) => handle?.setSkin((e as CustomEvent<SkinId>).detail);
     const onMotion = (e: Event) => handle?.setMotion((e as CustomEvent<boolean>).detail);

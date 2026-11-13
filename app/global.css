@@ -722,6 +722,45 @@ html.konbini-walking {
   font-weight: 700;
   color: var(--accent);
 }
+.walk-manga li {
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.6rem 0.65rem;
+}
+.walk-manga img {
+  flex: none;
+  align-self: flex-start;
+  width: 3.6rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 0.2rem;
+  background: #ece6da;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+}
+.walk-manga div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.walk-manga p {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.walk-progress {
+  position: relative;
+  margin-top: 0.3rem;
+}
+.walk-progress i {
+  display: block;
+  height: 3px;
+  margin-bottom: 0.2rem;
+  border-radius: 2px;
+  background: var(--accent);
+  max-width: 100%;
+}
 .walk-cart {
   flex: none;
   display: grid;
@@ -750,6 +789,12 @@ html.konbini-walking {
   margin-top: 0.9rem;
   color: var(--accent);
   font-weight: 700;
+}
+.walk-credit {
+  display: block;
+  margin-top: 0.9rem;
+  font-size: 0.7rem;
+  color: var(--muted);
 }
 .walk-panel-foot {
   padding: 0.6rem 1.25rem;

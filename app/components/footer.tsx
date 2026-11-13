@@ -22,6 +22,7 @@ export default function Footer() {
         </ul>
         <div className="barcode" aria-hidden="true" />
         <p className="receipt-meta">© {new Date().getFullYear()} Thomas Deconinck · MIT · Open 24/7</p>
+        <p className="receipt-meta">Clerk voice: VOICEVOX:玄野武宏(CV:ガロ)</p>
       </div>
     </footer>
   );

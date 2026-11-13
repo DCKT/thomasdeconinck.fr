@@ -4,11 +4,12 @@
  */
 import type { SKINS, SkinId } from "app/lib/skins";
 import { FONT, rectUv } from "./atlas";
+import type { MangaItem } from "app/lib/komga";
 import type { ShelfGame } from "app/lib/steam";
-import { PRINTS, type InteractionId } from "./interactions";
+import { mangaCoverUrl, PRINTS, type InteractionId } from "./interactions";
 import { drawIcon, drawPixelated, loadCover } from "./pixel-icons";
 import type { CameraPose, SceneExtra, SceneHandle } from "./scene";
-import { ANIM, Bag, mulberry32 } from "./world";
+import { ANIM, Bag, mulberry32, NO_ANIM, NO_UV } from "./world";
 
 type Skin = (typeof SKINS)[SkinId];
 type Vec3 = [number, number, number];
@@ -19,7 +20,8 @@ type Rect = [x0: number, z0: number, x1: number, z1: number];
  * The first match wins, so specific spots come before broad ones.
  */
 const INTERACTIONS: { id: InteractionId; zone: Rect; facing: [number, number] }[] = [
-  { id: "blog", zone: [-5.6, -2.15, -1.15, -0.85], facing: [0, 1] },
+  { id: "manga", zone: [-3.45, -2.15, -1.15, -0.85], facing: [0, 1] },
+  { id: "blog", zone: [-5.6, -2.15, -3.45, -0.85], facing: [0, 1] },
   { id: "editor", zone: [1.5, -1.75, 2.62, -1.03], facing: [0, 1] },
   { id: "games", zone: [2.85, -1.75, 3.62, -1.03], facing: [0, 1] },
   { id: "fried", zone: [2.6, -2.45, 3.62, -1.5], facing: [1, 0] },
@@ -38,14 +40,16 @@ const INTERACTIONS: { id: InteractionId; zone: Rect; facing: [number, number] }[
 const SOLIDS: Rect[] = [
   [-7, -8, -5.95, 1], [5.95, -8, 7, 1], [-7, -8, 7, -6.95], // walls
   [-7, -0.06, -1.1, 1], [1.1, -0.06, 7, 1], [-1.1, 0.02, 1.1, 1], // storefront, doors
-  [-5.85, -0.85, -1.25, -0.4], [-2.55, -1.5, -2.05, -1.2], // magazine rack + reader
+  [-5.85, -0.85, -1.25, -0.4], [-4.85, -1.5, -4.35, -1.2], // magazine rack + reader
   [1.62, -1.03, 2.58, -0.37], [2.92, -1.03, 3.68, -0.37], // copy machine, ATM
   [3.85, -5.45, 5.95, -1.45], [3.7, -6.95, 5.95, -5.45], // counter + clerk, staff corner
   [-5.95, -6.95, -5.25, -1.35], // drink fridges
   [-5.25, -6.95, 3.8, -6.18], // chilled cases
   [-4.35, -3.02, 1.95, -2.18], [-4.35, -4.82, 1.95, -3.98], // gondolas
   [1.93, -3.0, 2.32, -2.2], [1.93, -4.8, 2.32, -4.0], // end caps
-  [-1.85, -1.1, -1.35, -0.7], // baskets
+  [-5.8, -1.25, -5.25, -0.85], // baskets
+  [0.25, -5.78, 0.75, -5.42], // customer at the onigiri
+  [0.8, -0.78, 1.25, -0.42], // wet floor sign
 ];
 
 const RADIUS = 0.25;
@@ -60,19 +64,26 @@ const SIGN_TEXTS = [
   ["おにぎり・弁当", "ONIGIRI"],
   ["お菓子", "SNACKS"],
   ["ドット絵", "PIXEL ART"],
-  ["ゲーム", "GAMES I LOVE"],
+  ["ゲーム", "GAMES"],
   ["スイーツ", "SWEETS"],
   ["レジ", "REGISTER"],
   ["コピー・ATM", "EDITOR · GAMES"],
+  ["コミック", "MANGA"],
 ] as const;
 const signRect = (i: number) => [(i % 5) * 408, 720 + Math.floor(i / 5) * 88, 400, 80] as const;
 const cartRect = (i: number) => [i * 100, 896, 96, 96] as const;
 const printRect = (i: number) => [800 + i * 100, 896, 96, 96] as const;
+const mangaRect = (i: number) => [i * 84, 1000, 80, 120] as const;
+const MAX_MANGA = 18;
+/** "Staff pick" boards standing on top of the two personal shelves. */
+const TOPPERS = ["FAVORITE GAMES", "FAVORITE MANGA"] as const;
+const topperRect = (i: number) => [i * 408, 1128, 400, 80] as const;
 const MAX_CARTS = 8;
 
 /** Hanging signs: `axis` = the direction their faces point; `a` / `b` = text on the + / - side. */
 const SIGNS: { x: number; z: number; axis: "x" | "z"; a: number; b: number }[] = [
-  { x: -3.5, z: -1.3, axis: "z", a: 0, b: 0 },
+  { x: -4.6, z: -1.3, axis: "z", a: 0, b: 0 },
+  { x: -2.4, z: -1.3, axis: "z", a: 9, b: 9 },
   { x: -4.85, z: -3.9, axis: "x", a: 1, b: 1 },
   { x: -0.75, z: -5.75, axis: "z", a: 2, b: 2 },
   { x: -1.2, z: -2.6, axis: "z", a: 3, b: 4 },
@@ -106,7 +117,18 @@ const num = (css: string) => parseInt(css.slice(1), 16);
 const brandOf = (skin: Skin) => (skin.colors[0] === 0xffffff ? skin.colors[1] : skin.colors[0]);
 /** Set when walk mode starts (the data comes from the server: favourites + Steam). */
 let featured: ShelfGame[] = [];
+let manga: MangaItem[] = [];
 const covers = new Map<string, HTMLImageElement>();
+const mangaCovers = new Map<string, HTMLImageElement>();
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
 
 /** Draws an image centred in a square, crisp (nearest neighbour), on white. */
 function paintImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement | undefined, [x, y, w, h]: readonly number[]) {
@@ -159,6 +181,32 @@ export const interior: SceneExtra = {
     });
 
     PRINTS.forEach((print, i) => paintImage(ctx, images.get(print.src), printRect(i)));
+
+    // Toppers: yellow staff-pick boards, so the personal shelves stand out from the stock
+    TOPPERS.forEach((text, i) => {
+      const [x, y, w, h] = topperRect(i);
+      ctx.fillStyle = "#ffd60a";
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = "#d62828";
+      ctx.fillRect(x, y, w, 7);
+      ctx.fillRect(x, y + h - 7, w, 7);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#d62828";
+      ctx.font = `800 15px ${FONT}`;
+      ctx.fillText("★ 店長のおすすめ · STAFF PICK ★", x + w / 2, y + 22);
+      ctx.fillStyle = "#1b1b1f";
+      ctx.font = `900 32px ${FONT}`;
+      ctx.fillText(text, x + w / 2, y + 52);
+    });
+
+    // Manga covers (full colour: they are book covers, not pixel art)
+    manga.slice(0, MAX_MANGA).forEach((m, i) => {
+      const [x, y, w, h] = mangaRect(i);
+      const img = mangaCovers.get(m.id);
+      ctx.fillStyle = "#f1ece2";
+      ctx.fillRect(x, y, w, h);
+      if (img) ctx.drawImage(img, x, y, w, h);
+    });
   },
 
   build(skin) {
@@ -172,10 +220,29 @@ export const interior: SceneExtra = {
     for (let x = -5.4; x < 6; x += 0.6) bag.box(x, 0.16, -3.5, 0.012, 0.004, 6.9, 0xaab2b8, 0.75);
     for (let z = -6.6; z < 0; z += 0.6) bag.box(0, 0.16, z, 11.9, 0.004, 0.012, 0xaab2b8, 0.75);
 
-    // Magazines facing the inside of the store
+    // Inside face of the rack: magazines (the blog) on the left, comics right by the entrance
     for (let row = 0; row < 2; row++) {
-      for (let i = 0; i < 13; i++) bag.box(-5.6 + i * 0.34, 0.68 + row * 0.5, -0.78, 0.27, 0.38, 0.04, pick(), 0.95);
+      for (let i = 0; i < 7; i++) bag.box(-5.62 + i * 0.315, 0.68 + row * 0.5, -0.78, 0.26, 0.38, 0.04, pick(), 0.95);
     }
+    bag.box(-3.45, 0.6, -0.8, 0.03, 0.95, 0.06, 0xd5d8d4, 0.85); // divider
+    let slot = 0;
+    for (let row = 0; row < 2; row++) {
+      for (let i = 0; i < 9; i++, slot++) {
+        const x = -3.27 + i * 0.205, y = 1.18 - row * 0.5;
+        const item = manga[slot];
+        if (item && slot < MAX_MANGA) {
+          // Rotated half a turn: the textured face must look into the store (-z)
+          bag.box(x, y, -0.78, 0.17, 0.25, 0.03, 0xffffff, 1, rectUv(mangaRect(slot)), Math.PI);
+        } else {
+          bag.box(x, y, -0.78, 0.17, 0.25, 0.03, [0xf1ece2, 0xe9e1d3, 0xf7f3ea][slot % 3], 0.95);
+          bag.box(x, y + 0.17, -0.794, 0.17, 0.05, 0.004, pick(), 1);
+        }
+      }
+    }
+    // Topper on top of the rack, above the comics (facing into the store)
+    bag.box(-2.45, 1.66, -0.76, 1.7, 0.34, 0.02, 0xffffff, 1, rectUv(topperRect(1)), Math.PI);
+    // Shelf strips under each tier, with the price tags konbini shelves are covered in
+    for (const y of [0.64, 1.14]) bag.box(-3.55, y, -0.78, 4.5, 0.03, 0.05, 0xffffff, 1);
 
     // Hanging signs: two boxes back to back, with a gap so their faces never z-fight
     for (const sign of SIGNS) {
@@ -194,19 +261,23 @@ export const interior: SceneExtra = {
     }
 
     // Games shelf, eye level: featured favourites on little stands, then filler carts
-    // Featured near the main-aisle end, where you step into the aisle
-    const shelfY = 1.0, edge = -4.02, gap = 0.4;
+    // Featured on the top shelf, near the main-aisle end where you step into the aisle
+    const shelfY = 1.36, edge = -4.02, gap = 0.4;
     const span = (featured.length - 1) * gap;
     const mid = Math.min(1.0, 1.62 - span / 2);
     const first = mid - span / 2;
     featured.forEach((game, i) => {
       const x = first + i * gap;
       bag.box(x, shelfY, edge - 0.08, 0.3, 0.02, 0.14, 0xf5f7fa, 0.95); // acrylic stand
-      bag.box(x, shelfY + 0.02, edge - 0.085, 0.25, 0.3, 0.035, num(game.shell), 0.95);
-      bag.box(x, shelfY + 0.3, edge - 0.085, 0.19, 0.025, 0.036, 0x1b1b1f, 0.9); // grip ridge
-      bag.box(x, shelfY + 0.08, edge - 0.066, 0.21, 0.2, 0.004, 0xffffff, 1, rectUv(cartRect(i)));
+      // 0.26 tall so they clear the gondola's top cap (y 1.66)
+      bag.box(x, shelfY + 0.02, edge - 0.085, 0.25, 0.26, 0.035, num(game.shell), 0.95);
+      bag.box(x, shelfY + 0.255, edge - 0.085, 0.19, 0.02, 0.036, 0x1b1b1f, 0.9); // grip ridge
+      bag.box(x, shelfY + 0.06, edge - 0.066, 0.2, 0.18, 0.004, 0xffffff, 1, rectUv(cartRect(i)));
       bag.box(x, shelfY - 0.05, edge + 0.002, 0.14, 0.03, 0.004, 0xffe94d, 1.1); // price tag
     });
+    // Topper standing on the gondola, above the favourites
+    bag.box(featured.length ? mid : 0.6, 1.69, -4.035, 1.7, 0.34, 0.02, 0xffffff, 1, rectUv(topperRect(0)));
+    for (const e of [-0.7, 0.7]) bag.box((featured.length ? mid : 0.6) + e, 1.69, -4.06, 0.03, 0.06, 0.06, 0x9aa0a6, 0.7);
     const start = featured.length ? first - gap / 2 : mid;
     const end = featured.length ? first + (featured.length - 1) * gap + gap / 2 : mid;
     for (let x = -4.16; x < 1.8; x += 0.13) {
@@ -223,8 +294,63 @@ export const interior: SceneExtra = {
       bag.box(x, y + 0.03, -2.702, 0.3, 0.3, 0.004, 0xffffff, 1, rectUv(printRect(i)), Math.PI);
     });
 
-    // Shopping baskets by the door
-    for (let i = 0; i < 4; i++) bag.box(-1.6, 0.16 + i * 0.14, -0.9, 0.48, 0.2, 0.34, brand, 0.85);
+    // Shopping baskets, in the corner between the rack and the fridges
+    for (let i = 0; i < 4; i++) bag.box(-5.52, 0.16 + i * 0.14, -1.05, 0.48, 0.2, 0.34, brand, 0.85);
+
+    // Price tags along every shelf edge
+    const tags = (x0: number, x1: number, y: number, z: number, step = 0.34) => {
+      for (let x = x0 + 0.1; x < x1 - 0.05; x += step) bag.box(x, y, z, 0.07, 0.028, 0.004, rnd() < 0.8 ? 0xfff3b0 : 0xffffff, 1.05);
+    };
+    for (const y of [0.28, 0.6, 0.92]) {
+      tags(-4.3, 1.9, y - 0.055, -2.6 + 0.408);
+      tags(-4.3, y > 0.3 ? -1.2 : 1.9, y - 0.055, -2.6 - 0.412);
+    }
+    for (const y of [0.28, 0.64, 1.0, 1.36]) {
+      tags(-4.3, 1.9, y - 0.055, -4.4 + 0.408);
+      tags(-4.3, 1.9, y - 0.055, -4.4 - 0.412);
+    }
+    for (const [y, front] of [[0.62, -6.2], [0.98, -6.32], [1.34, -6.42], [1.7, -6.52]]) tags(-5.25, 3.75, y - 0.048, front + 0.012, 0.4);
+    // Shelf talkers sticking out of the shelves
+    for (let i = 0; i < 14; i++) {
+      const g = i % 2 ? -2.6 + 0.43 : -4.4 + 0.43;
+      bag.box(-4.0 + rnd() * 5.6, 0.45 + Math.floor(rnd() * 3) * 0.33, g, 0.006, 0.1, 0.12, [0xe63946, 0xffd60a, brand, 0xff7b00][i % 4], 1.1);
+    }
+
+    // Ceiling: AC vents, smoke detectors, security dome, round mirror, exit sign
+    for (const [x, z] of [[-2.8, -3.4], [1.8, -5.6]]) {
+      bag.box(x, 3.95, z, 0.7, 0.04, 0.7, 0xd8dcdf, 0.9);
+      for (let k = -2; k <= 2; k++) bag.box(x, 3.945, z + k * 0.12, 0.6, 0.01, 0.02, 0x9aa0a6, 0.8);
+    }
+    for (const [x, z] of [[-0.5, -2.2], [3.5, -4.2], [-4, -5.4]]) bag.box(x, 3.94, z, 0.12, 0.05, 0.12, 0xf5f5f2, 0.95);
+    bag.box(5.3, 3.8, -1.0, 0.18, 0.16, 0.18, 0x2b2e35, 0.7);
+    bag.box(5.3, 3.74, -1.0, 0.1, 0.06, 0.1, 0x111111, 0.6);
+    bag.box(5.7, 2.75, -6.7, 0.45, 0.45, 0.05, 0xdfe7ee, 1.25, NO_UV, -Math.PI / 4);
+    bag.box(5.1, 2.32, -6.84, 0.42, 0.16, 0.03, 0x1faa59, 1.5);
+    bag.box(5.1, 2.37, -6.825, 0.24, 0.06, 0.005, 0xffffff, 1.6);
+
+    // Counter extras: card terminals, a donation box, carrier bags, a hand bell
+    for (const z of [-2.55, -4.25]) {
+      bag.box(3.98, 1.16, z, 0.1, 0.05, 0.14, 0x2b2e35, 0.7);
+      bag.box(3.975, 1.21, z, 0.08, 0.008, 0.1, 0x22c55e, 1.4);
+    }
+    bag.box(4.0, 1.16, -4.75, 0.14, 0.18, 0.14, 0xe9f5ff, 1.1);
+    bag.box(4.0, 1.34, -4.75, 0.15, 0.02, 0.15, brand, 0.95);
+    bag.box(4.55, 0.4, -5.38, 0.5, 0.5, 0.06, 0xf5f5f2, 0.95);
+    bag.box(4.1, 1.16, -5.3, 0.06, 0.07, 0.06, 0xd4a017, 1.1);
+
+    // Entrance: mat and a wet floor sign (rainy night)
+    bag.box(0, 0.16, -0.55, 1.9, 0.012, 0.8, 0x3a3f47, 0.8);
+    for (const dz of [-0.07, 0.07]) bag.box(1.02, 0.16, -0.6 + dz, 0.32, 0.58, 0.02, 0xffd60a, 1.05);
+    bag.box(1.02, 0.52, -0.58, 0.18, 0.1, 0.005, 0x111111, 1);
+
+    // A customer choosing an onigiri, basket in hand
+    bag.anim = [ANIM.bob, 1.2, 2.1, 0.015];
+    bag.box(0.5, 0.16, -5.6, 0.36, 0.82, 0.22, 0x2f3e46, 0.85);
+    bag.box(0.5, 0.98, -5.6, 0.46, 0.62, 0.28, 0x8d6e63, 0.85);
+    bag.box(0.5, 1.6, -5.62, 0.26, 0.28, 0.26, 0xf1c9a5, 0.9);
+    bag.box(0.5, 1.84, -5.58, 0.28, 0.1, 0.3, 0x111111, 0.85);
+    bag.box(0.8, 0.7, -5.6, 0.34, 0.2, 0.24, brand, 0.85);
+    bag.anim = NO_ANIM;
 
     // The clerk waves now and then
     bag.anim = [ANIM.sway, 2.4, 0, 0.12];
@@ -275,12 +401,47 @@ export type WalkHandle = {
   destroy: () => void;
 };
 
+export type WalkContent = { games: ShelfGame[]; manga: MangaItem[] };
+
+const prepared = new WeakSet<SceneHandle>();
+/** Repainting the artwork costs a frame or two: never do it during the entrance / exit flights. */
+let flying = false;
+let pendingArt: SceneHandle | null = null;
+function refreshArt(scene: SceneHandle) {
+  if (flying) pendingArt = scene;
+  else scene.refreshExtraArt();
+}
+
+/**
+ * Builds the interior and starts fetching its images. Called on hover of the door box,
+ * so that nothing heavy happens during the entrance flight. Safe to call twice.
+ */
+export function prepareWalk(scene: SceneHandle, content: WalkContent) {
+  if (prepared.has(scene)) return;
+  prepared.add(scene);
+  featured = content.games.slice(0, MAX_CARTS);
+  manga = content.manga.slice(0, MAX_MANGA);
+  scene.setExtra(interior);
+  // Images arrive a moment later: repaint only the artwork region once they are in
+  const pending = [...PRINTS.map((p) => p.src), ...featured.flatMap((g) => (g.image ? [g.image] : []))];
+  const coverLoads = featured.map(async (g) => {
+    if (g.image || !g.covers || covers.has(g.title)) return;
+    const img = await loadCover(g.covers);
+    if (img) covers.set(g.title, img);
+  });
+  const mangaLoads = manga.map(async (m) => {
+    const img = await loadImage(mangaCoverUrl(m.id));
+    if (img) mangaCovers.set(m.id, img);
+  });
+  void Promise.all([loadImages(pending), ...coverLoads, ...mangaLoads]).then(() => refreshArt(scene));
+}
+
 export function startWalk(
   scene: SceneHandle,
   canvas: HTMLCanvasElement,
   opts: {
     reducedMotion: boolean;
-    games: ShelfGame[];
+    content: WalkContent;
     onPrompt: (id: InteractionId | null) => void;
     onInteract: (id: InteractionId) => void;
     onControl: () => void;
@@ -289,16 +450,7 @@ export function startWalk(
     onExit: () => void;
   },
 ): WalkHandle {
-  featured = opts.games.slice(0, MAX_CARTS);
-  scene.setExtra(interior);
-  // Prints, custom labels and Steam covers arrive a moment later: repaint once they are in
-  const pending = [...PRINTS.map((p) => p.src), ...featured.flatMap((g) => (g.image ? [g.image] : []))];
-  const coverLoads = featured.map(async (g) => {
-    if (g.image || !g.covers || covers.has(g.title)) return;
-    const img = await loadCover(g.covers);
-    if (img) covers.set(g.title, img);
-  });
-  void Promise.all([loadImages(pending), ...coverLoads]).then(() => scene.setExtra(interior));
+  prepareWalk(scene, opts.content);
 
   type Transition = { kind: "enter" | "exit"; t: number; duration: number; from: CameraPose };
   let transition: Transition | null = {
@@ -311,6 +463,8 @@ export function startWalk(
   const pos: Vec3 = [...START];
   let yaw = 0;
   let pitch = -0.011;
+  /** Where the mouse / arrows want to look; the camera eases towards it (no jitter). */
+  let aimYaw = yaw, aimPitch = pitch;
   let velX = 0, velZ = 0;
   let stride = 0;
   let door = 0;
@@ -380,7 +534,10 @@ export function startWalk(
     const turn = paused ? 0 : k("ArrowRight") - k("ArrowLeft") + virtual.turn;
     const speed = keys.has("ShiftLeft") || keys.has("ShiftRight") ? 4.2 : 2.6;
 
-    yaw -= turn * 2.1 * dt;
+    aimYaw -= turn * 2.1 * dt;
+    const ease = opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 18);
+    yaw += (aimYaw - yaw) * ease;
+    pitch += (aimPitch - pitch) * ease;
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
     const rx = Math.cos(yaw), rz = -Math.sin(yaw);
     let wx = fx * forward + rx * strafe;
@@ -418,6 +575,11 @@ export function startWalk(
   }
 
   const tick = (dt: number) => {
+    flying = transition !== null;
+    if (!flying && pendingArt) {
+      pendingArt.refreshExtraArt();
+      pendingArt = null;
+    }
     if (transition) tickTransition(transition, dt);
     else tickWalk(dt);
 
@@ -425,7 +587,6 @@ export function startWalk(
     const near = Math.abs(pose.eye[0]) < 2.2 && pose.eye[2] > -2.2 && pose.eye[2] < 4;
     door += ((near ? 1 : 0) - door) * (opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 6));
     scene.setDoor(door);
-    scene.setReflection(pose.eye[2] > -0.3);
     scene.setCamera(pose);
   };
 
@@ -457,8 +618,8 @@ export function startWalk(
   };
   const onPointerMove = (e: PointerEvent) => {
     if (!drag || drag.id !== e.pointerId || paused) return;
-    yaw -= (e.clientX - drag.x) * 0.005;
-    pitch = Math.min(Math.max(pitch - (e.clientY - drag.y) * 0.004, -0.9), 0.9);
+    aimYaw -= (e.clientX - drag.x) * 0.005;
+    aimPitch = Math.min(Math.max(aimPitch - (e.clientY - drag.y) * 0.004, -0.9), 0.9);
     drag.x = e.clientX;
     drag.y = e.clientY;
   };
@@ -476,6 +637,11 @@ export function startWalk(
   scene.setTicker(tick);
 
   function finish() {
+    flying = false;
+    if (pendingArt) {
+      pendingArt.refreshExtraArt();
+      pendingArt = null;
+    }
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
     window.removeEventListener("blur", onBlur);

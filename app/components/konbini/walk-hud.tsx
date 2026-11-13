@@ -4,16 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { GAMES } from "app/lib/games";
+import type { MangaItem } from "app/lib/komga";
 import type { ShelfGame } from "app/lib/steam";
 import { USE_EVENT } from "./events";
-import { INTERACTION_LABELS, PRINTS, TOASTS, type InteractionId } from "./interactions";
+import { INTERACTION_LABELS, mangaCoverUrl, PRINTS, TOASTS, type InteractionId } from "./interactions";
 import { drawIcon, drawPixelated, loadCover } from "./pixel-icons";
+import { greet, preloadGreeting, VOICE_CREDIT } from "./voice";
 import type { WalkHandle } from "./walk";
 
 export type ShelfItem = { slug: string; title: string; date: string };
-export type WalkData = { posts: ShelfItem[]; pixelArt: ShelfItem[]; games: ShelfGame[] };
+export type WalkData = { posts: ShelfItem[]; pixelArt: ShelfItem[]; games: ShelfGame[]; manga: MangaItem[] };
 
-const PANELS = ["blog", "games", "about", "pixel-art", "favorites"] as const;
+const PANELS = ["blog", "manga", "games", "about", "pixel-art", "favorites"] as const;
 type Panel = (typeof PANELS)[number];
 const isPanel = (id: InteractionId): id is Panel => (PANELS as readonly string[]).includes(id);
 
@@ -57,6 +59,8 @@ export default function WalkHud({
     toastTimer.current = window.setTimeout(() => setToast(null), 2600);
   };
 
+  useEffect(() => preloadGreeting(), []);
+
   useEffect(() => {
     if (control) say("いらっしゃいませ！ Welcome in.");
     else setPanel(null);
@@ -67,7 +71,10 @@ export default function WalkHud({
     const onUse = (e: Event) => {
       const id = (e as CustomEvent<InteractionId>).detail;
       if (id === "editor") router.push("/pixel-editor");
-      else if (isPanel(id)) setPanel(id);
+      else if (isPanel(id)) {
+        if (id === "about") greet(); // the clerk says いらっしゃいませ
+        setPanel(id);
+      }
       else {
         const lines = TOASTS[id] ?? [];
         if (lines.length) say(lines[Math.floor(Math.random() * lines.length)]);
@@ -165,6 +172,30 @@ export default function WalkHud({
               <Shelf items={data.pixelArt} base="/pixel-art" />
             </div>
           )}
+          {panel === "manga" &&
+            (data.manga.length ? (
+              <ul className="walk-list walk-manga">
+                {data.manga.map((m) => (
+                  <li key={m.id}>
+                    <img src={mangaCoverUrl(m.id)} alt="" loading="lazy" />
+                    <div>
+                      <strong>{m.title}</strong>
+                      <span>
+                        {[m.authors.join(", "), m.year, `${m.volumes} vol.`].filter(Boolean).join(" · ")}
+                      </span>
+                      <span className="walk-progress">
+                        <i style={{ width: `${m.volumes ? Math.round((m.read / m.volumes) * 100) : 0}%` }} />
+                        read {m.read}/{m.volumes}
+                        {m.status === "ENDED" ? " · complete" : m.status === "ONGOING" ? " · ongoing" : ""}
+                      </span>
+                      {m.summary && <p>{m.summary}…</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="walk-about">The comics shelf is still being stocked. Come back soon!</p>
+            ))}
           {panel === "favorites" && (
             <ul className="walk-list">
               {data.games.map((game) => (
@@ -210,6 +241,7 @@ export default function WalkHud({
               <a href="/#about" onClick={() => walk.exit()}>
                 More about me →
               </a>
+              <small className="walk-credit">Clerk voice: {VOICE_CREDIT}</small>
             </div>
           )}
           <p className="walk-panel-foot">
@@ -226,7 +258,8 @@ const PANEL_TITLES: Record<Panel, { jp: string; title: string }> = {
   "pixel-art": { jp: "ドット絵", title: "Pixel art I drew" },
   games: { jp: "ATM", title: "Arcade Token Machine · games I made" },
   about: { jp: "店長", title: "The clerk" },
-  favorites: { jp: "ゲーム", title: "Games I love" },
+  favorites: { jp: "お気に入り · ゲーム", title: "Favorite games" },
+  manga: { jp: "お気に入り · 漫画", title: "Favorite manga" },
 };
 
 /** The cartridge label, as on the shelf: custom art, the pixelated Steam cover, or a generated icon. */

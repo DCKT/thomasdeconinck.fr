@@ -42,8 +42,8 @@ export const viewport: Viewport = {
 };
 
 /* Applies saved skin / sound / motion preferences before first paint (no flash, no hydration mismatch).
-   Motion defaults to the OS "reduce motion" setting until the visitor picks one. */
-const skinScript = `try{var d=document.documentElement,s=localStorage.getItem("skin");if(${JSON.stringify(SKIN_IDS)}.indexOf(s)>-1)d.dataset.skin=s;if(localStorage.getItem("sound")==="off")d.dataset.sound="off";var m=localStorage.getItem("motion");d.dataset.motion=m==="on"||m==="off"?m:matchMedia("(prefers-reduced-motion: reduce)").matches?"off":"on"}catch(e){}`;
+   Animations play by default; the pause button in the header turns them off (remembered). */
+const skinScript = `try{var d=document.documentElement,s=localStorage.getItem("skin");if(${JSON.stringify(SKIN_IDS)}.indexOf(s)>-1)d.dataset.skin=s;if(localStorage.getItem("sound")==="off")d.dataset.sound="off";if(localStorage.getItem("motion")==="off")d.dataset.motion="off"}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -4,7 +4,7 @@ import { UV } from "./atlas";
 /** Floats per box instance: pos3, size3, rgb+emissive, uv rect, rotY+kind, anim4. */
 export const STRIDE = 20;
 
-export const KIND = { solid: 0, rain: 1, ground: 2, glow: 3, unlit: 4 } as const;
+export const KIND = { solid: 0, rain: 1, ground: 2, glow: 3, unlit: 4, floor: 5, glass: 6 } as const;
 
 /**
  * Per-instance animation, evaluated in the vertex shader: [type, a, b, c]
@@ -75,6 +75,9 @@ export function buildWorld(skin: Skin) {
     draw();
     M.anim = FX.anim = NO_ANIM;
   };
+  /** A pane of glass: drawn additively, mostly visible at grazing angles. */
+  const glass = (cx: number, y0: number, cz: number, w: number, h: number, d: number, strength = 0.05) =>
+    FX.box(cx, y0, cz, w, h, d, 0xdcecff, strength, NO_UV, 0, KIND.glass);
   const [c1, c2, c3] = skin.colors;
   const brand = c1 === 0xffffff ? c2 : c1;
   const signBg = parseInt(skin.sign.bg.slice(1), 16);
@@ -93,7 +96,7 @@ export function buildWorld(skin: Skin) {
     M.box(s * 6.1, 0, -3.5, 0.2, 4.2, 7.2, 0xd9d9d4);
     M.box(s * 5.95, 0.1, -3.5, 0.1, 4, 7, 0xd3d8dc, 0.8);
   }
-  M.box(0, 0.1, -3.5, 12, 0.06, 7, 0xc9d0d4, 0.75);
+  G.box(0, 0.1, -3.5, 11.9, 0.06, 6.9, 0xd3d9dd, 0.8, NO_UV, 0, KIND.floor); // polished tiles
   M.box(0, 4.0, -3.5, 12, 0.1, 7, 0xe4e7ea, 0.9);
   for (const z of [-3.5, -5.5]) M.box(0, 3.96, z, 10.5, 0.05, 0.25, 0xffffff, 1);
   animated([ANIM.flicker, 0, 0.37, 0.8], () => M.box(0, 3.96, -1.5, 10.5, 0.05, 0.25, 0xffffff, 1));
@@ -110,6 +113,11 @@ export function buildWorld(skin: Skin) {
   for (const x of [-6, -4.37, -2.73, -1.1, 1.1, 2.73, 4.37, 6]) M.box(x, 0.12, 0, 0.09, 2.95, 0.14, 0xb9bec4, 0.25);
   M.box(0, 2.95, 0, 12, 0.1, 0.14, 0xb9bec4, 0.25);
   M.box(0, 2.45, 0, 2.2, 0.08, 0.12, 0xb9bec4, 0.25);
+  // Window glass between the mullions
+  for (const [a, b] of [[-6, -4.37], [-4.37, -2.73], [-2.73, -1.1], [1.1, 2.73], [2.73, 4.37], [4.37, 6]]) {
+    glass((a + b) / 2, 0.57, 0, b - a - 0.09, 2.33, 0.01, 0.045);
+  }
+  glass(0, 2.49, 0, 2.11, 0.42, 0.01, 0.045);
   // Automatic sliding doors (opened by the uDoor uniform)
   for (const s of [-1, 1]) {
     animated([ANIM.slide, s * 1.02, 0, 0], () => {
@@ -118,6 +126,7 @@ export function buildWorld(skin: Skin) {
       M.box(cx, 2.4, 0.12, 1.09, 0.05, 0.06, 0x9aa1a8, 0.3);
       M.box(cx, 0.12, 0.12, 1.09, 0.1, 0.06, 0x9aa1a8, 0.3);
       M.box(cx - s * 0.4, 0.85, 0.16, 0.03, 0.55, 0.03, 0xd0d4d8, 0.4);
+      glass(cx, 0.22, 0.12, 1.0, 2.18, 0.01, 0.06);
     });
   }
   M.box(0, 0.12, 0.9, 1.9, 0.02, 1, brand); // door mat
@@ -137,10 +146,10 @@ export function buildWorld(skin: Skin) {
       M.box(-5.6 + i * 0.34, 0.68 + row * 0.5, -0.42, 0.27, 0.38, 0.04, pick(CANDY), 0.95);
     }
   }
-  M.box(-2.3, 0.16, -1.35, 0.42, 1.3, 0.26, 0x34435e, 0.75);
+  M.box(-4.6, 0.16, -1.35, 0.42, 1.3, 0.26, 0x34435e, 0.75);
   animated([ANIM.bob, 0.8, 1.3, 0.025], () => {
-    M.box(-2.3, 1.48, -1.35, 0.26, 0.28, 0.26, 0xf1c9a5, 0.85);
-    M.box(-2.3, 1.72, -1.37, 0.28, 0.1, 0.28, 0x2b2019, 0.8);
+    M.box(-4.6, 1.48, -1.35, 0.26, 0.28, 0.26, 0xf1c9a5, 0.85);
+    M.box(-4.6, 1.72, -1.37, 0.28, 0.1, 0.28, 0x2b2019, 0.8);
   });
 
   // Copy machine (→ Editor) and ATM (→ Games)
@@ -152,7 +161,12 @@ export function buildWorld(skin: Skin) {
 
   // Left wall: walk-in drink fridges, five glass doors facing the store
   const FZ0 = -6.4, FZ1 = -1.4, FCZ = (FZ0 + FZ1) / 2, FLEN = FZ1 - FZ0;
-  M.box(-5.9, 0.16, FCZ, 0.04, 2.34, FLEN, 0xd8ecf8, 1.05); // lit back
+  // Lit back panels: the door nearest the entrance is the HOT drinks warmer
+  for (let d = 0; d < 5; d++) {
+    M.box(-5.9, 0.16, FZ1 - 0.5 - d, 0.04, 2.34, 1.0, d === 0 ? 0xffc48a : 0xd8ecf8, d === 0 ? 1.15 : 1.05);
+    glass(-5.3, 0.3, FZ1 - 0.5 - d, 0.01, 2.14, 0.92, 0.07);
+  }
+  M.box(-5.27, 2.3, FZ1 - 0.5, 0.01, 0.12, 0.5, 0xe85d04, 1.3); // "HOT" strip
   M.box(-5.6, 0.16, FCZ, 0.62, 0.14, FLEN, 0x3a3f47, 0.5); // kick
   M.box(-5.6, 2.5, FCZ, 0.7, 0.36, FLEN + 0.06, brand, 0.95); // header
   M.box(-5.3, 2.44, FCZ, 0.06, 0.06, FLEN, 0x8a9199, 0.5);
@@ -266,7 +280,7 @@ export function buildWorld(skin: Skin) {
   const SHELLS = [0x8a8f98, 0x3a3d45, 0x6b7280, 0xd1d5db, 0x4b5563];
   gondola(-4.3, 1.9, -4.4, 1.5, [0.28, 0.64, 1.0, 1.36], (side, level, x0, x1, y, edge) => {
     if (side === 1) {
-      if (level === 2) return; // eye level: the featured favourites, added in walk mode
+      if (level === 3) return; // top shelf: the featured games, added in walk mode
       for (let x = x0 + 0.06; x < x1; x += 0.13) {
         item(x, y, edge, side, 0.1, 0.12, 0.025, pick(SHELLS));
         M.box(x, y + 0.045, edge - 0.028, 0.08, 0.055, 0.004, pick(CANDY), 1);
@@ -291,6 +305,7 @@ export function buildWorld(skin: Skin) {
   M.box(4.2, 1.74, -2.0, 0.57, 0.04, 0.82, 0xffd9a0, 1.6);
   for (const e of [-0.4, 0.4]) M.box(4.2, 1.16, -2.0 + e, 0.55, 0.6, 0.02, 0xb9bec4, 0.5);
   M.box(4.25, 1.43, -2.0, 0.42, 0.02, 0.76, 0xb9bec4, 0.6);
+  glass(3.94, 1.2, -2.0, 0.01, 0.54, 0.78, 0.08);
   const FRIED = [0xc98a2c, 0xd9a040, 0xb26a1f, 0xe0b35a, 0xa85d1a];
   for (const y of [1.2, 1.45]) {
     for (let i = 0; i < 8; i++) {
@@ -311,6 +326,7 @@ export function buildWorld(skin: Skin) {
   M.box(4.2, 1.16, -3.3, 0.45, 0.04, 0.45, 0x6b6f76, 0.7);
   M.box(4.2, 1.6, -3.3, 0.47, 0.04, 0.47, 0xfff4e0, 1.5);
   for (const e of [-0.22, 0.22]) M.box(4.2, 1.16, -3.3 + e, 0.45, 0.44, 0.02, 0xb9bec4, 0.5);
+  glass(3.98, 1.2, -3.3, 0.01, 0.4, 0.42, 0.08);
   for (let i = 0; i < 6; i++) M.box(4.08 + (i % 2) * 0.17, 1.2 + Math.floor(i / 4) * 0.16, -3.42 + (i % 3) * 0.12, 0.1, 0.07, 0.1, 0xfaf6ee, 1.1);
   // Oden pot
   M.box(4.2, 1.16, -3.9, 0.45, 0.14, 0.5, 0xb8bec6, 0.7);
@@ -339,6 +355,14 @@ export function buildWorld(skin: Skin) {
   M.box(5.1, 1.6, -6.84, 0.45, 0.22, 0.01, 0xffffff, 1, UV.staff);
 
   // ── Outside props ─────────────────────────────────────────────────────────
+  // Umbrella stand by the door (it's raining, after all)
+  M.box(-1.65, 0.12, 0.55, 0.5, 0.42, 0.3, 0x9aa0a6, 0.3);
+  [0x1d3557, 0xe63946, 0xf1faee, 0x2a9d8f, 0x111111, 0xf4a261].forEach((color, i) => {
+    const x = -1.84 + (i % 3) * 0.19, z = 0.48 + Math.floor(i / 3) * 0.14;
+    M.box(x, 0.2, z, 0.07, 0.75, 0.07, color, 0.15);
+    M.box(x, 0.95, z, 0.025, 0.12, 0.025, 0x3b2a20, 0.15);
+  });
+
   // Recycling bins
   [0x2563eb, 0x16a34a, 0x9ca3af].forEach((lid, i) => {
     const x = -5.5 + i * 0.68;
