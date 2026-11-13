@@ -90,6 +90,9 @@ export function isSkin(value: unknown): value is SkinId {
 /** Where the "Click me" box floats: just above the sliding doors. */
 export const DOOR_SPOT = { id: "door", pos: [0, 2.15, 0.25] } as const;
 
+/** Where the "Gacha !" tag floats: above the capsule machines by the right window. */
+export const GACHA_SPOT = { id: "gacha", hint: "Capsule toy machines", pos: [5.0, 2.3, 0.6] } as const;
+
 /** A place in the 3D store that links to a page. `pos` is in world units. */
 export const SPOTS = [
   { id: "blog", href: "/blog", label: "Blog", jp: "雑誌", hint: "Magazine rack", pos: [-3.5, 2.05, 0.1] },

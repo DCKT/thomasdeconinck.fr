@@ -1,8 +1,9 @@
 import type { Skin } from "app/lib/skins";
+import { GACHA_SERIES } from "./gacha-data";
 
 /** One 2D canvas holds every texture of the scene: a single upload, a single bind. */
 export const ATLAS_W = 2048;
-export const ATLAS_H = 1280;
+export const ATLAS_H = 1600;
 
 type Rect = readonly [x: number, y: number, w: number, h: number];
 
@@ -21,9 +22,19 @@ const R = {
   fried: [1688, 200, 352, 96],
   steam: [1688, 300, 352, 96],
   staff: [1688, 400, 192, 96],
+  // Gachapon bank: one display card per machine, the control panel sticker, the topper
+  gachaCard0: [4, 1284, 288, 150],
+  gachaCard1: [296, 1284, 288, 150],
+  gachaCard2: [588, 1284, 288, 150],
+  gachaCard3: [880, 1284, 288, 150],
+  gachaCard4: [1172, 1284, 288, 150],
+  gachaCard5: [1464, 1284, 288, 150],
+  gachaPanel: [4, 1440, 272, 156],
+  gachaHeader: [284, 1440, 944, 152],
 } as const satisfies Record<string, Rect>;
-/** From here down, the atlas holds walk-mode artwork, painted lazily and uploaded on its own. */
+/** This band of the atlas holds walk-mode artwork, painted lazily and uploaded on its own. */
 export const EXTRA_Y = 720;
+export const EXTRA_H = 560;
 
 export const rectUv = ([x, y, w, h]: Rect) => [
   (x + 1) / ATLAS_W,
@@ -35,6 +46,8 @@ export const rectUv = ([x, y, w, h]: Rect) => [
 export const UV = Object.fromEntries(
   Object.entries(R).map(([k, r]) => [k, rectUv(r)]),
 ) as Record<keyof typeof R, number[]>;
+
+export const GACHA_CARD_UV = [UV.gachaCard0, UV.gachaCard1, UV.gachaCard2, UV.gachaCard3, UV.gachaCard4, UV.gachaCard5];
 
 export const FONT = `system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif`;
 const hex = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
@@ -274,6 +287,173 @@ export function paintAtlas(canvas: HTMLCanvasElement, skin: Skin) {
     ctx.fillText("STAFF ONLY", w / 2, h * 0.38);
     ctx.font = `700 16px ${FONT}`;
     ctx.fillText("関係者以外立入禁止", w / 2, h * 0.74);
+  });
+
+  // ── Gachapon ──────────────────────────────────────────────────────────────
+  const capsule = (x: number, y: number, r: number, color: string) => {
+    ctx.fillStyle = "#f4f7fa";
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,.25)";
+    ctx.fillRect(x - r, y - 1.5, r * 2, 3);
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.beginPath();
+    ctx.arc(x - r * 0.35, y - r * 0.45, r * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  /** A spiky price burst, the kind stuck on every machine. */
+  const burst = (x: number, y: number, r: number, fill: string) => {
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * Math.PI * 2;
+      const rr = i % 2 ? r : r * 0.8;
+      ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  GACHA_SERIES.forEach((series, i) => {
+    const rect = [R.gachaCard0, R.gachaCard1, R.gachaCard2, R.gachaCard3, R.gachaCard4, R.gachaCard5][i];
+    region(rect, (w, h) => {
+      const g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, hex(series.color));
+      g.addColorStop(1, hex(series.dark));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      // Sunburst behind the title
+      ctx.fillStyle = "rgba(255,255,255,.13)";
+      for (let k = 0; k < 14; k++) {
+        const a = (k / 14) * Math.PI * 2 + i;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.36, h * 0.5);
+        ctx.lineTo(w * 0.36 + Math.cos(a) * 400, h * 0.5 + Math.sin(a) * 400);
+        ctx.lineTo(w * 0.36 + Math.cos(a + 0.22) * 400, h * 0.5 + Math.sin(a + 0.22) * 400);
+        ctx.fill();
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, 20);
+      ctx.fillStyle = hex(series.dark);
+      ctx.textAlign = "left";
+      ctx.font = `800 12px ${FONT}`;
+      ctx.fillText("カプセルトイ · CAPSULE TOY", 10, 11);
+      ctx.textAlign = "right";
+      ctx.fillText(`No.${String(i + 1).padStart(2, "0")}`, w - 10, 11);
+
+      ctx.textAlign = "left";
+      ctx.lineJoin = "round";
+      ctx.font = `900 ${series.jp.length > 5 ? 30 : 38}px ${FONT}`;
+      ctx.strokeStyle = hex(series.dark);
+      ctx.lineWidth = 8;
+      ctx.strokeText(series.jp, 12, 56, w * 0.66);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(series.jp, 12, 56, w * 0.66);
+      ctx.font = `900 20px ${FONT}`;
+      ctx.lineWidth = 5;
+      ctx.strokeText(series.en, 13, 90, w * 0.62);
+      ctx.fillStyle = "#fff275";
+      ctx.fillText(series.en, 13, 90, w * 0.62);
+      // "5 to collect" strip with tiny capsules
+      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillRect(0, h - 36, w, 36);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `800 13px ${FONT}`;
+      ctx.fillText("全5種 + シークレット", 10, h - 17);
+      for (let k = 0; k < 4; k++) capsule(w * 0.58 + k * 26, h - 18, 10, CANDY[(k * 3 + i * 2) % CANDY.length]);
+
+      burst(w - 44, 66, 40, "#ffe14d");
+      ctx.fillStyle = "#d00000";
+      ctx.textAlign = "center";
+      ctx.font = `800 12px ${FONT}`;
+      ctx.fillText("1回", w - 44, 50);
+      ctx.font = `900 24px ${FONT}`;
+      ctx.fillText("¥300", w - 44, 72);
+    });
+  });
+
+  // Control panel sticker: the dial, coin slot and chute are modelled on top of it (see world.ts)
+  region(R.gachaPanel, (w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#fbfbf9");
+    g.addColorStop(1, "#e4e6e3");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Turn-this-way ring around the dial
+    const dx = 152, dy = 80;
+    ctx.fillStyle = "#d9dcdf";
+    ctx.beginPath();
+    ctx.arc(dx, dy, 52, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#e63946";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 44, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+    ctx.fillStyle = "#e63946";
+    ctx.beginPath();
+    const tip = Math.PI * 1.85;
+    ctx.moveTo(dx + Math.cos(tip + 0.28) * 44, dy + Math.sin(tip + 0.28) * 44);
+    ctx.lineTo(dx + Math.cos(tip) * 54, dy + Math.sin(tip) * 54);
+    ctx.lineTo(dx + Math.cos(tip) * 34, dy + Math.sin(tip) * 34);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#3a3d42";
+    ctx.font = `800 11px ${FONT}`;
+    ctx.fillText("まわす", dx, dy + 62);
+    // Price
+    burst(42, 36, 32, "#e63946");
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `800 10px ${FONT}`;
+    ctx.fillText("1回", 42, 24);
+    ctx.font = `900 19px ${FONT}`;
+    ctx.fillText("¥300", 42, 41);
+    // Coins it takes, above the slot
+    ctx.fillStyle = "#3a3d42";
+    ctx.font = `800 10px ${FONT}`;
+    ctx.fillText("100円玉", 236, 16);
+    for (let k = 0; k < 3; k++) {
+      ctx.fillStyle = "#b8bcc2";
+      ctx.beginPath();
+      ctx.arc(220 + k * 16, 132, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#6b7078";
+      ctx.font = `800 7px ${FONT}`;
+      ctx.fillText("100", 220 + k * 16, 132.5);
+    }
+    ctx.fillStyle = "#3a3d42";
+    ctx.font = `800 9px ${FONT}`;
+    ctx.fillText("取出口", 55, 75);
+  });
+
+  region(R.gachaHeader, (w, h) => {
+    ctx.fillStyle = "#fff275";
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#e63946";
+    ctx.fillRect(0, 0, w, 16);
+    ctx.fillRect(0, h - 16, w, 16);
+    for (let k = 0; k < 5; k++) {
+      capsule(60 + k * 20, h / 2 + (k % 2 ? 18 : -14), 22, CANDY[(k * 3) % CANDY.length]);
+      capsule(w - 60 - k * 20, h / 2 + (k % 2 ? -14 : 18), 22, CANDY[(k * 3 + 4) % CANDY.length]);
+    }
+    ctx.textAlign = "center";
+    ctx.lineJoin = "round";
+    ctx.font = `900 76px ${FONT}`;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 14;
+    ctx.strokeText("ガチャガチャ", w / 2 - 110, h / 2 + 2);
+    ctx.fillStyle = "#e63946";
+    ctx.fillText("ガチャガチャ", w / 2 - 110, h / 2 + 2);
+    ctx.fillStyle = "#1d3557";
+    ctx.textAlign = "left";
+    ctx.font = `900 34px ${FONT}`;
+    ctx.fillText("CAPSULE", w / 2 + 150, h / 2 - 16);
+    ctx.fillText("TOYS", w / 2 + 150, h / 2 + 22);
   });
 
   region(R.sky, (w, h) => {

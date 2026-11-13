@@ -1,5 +1,5 @@
 import { SKINS, type SkinId } from "app/lib/skins";
-import { ATLAS_H, ATLAS_W, EXTRA_Y, paintAtlas } from "./atlas";
+import { ATLAS_W, EXTRA_H, EXTRA_Y, paintAtlas } from "./atlas";
 import { buildWorld, LAMP_POS, STRIDE } from "./world";
 
 /**
@@ -44,6 +44,8 @@ export type SceneHandle = {
   setDoor: (open: number) => void;
   /** The wet-ground reflection pass is useless indoors: skip it there. */
   setReflection: (on: boolean) => void;
+  /** Gachapon: crank angle (radians), how hard the capsules rattle (0..1), machine index (-1: none). */
+  setGacha: (spin: number, shake: number, machine: number) => void;
   setExtra: (extra: SceneExtra | null) => void;
   /** Repaints only the extra artwork (e.g. once images have loaded): no geometry upload. */
   refreshExtraArt: () => void;
@@ -64,17 +66,27 @@ uniform float uTime;
 uniform float uMirror;
 uniform float uDoor;
 uniform float uPlane;
+uniform vec3 uGacha;
 out vec3 vW;
 out vec3 vN;
 out vec4 vCol;
 out vec2 vUv;
 out float vTex;
 out float vKind;
+flat out vec3 vC;
+flat out float vR;
 void main() {
   float c = cos(iMisc.x), s = sin(iMisc.x);
   vec3 p = aPos * iSize;
-  p.xz = vec2(c * p.x + s * p.z, c * p.z - s * p.x);
   vec3 n = aNor;
+  // Gachapon parts of the machine being cranked
+  bool cranked = iAnim.x == 6.0 && iAnim.y == uGacha.z;
+  if (cranked && iAnim.w > 0.5) {   // the dial turns clockwise, about its own axis
+    float ca = cos(uGacha.x), sa = sin(uGacha.x);
+    p.xy = vec2(ca * p.x + sa * p.y, ca * p.y - sa * p.x);
+    n.xy = vec2(ca * n.x + sa * n.y, ca * n.y - sa * n.x);
+  }
+  p.xz = vec2(c * p.x + s * p.z, c * p.z - s * p.x);
   n.xz = vec2(c * n.x + s * n.z, c * n.z - s * n.x);
   vec3 w = iPos + p;
   if (iMisc.y >= 1.0 && iMisc.y < 2.0) {
@@ -100,8 +112,12 @@ void main() {
     w.x += sin(t * iAnim.y + iAnim.z) * iAnim.w * (aPos.y + 0.5);
   } else if (iAnim.x == 5.0) {   // sliding door
     w.x += iAnim.y * uDoor;
+  } else if (cranked) {          // capsules rattle while the dial turns
+    w.xy += vec2(sin(uGacha.x * 9.0 + iAnim.z), cos(uGacha.x * 7.0 + iAnim.z * 1.7)) * 0.012 * uGacha.y;
   }
   vW = w;
+  vC = w - p;
+  vR = iSize.x * 0.5;
   vCol = vec4(iCol.rgb, em);
   vKind = iMisc.y;
   vTex = (aNor.z > 0.5 && iUv.z > 0.0) ? 1.0 : 0.0;
@@ -118,12 +134,15 @@ in vec4 vCol;
 in vec2 vUv;
 in float vTex;
 in float vKind;
+flat in vec3 vC;
+flat in float vR;
 uniform sampler2D uAtlas;
 uniform vec3 uLight;
 uniform vec3 uLamp;
 uniform vec3 uCam;
 uniform float uMirror;
 uniform float uTime;
+uniform float uPlane;
 out vec4 o;
 const vec3 FOG = vec3(0.035, 0.043, 0.09);
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -143,7 +162,7 @@ void main() {
     o = vec4(vec3(0.11, 0.13, 0.19), 1.0);
     return;
   }
-  if (vKind >= 6.0) {                           // glass (additive): sheen grows at grazing angles
+  if (vKind >= 6.0 && vKind < 7.0) {            // glass (additive): sheen grows at grazing angles
     vec3 V = normalize(uCam - vW);
     float f = pow(1.0 - abs(dot(normalize(vN), V)), 2.0);
     o = vec4(vCol.rgb * vCol.a * (0.35 + 2.2 * f), 1.0);
@@ -152,21 +171,48 @@ void main() {
   vec3 base = vTex > 0.5 ? t.rgb : vCol.rgb;
   if (vKind >= 4.0 && vKind < 5.0) { o = vec4(base, 1.0); return; }
 
+  vec3 P = vW;
   vec3 n = normalize(vN);
+  float cover = 1.0;
+  vec3 ballV = vec3(0.0);
+  if (vKind >= 7.0) {                           // ball: the sphere inscribed in the box, ray-traced
+    vec3 cam = uCam;
+    if (uMirror < 0.0) cam.y = 2.0 * uPlane - cam.y;
+    vec3 rd = normalize(vW - cam);
+    vec3 oc = cam - vC;
+    float b = dot(oc, rd);
+    float d = length(oc - b * rd);              // how far the ray passes from the centre
+    cover = clamp((vR - d) / max(fwidth(d), 1e-5) + 0.5, 0.0, 1.0);
+    if (cover <= 0.0) discard;
+    P = cam + rd * (-b - sqrt(max(vR * vR - d * d, 0.0)));
+    n = (P - vC) / vR;
+    ballV = -rd;
+    base = vCol.rgb;
+    if (vUv.x != 0.0 || vUv.y != 0.0) {         // capsule: coloured lid, clear bottom, a seam between
+      float side = dot(n, normalize(vec3(vUv.x, 0.6, vUv.y)));
+      vec3 clear = mix(vec3(0.93, 0.95, 0.97), vCol.rgb, 0.16);
+      base = mix(clear, vCol.rgb, smoothstep(-0.03, 0.03, side));
+      base *= 0.68 + 0.32 * smoothstep(0.0, 0.07, abs(side));
+    }
+  }
   float em = vCol.a;
   // Night ambient + a hint of moonlight
   vec3 lit = base * vec3(0.3, 0.38, 0.62) * (0.2 + 0.16 * n.y + 0.14 * max(dot(n, normalize(vec3(-0.5, 0.6, 0.6))), 0.0));
   // Light spilling out of the storefront, approximated as a line light
-  vec3 L = vec3(clamp(vW.x, -5.5, 5.5), 2.0, 0.4) - vW;
+  vec3 L = vec3(clamp(P.x, -5.5, 5.5), 2.0, 0.4) - P;
   float d2 = dot(L, L);
-  lit += base * uLight * (0.25 + 0.75 * max(dot(n, L * inversesqrt(d2)), 0.0)) * smoothstep(-0.2, 0.3, vW.z) * 6.0 / (1.0 + d2 * 0.5);
+  lit += base * uLight * (0.25 + 0.75 * max(dot(n, L * inversesqrt(d2)), 0.0)) * smoothstep(-0.2, 0.3, P.z) * 6.0 / (1.0 + d2 * 0.5);
   // Sodium street lamp
-  vec3 L2 = uLamp - vW;
+  vec3 L2 = uLamp - P;
   float e2 = dot(L2, L2);
   lit += base * vec3(1.0, 0.6, 0.26) * max(dot(n, L2 * inversesqrt(e2)), 0.0) * 22.0 / (1.0 + e2);
 
   float shade = 0.74 + 0.26 * clamp(dot(n, normalize(vec3(0.25, 0.8, 0.55))), 0.0, 1.0);
   vec3 col = mix(lit, base * shade, min(em, 1.0)) * max(em, 1.0);
+  if (vKind >= 7.0) {                           // glossy plastic: darker rim, one sharp highlight
+    col *= 0.62 + 0.38 * pow(max(dot(n, ballV), 0.0), 0.7);
+    col += pow(max(dot(n, normalize(ballV + normalize(vec3(-0.35, 0.9, 0.45)))), 0.0), 60.0) * 0.6;
+  }
 
   // Indoors: soft contact shadow towards the floor, darker corners
   if (abs(vW.x) < 6.0 && vW.z < 0.0 && vW.z > -7.0 && vW.y < 4.0) {
@@ -174,7 +220,7 @@ void main() {
     col *= mix(0.72, 1.0, smoothstep(0.1, 0.85, vW.y)) * mix(0.86, 1.0, smoothstep(0.0, 1.2, wall));
   }
 
-  float a = 1.0;
+  float a = cover;
   if (vKind >= 5.0 && vKind < 6.0) {            // polished tiles: let the reflection through
     vec3 V = normalize(uCam - vW);
     float fresnel = pow(1.0 - max(V.y, 0.0), 4.0);
@@ -198,10 +244,10 @@ void main() {
     col += ring * vec3(0.35, 0.38, 0.5);
     a = max(a, ring * 0.9);
   }
-  if (uMirror < 0.0) col *= 0.85 * exp(-vW.y * 0.1);
+  if (uMirror < 0.0) col *= 0.85 * exp(-P.y * 0.1);
 
-  float fog = max(smoothstep(-9.0, -52.0, vW.z), smoothstep(20.0, 70.0, abs(vW.x)));
-  fog = max(fog, smoothstep(22.0, 90.0, vW.z));
+  float fog = max(smoothstep(-9.0, -52.0, P.z), smoothstep(20.0, 70.0, abs(P.x)));
+  fog = max(fog, smoothstep(22.0, 90.0, P.z));
   o = vec4(min(mix(col, FOG, fog), 1.0), a);
 }`;
 
@@ -305,7 +351,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
       throw new Error(gl!.getProgramInfoLog(program) ?? "program link failed");
     }
     gl!.useProgram(program);
-    for (const name of ["uVP", "uTime", "uMirror", "uAtlas", "uLight", "uLamp", "uCam", "uDoor", "uPlane"]) {
+    for (const name of ["uVP", "uTime", "uMirror", "uAtlas", "uLight", "uLamp", "uCam", "uDoor", "uPlane", "uGacha"]) {
       uniforms[name] = gl!.getUniformLocation(program, name);
     }
 
@@ -349,7 +395,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
   function paintExtra() {
     if (!extra) return;
     extraCanvas.width = ATLAS_W;
-    extraCanvas.height = ATLAS_H - EXTRA_Y;
+    extraCanvas.height = EXTRA_H;
     const ctx = extraCanvas.getContext("2d")!;
     ctx.setTransform(1, 0, 0, 1, 0, -EXTRA_Y); // the painter works in atlas coordinates
     extra.paint(extraCanvas, skin);
@@ -408,6 +454,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
   let override: CameraPose | null = null;
   let ticker: ((dt: number, now: number) => void) | null = null;
   let door = 0;
+  const gacha = [0, 0, -1];
   let reflection = true;
   /** Dynamic resolution: drops when frames are consistently slow (weak GPU, huge screen). */
   let resScale = 1;
@@ -474,6 +521,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     gl!.uniform3fv(uniforms.uCam, pose.eye);
     gl!.uniform1f(uniforms.uTime, rainTime);
     gl!.uniform1f(uniforms.uDoor, door);
+    gl!.uniform3f(uniforms.uGacha, gacha[0], gacha[1], gacha[2]);
     // Reflect through the shop floor when the camera is inside, the street otherwise
     const indoors = pose.eye[2] < 0.05 && Math.abs(pose.eye[0]) < 6;
     gl!.uniform1f(uniforms.uPlane, indoors ? 0.16 : 0);
@@ -481,6 +529,8 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     gl!.disable(gl!.BLEND);
     gl!.clear(gl!.COLOR_BUFFER_BIT | gl!.DEPTH_BUFFER_BIT);
 
+    // Balls fade their silhouette through alpha: with MSAA that becomes a smooth edge
+    gl!.enable(gl!.SAMPLE_ALPHA_TO_COVERAGE);
     // 1. The world mirrored through y = 0 (flips winding)…
     if (reflection) {
       gl!.uniform1f(uniforms.uMirror, -1);
@@ -492,14 +542,17 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     }
     gl!.uniform1f(uniforms.uMirror, 1);
     // 2. …seen through the semi-transparent wet ground
+    gl!.disable(gl!.SAMPLE_ALPHA_TO_COVERAGE);
     gl!.enable(gl!.BLEND);
     gl!.blendFunc(gl!.SRC_ALPHA, gl!.ONE_MINUS_SRC_ALPHA);
     draw(world.ground);
     gl!.disable(gl!.BLEND);
     // 3. The world itself
+    gl!.enable(gl!.SAMPLE_ALPHA_TO_COVERAGE);
     draw({ first: world.mirrored.first, count: world.mirrored.count + world.plain.count });
     if (extraRange.count) draw(extraRange);
     // 4. Additive glow + rain
+    gl!.disable(gl!.SAMPLE_ALPHA_TO_COVERAGE);
     gl!.enable(gl!.BLEND);
     gl!.blendFunc(gl!.ONE, gl!.ONE);
     gl!.depthMask(false);
@@ -620,6 +673,11 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
     },
     setReflection(on) {
       reflection = on;
+    },
+    setGacha(spin, shake, machine) {
+      gacha[0] = spin;
+      gacha[1] = shake;
+      gacha[2] = machine;
     },
     setExtra(value) {
       extra = value;

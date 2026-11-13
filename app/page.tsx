@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BlogPosts } from "app/components/posts";
 import KonbiniScene from "app/components/konbini/konbini-scene";
 import { DoorChime } from "app/components/konbini/door-chime";
+import { GachaTag } from "app/components/konbini/gacha-tag";
 import { getBlogPosts, getPixelArtPosts, shortDate, sortByDate } from "app/blog/utils";
 import { getShelfGames } from "app/lib/steam";
 import { getMangaShelf } from "app/lib/komga";
@@ -37,6 +38,7 @@ export default async function Page() {
             </Link>
           ))}
           <DoorChime index={SPOTS.length} />
+          <GachaTag index={SPOTS.length + 1} />
         </nav>
         <div className="hero-copy">
           <p className="eyebrow">24時間営業 · Open 24/7</p>

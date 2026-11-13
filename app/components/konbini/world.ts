@@ -1,10 +1,12 @@
 import type { Skin } from "app/lib/skins";
-import { UV } from "./atlas";
+import { GACHA_CARD_UV, UV } from "./atlas";
+import { GACHA, GACHA_COUNT, GACHA_SERIES, machineBase } from "./gacha-data";
 
 /** Floats per box instance: pos3, size3, rgb+emissive, uv rect, rotY+kind, anim4. */
 export const STRIDE = 20;
 
-export const KIND = { solid: 0, rain: 1, ground: 2, glow: 3, unlit: 4, floor: 5, glass: 6 } as const;
+/** `ball` draws the sphere inscribed in the box (ray-traced in the fragment shader). */
+export const KIND = { solid: 0, rain: 1, ground: 2, glow: 3, unlit: 4, floor: 5, glass: 6, ball: 7 } as const;
 
 /**
  * Per-instance animation, evaluated in the vertex shader: [type, a, b, c]
@@ -13,8 +15,10 @@ export const KIND = { solid: 0, rain: 1, ground: 2, glow: 3, unlit: 4, floor: 5,
  *   bob     → a = frequency, b = phase, c = amplitude (y)
  *   sway    → a = frequency, b = phase, c = amplitude (x, grows with height)
  *   slide   → a = x distance travelled when the doors are fully open (uniform uDoor)
+ *   gacha   → a = machine index, b = phase, c = 0 capsule (rattles) / 1 dial (spins).
+ *             Only the machine being cranked moves (uniform uGacha).
  */
-export const ANIM = { none: 0, drive: 1, flicker: 2, bob: 3, sway: 4, slide: 5 } as const;
+export const ANIM = { none: 0, drive: 1, flicker: 2, bob: 3, sway: 4, slide: 5, gacha: 6 } as const;
 
 export const NO_UV = [0, 0, 0, 0];
 export const NO_ANIM = [0, 0, 0, 0];
@@ -131,7 +135,7 @@ export function buildWorld(skin: Skin) {
   }
   M.box(0, 0.12, 0.9, 1.9, 0.02, 1, brand); // door mat
   M.box(-4.9, 1.2, 0.03, 0.75, 1, 0.02, WHITE, 0.95, UV.poster1);
-  M.box(5.2, 1.2, 0.03, 0.75, 1, 0.02, WHITE, 0.95, UV.poster2);
+  M.box(-1.95, 1.2, 0.03, 0.75, 1, 0.02, WHITE, 0.95, UV.poster2);
 
   // ── Interior: laid out like a real konbini ────────────────────────────────
   // Front: magazines + copy/ATM · right: counter, hot snacks, cigarettes ·
@@ -373,6 +377,73 @@ export function buildWorld(skin: Skin) {
   for (const x of [-6.75, -7.45]) {
     for (const row of [0, 1]) M.box(x, 0.12 + row * 0.82, 0.3, 0.64, 0.8, 0.5, WHITE, 0.75, UV.gacha);
   }
+  // Gachapon bank (→ the gacha scene): six machines, two high, in front of the right window
+  {
+    const { w, h, depth, front } = GACHA;
+    const zc = front - depth / 2;
+    const cx = GACHA.x0 + (GACHA.cols * w) / 2;
+    const bankW = GACHA.cols * w;
+    const BODY = 0xf3f4f1;
+    // Its own dice, so adding the bank does not reshuffle the rest of the street
+    const dice = mulberry32(23);
+    M.box(cx, 0.12, zc, bankW + 0.04, 0.1, depth + 0.02, 0x2b2e35, 0.4); // plinth
+    for (const e of [-1, 1]) M.box(cx + e * (bankW / 2 + 0.01), 0.22, zc, 0.02, GACHA.rows * h, depth, 0xd9dcd8, 0.6);
+    M.box(cx, GACHA.y0 + GACHA.rows * h, front - 0.08, bankW, 0.26, 0.08, 0xffffff, 1, UV.gachaHeader); // topper
+    M.box(cx, GACHA.y0 + GACHA.rows * h + 0.26, front - 0.06, bankW + 0.04, 0.03, 0.16, 0xffffff, 1.4);
+
+    for (let i = 0; i < GACHA_COUNT; i++) {
+      const { x, y } = machineBase(i);
+      const { color } = GACHA_SERIES[i];
+      const bw = w - 0.02; // a hair of shadow between neighbours
+      // Lower half: the control panel
+      M.box(x, y, zc, bw, 0.3, depth, BODY, 0.82, UV.gachaPanel);
+      M.box(x, y + 0.285, front + 0.004, bw, 0.03, 0.008, color, 0.95);
+      // Dial: a domed knob with a grip bar across it (the bar spins when cranked)
+      const dx = x + 0.03, dy = y + 0.147;
+      M.box(dx, dy - 0.065, front - 0.025, 0.13, 0.13, 0.13, 0xe9ecef, 0.85, NO_UV, 0, KIND.ball);
+      animated([ANIM.gacha, i, 0, 1], () => {
+        M.box(dx, dy - 0.02, front + 0.05, 0.15, 0.04, 0.035, color, 0.95);
+        M.box(dx, dy - 0.012, front + 0.07, 0.06, 0.024, 0.01, 0xffffff, 1);
+      });
+      // Coin slot
+      M.box(x + 0.2, y + 0.12, front + 0.004, 0.06, 0.1, 0.008, 0xb9bec4, 0.7);
+      M.box(x + 0.2, y + 0.15, front + 0.01, 0.012, 0.05, 0.006, 0x15171c, 0.3);
+      M.box(x + 0.2, y + 0.095, front + 0.012, 0.03, 0.03, 0.012, 0xe63946, 1);
+      // Chute where the capsule comes out
+      M.box(x - 0.155, y + 0.02, front + 0.002, 0.16, 0.11, 0.006, 0x15171c, 0.25);
+      M.box(x - 0.155, y + 0.012, front + 0.025, 0.18, 0.016, 0.05, 0xdfe2e0, 0.8);
+      for (const e of [-1, 1]) M.box(x - 0.155 + e * 0.085, y + 0.02, front + 0.02, 0.012, 0.115, 0.04, 0xdfe2e0, 0.8);
+      M.box(x - 0.155, y + 0.132, front + 0.02, 0.182, 0.012, 0.04, 0xdfe2e0, 0.8);
+
+      // Upper half: the display, a lit box full of capsules behind glass
+      const wy = y + 0.3;
+      M.box(x, wy, front - depth / 2 - 0.1, bw, 0.5, depth - 0.2, 0xeef5fa, 1.05); // lit back
+      for (const e of [-1, 1]) M.box(x + e * (bw / 2 - 0.015), wy, zc, 0.03, 0.5, depth, BODY, 0.82);
+      M.box(x, wy + 0.47, zc, bw, 0.03, depth, BODY, 0.82);
+      M.box(x, wy + 0.47, front + 0.003, bw, 0.03, 0.006, color, 0.95);
+      M.box(x, wy + 0.225, front - 0.006, bw - 0.06, 0.245, 0.008, 0xffffff, 1, GACHA_CARD_UV[i]);
+      glass(x, wy, front - 0.002, bw - 0.06, 0.225, 0.004, 0.05);
+      // The pile: staggered layers, two rows deep, a few missing on top
+      const R = 0.043;
+      animated([ANIM.gacha, i, 0, 0], () => {
+        for (let layer = 0; layer < 3; layer++) {
+          const odd = layer % 2;
+          for (let row = 0; row < 2; row++) {
+            for (let k = 0; k < 5 - odd; k++) {
+              if (layer === 2 && dice() < 0.3) continue;
+              const bx = x + (k - (4 - odd) / 2) * 0.089 + (dice() - 0.5) * 0.012;
+              const bz = front - 0.058 - row * 0.086 - odd * 0.03 + (dice() - 0.5) * 0.01;
+              const tint = dice() < 0.3 ? color : CANDY[Math.floor(dice() * CANDY.length)];
+              // Which way the capsule's lid points (never exactly 0: that means "plain ball")
+              const tilt = [dice() * 2 - 1 || 0.3, dice() * 2 - 1 || 0.3];
+              M.anim = [ANIM.gacha, i, dice() * 6.28, 0];
+              M.box(bx, wy + layer * 0.073, bz, R * 2, R * 2, R * 2, tint, 0.92, [...tilt, ...tilt], 0, KIND.ball);
+            }
+          }
+        }
+      });
+    }
+  }
   // Vending machines (→ Games)
   M.box(6.95, 0.12, 0.2, 1, 1.9, 0.75, 0xd7263d, 1, UV.vend1);
   M.box(8.05, 0.12, 0.2, 1, 1.9, 0.75, 0xf4f6f8, 1, UV.vend2);
@@ -443,6 +514,7 @@ export function buildWorld(skin: Skin) {
   glow(0, 1.4, 0.5, 19, 6.5, 0xfff6e6, 0.08);
   animated([ANIM.flicker, 0, 0.71, 0.6], () => glow(-9.3, 6.4, -0.2, 7, 7, skin.glow, 0.3));
   glow(7.5, 1.1, 0.7, 5.5, 4.5, 0xffffff, 0.16);
+  glow(5.0, 1.25, 0.72, 3.4, 3.4, 0xfff4d6, 0.1);
   glow(8.6, 6.4, 1.9, 5, 5, 0xffb060, 0.55);
   for (let i = 0; i < 520; i++) {
     FX.box(-20 + rnd() * 40, rnd() * 14, -5 + rnd() * 19, 0.014, 0.5 + rnd() * 0.3, 0.014, 0, 0, NO_UV, 0, KIND.rain + rnd() * 0.99);
