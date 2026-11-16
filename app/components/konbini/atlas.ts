@@ -1,5 +1,5 @@
 import type { Skin } from "app/lib/skins";
-import { GACHA_SERIES } from "./gacha-data";
+import { GACHA_SERIES, prizeCount } from "./gacha-data";
 
 /** One 2D canvas holds every texture of the scene: a single upload, a single bind. */
 export const ATLAS_W = 2048;
@@ -364,7 +364,7 @@ export function paintAtlas(canvas: HTMLCanvasElement, skin: Skin) {
       ctx.fillRect(0, h - 36, w, 36);
       ctx.fillStyle = "#ffffff";
       ctx.font = `800 13px ${FONT}`;
-      ctx.fillText("全5種 + シークレット", 10, h - 17);
+      ctx.fillText(`全${prizeCount(series)}種 + シークレット`, 10, h - 17);
       for (let k = 0; k < 4; k++) capsule(w * 0.58 + k * 26, h - 18, 10, CANDY[(k * 3 + i * 2) % CANDY.length]);
 
       burst(w - 44, 66, 40, "#ffe14d");

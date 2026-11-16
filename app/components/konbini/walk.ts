@@ -4,6 +4,7 @@
  */
 import type { SKINS, SkinId } from "app/lib/skins";
 import { FONT, rectUv } from "./atlas";
+import { CARDS } from "./cards-data";
 import type { MangaItem } from "app/lib/komga";
 import type { ShelfGame } from "app/lib/steam";
 import { mangaCoverUrl, PRINTS, type InteractionId } from "./interactions";
@@ -19,16 +20,20 @@ type Rect = [x0: number, z0: number, x1: number, z1: number];
  * Stand in a zone, look the right way (`facing` = direction you look along), press E.
  * The first match wins, so specific spots come before broad ones.
  */
+/** Left part of the games aisle: its right edge follows the shelf layout (see prepareWalk). */
+const MANGA_ZONE: Rect = [-4.35, -3.98, -1.4, -3.02];
+
 const INTERACTIONS: { id: InteractionId; zone: Rect; facing: [number, number] }[] = [
-  { id: "manga", zone: [-3.45, -2.15, -1.15, -0.85], facing: [0, 1] },
-  { id: "blog", zone: [-5.6, -2.15, -3.45, -0.85], facing: [0, 1] },
+  { id: "blog", zone: [-5.6, -2.15, -1.15, -0.85], facing: [0, 1] },
   { id: "editor", zone: [1.5, -1.75, 2.62, -1.03], facing: [0, 1] },
   { id: "games", zone: [2.85, -1.75, 3.62, -1.03], facing: [0, 1] },
   { id: "fried", zone: [2.6, -2.45, 3.62, -1.5], facing: [1, 0] },
   { id: "about", zone: [2.6, -3.1, 3.62, -2.45], facing: [1, 0] },
+  { id: "cards", zone: [2.6, -4.75, 3.62, -4.2], facing: [1, 0] },
   { id: "oden", zone: [2.6, -4.2, 3.62, -3.1], facing: [1, 0] },
   { id: "coffee", zone: [2.6, -5.45, 3.62, -4.6], facing: [1, 0] },
   { id: "pixel-art", zone: [-1.25, -3.98, 1.95, -3.02], facing: [0, 1] },
+  { id: "manga", zone: MANGA_ZONE, facing: [0, -1] },
   { id: "favorites", zone: [-4.35, -3.98, 1.95, -3.02], facing: [0, -1] },
   { id: "drinks", zone: [-5.05, -6.2, -4.35, -1.35], facing: [-1, 0] },
   { id: "onigiri", zone: [-5.05, -6.2, 3.8, -4.82], facing: [0, -1] },
@@ -64,11 +69,10 @@ const SIGN_TEXTS = [
   ["おにぎり・弁当", "ONIGIRI"],
   ["お菓子", "SNACKS"],
   ["ドット絵", "PIXEL ART"],
-  ["ゲーム", "GAMES"],
+  ["ゲーム・コミック", "GAMES · MANGA"],
   ["スイーツ", "SWEETS"],
   ["レジ", "REGISTER"],
   ["コピー・ATM", "EDITOR · GAMES"],
-  ["コミック", "MANGA"],
 ] as const;
 const signRect = (i: number) => [(i % 5) * 408, 720 + Math.floor(i / 5) * 88, 400, 80] as const;
 const cartRect = (i: number) => [i * 100, 896, 96, 96] as const;
@@ -79,11 +83,45 @@ const MAX_MANGA = 18;
 const TOPPERS = ["FAVORITE GAMES", "FAVORITE MANGA"] as const;
 const topperRect = (i: number) => [i * 408, 1128, 400, 80] as const;
 const MAX_CARTS = 8;
+/**
+ * The manhole card display at the counter (see cards-data.ts): banner, wrapper,
+ * the four cards shown off on the top tier and the poster on the counter front.
+ */
+type AtlasRect = readonly [x: number, y: number, w: number, h: number];
+const CARD_SIGN: AtlasRect = [816, 1128, 480, 152];
+const CARD_PACK: AtlasRect = [1304, 1128, 88, 148];
+const cardFaceRect = (i: number): AtlasRect => [1400 + i * 108, 1128, 104, 146];
+const CARD_POSTER: AtlasRect = [1840, 1128, 200, 152];
+/** The chase cards, to make you want a pack: the collab secret rares and holos. */
+const SHOWCASE = [
+  { slug: "pichu-kyoto", name: "PICHU", frame: "#ffe14d" },
+  { slug: "pikachu-nintendo-museum", name: "PIKACHU", frame: "#e2a81c" },
+  { slug: "gundam-odawara", name: "GUNDAM", frame: "#e2a81c" },
+  { slug: "hakodate", name: "HAKODATE", frame: "#4fb3d1" },
+] as const;
+const showcaseSrc = (slug: string) => `/cards/manhole/${slug}.jpg`;
+const RAINBOW = ["#ff5d8f", "#ffc400", "#49e08a", "#4cc9f0", "#b14dff"];
+
+/**
+ * The staff-pick shelf: top of gondola 2, facing the middle aisle. Favourite games sit
+ * towards the main aisle, favourite manga right next to them on the left, filler carts after.
+ */
+const SHELF = { y: 1.36, edge: -4.02, left: -4.22, gap: 0.4, bookW: 0.15, bookH: 0.225, bookPitch: 0.165 } as const;
+function shelfLayout() {
+  const span = (featured.length - 1) * SHELF.gap;
+  const mid = Math.min(1.0, 1.62 - span / 2);
+  const first = mid - span / 2;
+  const gamesStart = featured.length ? first - SHELF.gap / 2 : mid;
+  const gamesEnd = featured.length ? first + span + SHELF.gap / 2 : mid;
+  const mangaEnd = gamesStart - 0.08;
+  const books = Math.min(manga.length, Math.max(0, Math.floor((mangaEnd - SHELF.left) / SHELF.bookPitch)));
+  const mangaStart = mangaEnd - books * SHELF.bookPitch;
+  return { mid, first, gamesStart, gamesEnd, books, mangaStart, mangaEnd };
+}
 
 /** Hanging signs: `axis` = the direction their faces point; `a` / `b` = text on the + / - side. */
 const SIGNS: { x: number; z: number; axis: "x" | "z"; a: number; b: number }[] = [
   { x: -4.6, z: -1.3, axis: "z", a: 0, b: 0 },
-  { x: -2.4, z: -1.3, axis: "z", a: 9, b: 9 },
   { x: -4.85, z: -3.9, axis: "x", a: 1, b: 1 },
   { x: -0.75, z: -5.75, axis: "z", a: 2, b: 2 },
   { x: -1.2, z: -2.6, axis: "z", a: 3, b: 4 },
@@ -199,6 +237,115 @@ export const interior: SceneExtra = {
       ctx.fillText(text, x + w / 2, y + 52);
     });
 
+    // Manhole card display: banner, wrapper, the showcased cards and the counter poster
+    {
+      const [x, y, w, h] = CARD_SIGN;
+      ctx.fillStyle = "#ffd60a";
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = "#d62828";
+      ctx.fillRect(x, y, w, 36);
+      ctx.fillStyle = "#1b1b1f";
+      ctx.fillRect(x, y + h - 36, w, 36);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `800 21px ${FONT}`;
+      ctx.fillText("★ 新発売 · マンホールカード 第1弾 ★", x + w / 2, y + 19);
+      ctx.fillStyle = "#ffd60a";
+      ctx.fillText("BOOSTER PACKS · 5枚入り · ¥0 · レジにて", x + w / 2, y + h - 17, w - 20);
+      ctx.fillStyle = "#1b1b1f";
+      ctx.font = `900 58px ${FONT}`;
+      ctx.fillText("MANHOLE CARDS", x + w / 2, y + 78, w - 28);
+    }
+    {
+      const [x, y, w, h] = CARD_PACK;
+      const sheen = ctx.createLinearGradient(x, y, x + w, y + h);
+      sheen.addColorStop(0, "#3346b0");
+      sheen.addColorStop(0.5, "#1c2a78");
+      sheen.addColorStop(1, "#0c1230");
+      ctx.fillStyle = sheen;
+      ctx.fillRect(x, y, w, h);
+      // Crimped ends of the foil
+      for (let i = 0; i < w; i += 4) {
+        ctx.fillStyle = i % 8 ? "#aeb6c4" : "#e3e7ee";
+        ctx.fillRect(x + i, y, 4, 12);
+        ctx.fillRect(x + i, y + h - 9, 4, 9);
+      }
+      const cx = x + w / 2, cy = y + 60, r = 30;
+      ["#f28c28", "#e63946", "#4cc9f0", "#52b788"].forEach((color, k) => {
+        for (let n = k; n < 12; n += 4) {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, r, (n * Math.PI) / 6, ((n + 1) * Math.PI) / 6);
+          ctx.fill();
+        }
+      });
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#15171c";
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "#ffe14d";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.textAlign = "center";
+      ctx.font = `900 15px ${FONT}`;
+      ctx.fillText("マンホール", cx, y + 106, w - 8);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `900 18px ${FONT}`;
+      ctx.fillText("CARDS", cx, y + 125, w - 8);
+    }
+    SHOWCASE.forEach((card, i) => {
+      const [x, y, w, h] = cardFaceRect(i);
+      // Holo border, coloured frame, the photo, a name plate and two stars
+      const foil = ctx.createLinearGradient(x, y, x + w, y + h);
+      RAINBOW.forEach((color, k) => foil.addColorStop(k / (RAINBOW.length - 1), color));
+      ctx.fillStyle = foil;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = card.frame;
+      ctx.fillRect(x + 5, y + 5, w - 10, h - 10);
+      ctx.fillStyle = "#15171c";
+      ctx.textAlign = "left";
+      ctx.font = `900 12px ${FONT}`;
+      ctx.fillText(card.name, x + 10, y + 16, w - 20);
+      ctx.fillStyle = "#20242e";
+      ctx.fillRect(x + 9, y + 25, w - 18, w - 18);
+      const img = images.get(showcaseSrc(card.slug));
+      if (img) ctx.drawImage(img, x + 11, y + 27, w - 22, w - 22);
+      ctx.fillStyle = "rgb(255 255 255 / 0.55)";
+      ctx.fillRect(x + 10, y + w + 13, w - 20, 5);
+      ctx.fillRect(x + 10, y + w + 22, w - 44, 5);
+      ctx.fillStyle = "#15171c";
+      ctx.font = `900 11px ${FONT}`;
+      ctx.fillText("★★", x + 10, y + h - 12);
+    });
+    {
+      const [x, y, w, h] = CARD_POSTER;
+      ctx.fillStyle = "#1c2a78";
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = "#ffd60a";
+      ctx.fillRect(x, y, w, 6);
+      ctx.fillRect(x, y + h - 6, w, 6);
+      ctx.textAlign = "center";
+      ctx.font = `800 13px ${FONT}`;
+      ctx.fillText(`全${CARDS.length}種 · マンホールカード`, x + w / 2, y + 24);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `900 30px ${FONT}`;
+      ctx.fillText("COLLECT", x + w / 2, y + 54);
+      ctx.fillText(`ALL ${CARDS.length}!`, x + w / 2, y + 86);
+      const foil = ctx.createLinearGradient(x + 20, 0, x + w - 20, 0);
+      RAINBOW.forEach((color, k) => foil.addColorStop(k / (RAINBOW.length - 1), color));
+      ctx.fillStyle = foil;
+      ctx.fillRect(x + 16, y + 104, w - 32, 22);
+      ctx.fillStyle = "#15171c";
+      ctx.font = `900 13px ${FONT}`;
+      ctx.fillText("★ HOLO & SECRET RARES ★", x + w / 2, y + 116, w - 40);
+      ctx.fillStyle = "#ffd60a";
+      ctx.font = `800 11px ${FONT}`;
+      ctx.fillText("E · Buy a booster", x + w / 2, y + 137);
+    }
+
     // Manga covers (full colour: they are book covers, not pixel art)
     manga.slice(0, MAX_MANGA).forEach((m, i) => {
       const [x, y, w, h] = mangaRect(i);
@@ -220,27 +367,10 @@ export const interior: SceneExtra = {
     for (let x = -5.4; x < 6; x += 0.6) bag.box(x, 0.16, -3.5, 0.012, 0.004, 6.9, 0xaab2b8, 0.75);
     for (let z = -6.6; z < 0; z += 0.6) bag.box(0, 0.16, z, 11.9, 0.004, 0.012, 0xaab2b8, 0.75);
 
-    // Inside face of the rack: magazines (the blog) on the left, comics right by the entrance
+    // Inside face of the rack: magazines (the blog) all along
     for (let row = 0; row < 2; row++) {
-      for (let i = 0; i < 7; i++) bag.box(-5.62 + i * 0.315, 0.68 + row * 0.5, -0.78, 0.26, 0.38, 0.04, pick(), 0.95);
+      for (let i = 0; i < 14; i++) bag.box(-5.62 + i * 0.315, 0.68 + row * 0.5, -0.78, 0.26, 0.38, 0.04, pick(), 0.95);
     }
-    bag.box(-3.45, 0.6, -0.8, 0.03, 0.95, 0.06, 0xd5d8d4, 0.85); // divider
-    let slot = 0;
-    for (let row = 0; row < 2; row++) {
-      for (let i = 0; i < 9; i++, slot++) {
-        const x = -3.27 + i * 0.205, y = 1.18 - row * 0.5;
-        const item = manga[slot];
-        if (item && slot < MAX_MANGA) {
-          // Rotated half a turn: the textured face must look into the store (-z)
-          bag.box(x, y, -0.78, 0.17, 0.25, 0.03, 0xffffff, 1, rectUv(mangaRect(slot)), Math.PI);
-        } else {
-          bag.box(x, y, -0.78, 0.17, 0.25, 0.03, [0xf1ece2, 0xe9e1d3, 0xf7f3ea][slot % 3], 0.95);
-          bag.box(x, y + 0.17, -0.794, 0.17, 0.05, 0.004, pick(), 1);
-        }
-      }
-    }
-    // Topper on top of the rack, above the comics (facing into the store)
-    bag.box(-2.45, 1.66, -0.76, 1.7, 0.34, 0.02, 0xffffff, 1, rectUv(topperRect(1)), Math.PI);
     // Shelf strips under each tier, with the price tags konbini shelves are covered in
     for (const y of [0.64, 1.14]) bag.box(-3.55, y, -0.78, 4.5, 0.03, 0.05, 0xffffff, 1);
 
@@ -260,12 +390,10 @@ export const interior: SceneExtra = {
       }
     }
 
-    // Games shelf, eye level: featured favourites on little stands, then filler carts
-    // Featured on the top shelf, near the main-aisle end where you step into the aisle
-    const shelfY = 1.36, edge = -4.02, gap = 0.4;
-    const span = (featured.length - 1) * gap;
-    const mid = Math.min(1.0, 1.62 - span / 2);
-    const first = mid - span / 2;
+    // Staff-pick shelf, eye level: favourite games on little stands, favourite manga
+    // face-out on their left, then filler carts
+    const { y: shelfY, edge, gap } = SHELF;
+    const { mid, first, gamesStart, gamesEnd, books, mangaStart, mangaEnd } = shelfLayout();
     featured.forEach((game, i) => {
       const x = first + i * gap;
       bag.box(x, shelfY, edge - 0.08, 0.3, 0.02, 0.14, 0xf5f7fa, 0.95); // acrylic stand
@@ -278,10 +406,22 @@ export const interior: SceneExtra = {
     // Topper standing on the gondola, above the favourites
     bag.box(featured.length ? mid : 0.6, 1.69, -4.035, 1.7, 0.34, 0.02, 0xffffff, 1, rectUv(topperRect(0)));
     for (const e of [-0.7, 0.7]) bag.box((featured.length ? mid : 0.6) + e, 1.69, -4.06, 0.03, 0.06, 0.06, 0x9aa0a6, 0.7);
-    const start = featured.length ? first - gap / 2 : mid;
-    const end = featured.length ? first + (featured.length - 1) * gap + gap / 2 : mid;
+    // Manga, face-out, each with a little acrylic easel behind it and a price tag
+    for (let i = 0; i < books; i++) {
+      const x = mangaStart + (i + 0.5) * SHELF.bookPitch;
+      bag.box(x, shelfY, edge - 0.09, 0.05, 0.16, 0.02, 0xe8eef2, 0.9); // easel
+      bag.box(x, shelfY + 0.005, edge - 0.07, SHELF.bookW, SHELF.bookH, 0.025, 0xffffff, 1, rectUv(mangaRect(i)));
+      bag.box(x, shelfY - 0.05, edge + 0.002, 0.1, 0.03, 0.004, 0xffe94d, 1.1);
+    }
+    if (books) {
+      // Its own staff-pick board, kept clear of the games' one
+      const cx = Math.min((mangaStart + mangaEnd) / 2, mid - 1.75);
+      bag.box(cx, 1.69, -4.035, 1.7, 0.34, 0.02, 0xffffff, 1, rectUv(topperRect(1)));
+      for (const e of [-0.7, 0.7]) bag.box(cx + e, 1.69, -4.06, 0.03, 0.06, 0.06, 0x9aa0a6, 0.7);
+    }
+    const start = books ? mangaStart : gamesStart;
     for (let x = -4.16; x < 1.8; x += 0.13) {
-      if (x > start - 0.06 && x < end + 0.06) continue;
+      if (x > start - 0.06 && x < gamesEnd + 0.06) continue;
       bag.box(x, shelfY, edge - 0.0425, 0.1, 0.12, 0.025, [0x8a8f98, 0x3a3d45, 0x6b7280, 0xd1d5db][Math.floor(rnd() * 4)], 0.95);
       bag.box(x, shelfY + 0.045, edge - 0.028, 0.08, 0.055, 0.004, pick(), 1);
     }
@@ -329,14 +469,61 @@ export const interior: SceneExtra = {
     bag.box(5.1, 2.37, -6.825, 0.24, 0.06, 0.005, 0xffffff, 1.6);
 
     // Counter extras: card terminals, a donation box, carrier bags, a hand bell
-    for (const z of [-2.55, -4.25]) {
+    for (const z of [-2.55, -4.08]) {
       bag.box(3.98, 1.16, z, 0.1, 0.05, 0.14, 0x2b2e35, 0.7);
       bag.box(3.975, 1.21, z, 0.08, 0.008, 0.1, 0x22c55e, 1.4);
     }
-    bag.box(4.0, 1.16, -4.75, 0.14, 0.18, 0.14, 0xe9f5ff, 1.1);
-    bag.box(4.0, 1.34, -4.75, 0.15, 0.02, 0.15, brand, 0.95);
+    bag.box(3.93, 1.16, -5.3, 0.14, 0.18, 0.14, 0xe9f5ff, 1.1);
+    bag.box(3.93, 1.34, -5.3, 0.15, 0.02, 0.15, brand, 0.95);
     bag.box(4.55, 0.4, -5.38, 0.5, 0.5, 0.06, 0xf5f5f2, 0.95);
-    bag.box(4.1, 1.16, -5.3, 0.06, 0.07, 0.06, 0xd4a017, 1.1);
+    bag.box(4.12, 1.16, -5.33, 0.06, 0.07, 0.06, 0xd4a017, 1.1);
+    // ── Manhole card boosters: the one thing on the counter that is really for sale ──
+    // A three-tier stand in front of the second register. Everything faces the customer (-x).
+    const cardZ = -4.5;
+    const FACING = -Math.PI / 2;
+    const tierX = (k: number) => 3.875 + k * 0.09;
+    const tierTop = (k: number) => 1.19 + k * 0.115;
+    for (let k = 0; k < 3; k++) {
+      bag.box(tierX(k), 1.16, cardZ, 0.09, tierTop(k) - 1.16, 0.66, 0x15171c, 0.75);
+      bag.box(tierX(k) - 0.046, tierTop(k) - 0.014, cardZ, 0.004, 0.014, 0.66, 0xffd60a, 1.4);
+    }
+    // Two rows of sealed packs: the printed wrapper in front, a few more lined up behind
+    for (let k = 0; k < 2; k++) {
+      for (let i = 0; i < 5; i++) {
+        const z = cardZ - 0.25 + i * 0.125;
+        bag.box(tierX(k) - 0.022, tierTop(k), z, 0.1, 0.168, 0.008, 0xffffff, 1.25, rectUv(CARD_PACK), FACING);
+        bag.box(tierX(k) + 0.006, tierTop(k), z, 0.048, 0.166, 0.098, [0x2b3a8c, 0x1c2a78][(i + k) % 2], 0.95);
+        bag.box(tierX(k) + 0.006, tierTop(k) + 0.166, z, 0.05, 0.004, 0.1, 0xc3c9d4, 1.1);
+      }
+    }
+    // Top tier: the chase cards in clear stands, turned a little towards each other
+    SHOWCASE.forEach((_, i) => {
+      const z = cardZ - 0.225 + i * 0.15;
+      const turn = FACING + (i < 2 ? -0.22 : 0.22);
+      bag.box(tierX(2) - 0.01, tierTop(2), z, 0.05, 0.012, 0.11, 0xdfe7ee, 1.3);
+      bag.box(tierX(2) - 0.012, tierTop(2) + 0.012, z, 0.125, 0.175, 0.006, 0xffffff, 1.45, rectUv(cardFaceRect(i)), turn);
+      bag.box(tierX(2) - 0.004, tierTop(2) + 0.012, z, 0.127, 0.177, 0.006, 0x1b2238, 0.9, NO_UV, turn);
+    });
+    // Backboard, a lit canopy and the banner on top
+    bag.box(4.105, 1.16, cardZ, 0.014, 0.52, 0.7, 0x1c2a78, 0.95);
+    for (const e of [-0.343, 0.343]) bag.box(4.0, 1.16, cardZ + e, 0.22, 0.52, 0.014, 0xffd60a, 1.15);
+    bag.box(4.02, 1.672, cardZ, 0.2, 0.014, 0.7, 0x15171c, 0.8);
+    bag.box(4.0, 1.662, cardZ, 0.1, 0.01, 0.62, 0xfff4c2, 2);
+    bag.box(3.9, 1.69, cardZ, 0.76, 0.24, 0.014, 0xffffff, 1.5, rectUv(CARD_SIGN), FACING);
+    bag.box(3.916, 1.685, cardZ, 0.02, 0.25, 0.78, 0xd62828, 1.1);
+    // A "NEW" burst bobbing on the corner of the banner
+    bag.anim = [ANIM.bob, 2.6, 0, 0.022];
+    bag.box(3.89, 1.88, cardZ - 0.4, 0.014, 0.15, 0.15, 0xd62828, 1.5);
+    bag.box(3.881, 1.92, cardZ - 0.4, 0.004, 0.07, 0.07, 0xffd60a, 1.7);
+    bag.anim = NO_ANIM;
+    // Poster on the front of the counter, right under the stand
+    bag.box(3.884, 0.2, cardZ, 0.62, 0.47, 0.008, 0xffffff, 1.25, rectUv(CARD_POSTER), FACING);
+    bag.box(3.889, 0.185, cardZ, 0.66, 0.5, 0.006, 0xffd60a, 1.1, NO_UV, FACING);
+    // And a banner hung over the main aisle, readable from the door and from the back of the store
+    for (const side of [1, -1]) {
+      bag.box(3.08, 2.42, -3.95 + side * 0.007, 1.45, 0.46, 0.01, 0xffffff, 1.35, rectUv(CARD_SIGN), side > 0 ? 0 : Math.PI);
+    }
+    for (const e of [-0.6, 0.6]) bag.box(3.08 + e, 2.88, -3.95, 0.012, 1.1, 0.012, 0x9aa0a6, 0.6);
 
     // Entrance: mat and a wet floor sign (rainy night)
     bag.box(0, 0.16, -0.55, 1.9, 0.012, 0.8, 0x3a3f47, 0.8);
@@ -421,9 +608,15 @@ export function prepareWalk(scene: SceneHandle, content: WalkContent) {
   prepared.add(scene);
   featured = content.games.slice(0, MAX_CARTS);
   manga = content.manga.slice(0, MAX_MANGA);
+  const { gamesStart, books } = shelfLayout();
+  MANGA_ZONE[2] = books ? gamesStart - 0.04 : MANGA_ZONE[0];
   scene.setExtra(interior);
   // Images arrive a moment later: repaint only the artwork region once they are in
-  const pending = [...PRINTS.map((p) => p.src), ...featured.flatMap((g) => (g.image ? [g.image] : []))];
+  const pending = [
+    ...PRINTS.map((p) => p.src),
+    ...SHOWCASE.map((card) => showcaseSrc(card.slug)),
+    ...featured.flatMap((g) => (g.image ? [g.image] : [])),
+  ];
   const coverLoads = featured.map(async (g) => {
     if (g.image || !g.covers || covers.has(g.title)) return;
     const img = await loadCover(g.covers);

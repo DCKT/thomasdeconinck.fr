@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "app/lib/games";
 import type { MangaItem } from "app/lib/komga";
 import type { ShelfGame } from "app/lib/steam";
@@ -14,6 +14,9 @@ import type { WalkHandle } from "./walk";
 
 export type ShelfItem = { slug: string; title: string; date: string };
 export type WalkData = { posts: ShelfItem[]; pixelArt: ShelfItem[]; games: ShelfGame[]; manga: MangaItem[] };
+
+/** The booster counter is its own chunk (cards, holo CSS), fetched the first time you ask the clerk. */
+const CardShop = lazy(() => import("./card-shop"));
 
 const PANELS = ["blog", "manga", "games", "about", "pixel-art", "favorites"] as const;
 type Panel = (typeof PANELS)[number];
@@ -51,6 +54,7 @@ export default function WalkHud({
   const keys = useMoveKeys();
   const [panel, setPanel] = useState<Panel | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [cards, setCards] = useState(false);
   const toastTimer = useRef(0);
 
   const say = (text: string) => {
@@ -63,7 +67,10 @@ export default function WalkHud({
 
   useEffect(() => {
     if (control) say("いらっしゃいませ！ Welcome in.");
-    else setPanel(null);
+    else {
+      setPanel(null);
+      setCards(false);
+    }
   }, [control]);
 
   // The walk controller reports interactions as a window event (see konbini-scene).
@@ -71,6 +78,7 @@ export default function WalkHud({
     const onUse = (e: Event) => {
       const id = (e as CustomEvent<InteractionId>).detail;
       if (id === "editor") router.push("/pixel-editor");
+      else if (id === "cards") setCards(true);
       else if (isPanel(id)) {
         if (id === "about") greet(); // the clerk says いらっしゃいませ
         setPanel(id);
@@ -85,7 +93,7 @@ export default function WalkHud({
   }, [router]);
 
   useEffect(() => {
-    walk.setPaused(panel !== null);
+    walk.setPaused(panel !== null || cards);
     if (!panel) return;
     // Capture phase: close the panel without the walk controller also seeing the key
     const onKey = (e: KeyboardEvent) => {
@@ -97,7 +105,7 @@ export default function WalkHud({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [panel, walk]);
+  }, [panel, cards, walk]);
 
   const pad = (forward: number, turn: number) => ({
     onPointerDown: (e: React.PointerEvent) => {
@@ -120,7 +128,7 @@ export default function WalkHud({
         </p>
       )}
 
-      {prompt && !panel && (
+      {prompt && !panel && !cards && (
         <button type="button" className="walk-prompt" onClick={() => walk.interact()}>
           <kbd>E</kbd> {INTERACTION_LABELS[prompt]}
         </button>
@@ -149,6 +157,12 @@ export default function WalkHud({
         <button type="button" className="pad-right" {...pad(0, 1)}>▶</button>
         <button type="button" className="pad-down" {...pad(-1, 0)}>▼</button>
       </div>
+
+      {cards && (
+        <Suspense fallback={null}>
+          <CardShop onClose={() => setCards(false)} />
+        </Suspense>
+      )}
 
       {panel && (
         <div className="walk-panel" role="dialog" aria-label={INTERACTION_LABELS[panel]}>

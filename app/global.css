@@ -1353,6 +1353,28 @@ html.konbini-walking {
   object-fit: contain;
   image-rendering: pixelated;
 }
+/* Photos and scans, not pixel art: smooth them, and round them like a sticker */
+.gacha-card img[src^="/gacha/"] {
+  border-radius: 0.6rem;
+  image-rendering: auto;
+}
+/* http.cat cards stay landscape: the status code is printed under the photo */
+.gacha-card:has(img[src^="/gacha/cat/"]) {
+  width: min(24.5rem, calc(100% - 3rem));
+}
+.gacha-card img[src^="/gacha/cat/"] {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 4;
+  border-radius: 0.4rem;
+}
+/* Manga covers stay portrait, like a volume on the shelf */
+.gacha-card img[src^="/gacha/manga/"] {
+  width: auto;
+  height: 9rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 0.3);
+}
 .gacha-card strong {
   font-size: 1.15rem;
   font-weight: 800;
@@ -1404,6 +1426,12 @@ html.konbini-walking {
   .gacha-card img {
     width: 4rem;
     height: 4rem;
+  }
+  .gacha-card:has(img[src^="/gacha/cat/"]) {
+    width: min(14.5rem, calc(100% - 3rem));
+  }
+  .gacha-card img[src^="/gacha/cat/"] {
+    height: auto;
   }
   .gacha-next {
     flex-direction: row;

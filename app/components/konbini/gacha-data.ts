@@ -30,16 +30,6 @@ export function machineBase(i: number) {
   };
 }
 
-/** One capsule series per machine: the display card artwork and the machine's trim. */
-export const GACHA_SERIES = [
-  { jp: "ドットフルーツ", en: "PIXEL FRUITS", color: 0xe63946, dark: 0x9d0208 },
-  { jp: "ねこだらけ", en: "CAT CLUB", color: 0xffb703, dark: 0xe85d04 },
-  { jp: "レトロゲーム", en: "RETRO GAMES", color: 0x4cc9f0, dark: 0x3a0ca3 },
-  { jp: "おにぎり", en: "ONIGIRI PALS", color: 0x52b788, dark: 0x1b4332 },
-  { jp: "コンビニ", en: "KONBINI MINI", color: 0xf72585, dark: 0x7209b7 },
-  { jp: "キーキャップ", en: "KEYCAPS", color: 0x9d4edd, dark: 0x3c096c },
-] as const;
-
 // ── Rarity ──────────────────────────────────────────────────────────────────
 export type RarityId = "B" | "A" | "S" | "SSS";
 
@@ -76,9 +66,10 @@ export function rollRarity(random = Math.random): Rarity {
 
 // ── Prizes ──────────────────────────────────────────────────────────────────
 export type Prize = { name: string; image: string };
+export type PrizePool = Record<RarityId, Prize[]>;
 
-/** Placeholder prizes (the pixel art already on the site), until the real content is decided. */
-export const PRIZES: Record<RarityId, Prize[]> = {
+/** Placeholder prizes (the pixel art already on the site), until each machine gets its own. */
+const PLACEHOLDER: PrizePool = {
   B: [
     { name: "Strawberry", image: "/2025-06-25-fruits/Fraise.png" },
     { name: "Cherry", image: "/2025-06-25-fruits/Cerise.png" },
@@ -95,8 +86,108 @@ export const PRIZES: Record<RarityId, Prize[]> = {
   SSS: [{ name: "Totoro", image: "/2025-06-28-another-character-attempt/Totoro.png" }],
 };
 
-export function pickPrize(rarity: RarityId, random = Math.random): Prize {
-  const pool = PRIZES[rarity];
+/** Images from knowyourmeme.com, cropped square. */
+const meme = (file: string) => `/gacha/meme/${file}`;
+
+/** Pepe common, Risitas rare, rage comics super rare, Doge & surprised Pikachu legendary. */
+const MEMES: PrizePool = {
+  B: [
+    { name: "Feels Good Man", image: meme("pepe-feels-good.png") },
+    { name: "Sad Frog", image: meme("pepe-sad.jpg") },
+    { name: "Smug Pepe", image: meme("pepe-smug.jpg") },
+    { name: "PepeHands", image: meme("pepe-hands.png") },
+    { name: "REEEE", image: meme("pepe-reee.jpg") },
+  ],
+  A: [
+    { name: "Issou", image: meme("risitas-issou.jpg") },
+    { name: "El Risitas", image: meme("risitas-laugh.jpg") },
+    { name: "Jajaja", image: meme("risitas-jajaja.jpg") },
+  ],
+  S: [
+    { name: "Trollface", image: meme("rage-troll.jpg") },
+    { name: "Forever Alone", image: meme("rage-forever-alone.jpg") },
+    { name: "Y U NO", image: meme("rage-y-u-no.jpg") },
+    { name: "Me Gusta", image: meme("rage-me-gusta.jpg") },
+    { name: "Challenge Accepted", image: meme("rage-challenge-accepted.jpg") },
+    { name: "FFFUUUU", image: meme("rage-fuuu.jpg") },
+  ],
+  SSS: [
+    { name: "Doge", image: meme("doge.jpg") },
+    { name: "Surprised Pikachu", image: meme("pikachu-surprised.png") },
+  ],
+};
+
+const manga = (file: string) => `/gacha/manga/${file}.jpg`;
+
+/** Series covers downloaded once from Komga (the same library as the comics shelf). */
+const MANGA: PrizePool = {
+  B: [
+    { name: "Chainsaw Man", image: manga("chainsaw-man") },
+    { name: "L'Atelier des sorciers", image: manga("atelier-des-sorciers") },
+  ],
+  A: [
+    { name: "Hunter × Hunter", image: manga("hunter-x-hunter") },
+    { name: "One-Punch Man", image: manga("one-punch-man") },
+    { name: "Frieren", image: manga("frieren") },
+  ],
+  S: [
+    { name: "Slam Dunk", image: manga("slam-dunk") },
+    { name: "Noragami", image: manga("noragami") },
+  ],
+  SSS: [
+    { name: "Berserk", image: manga("berserk") },
+    { name: "Vagabond", image: manga("vagabond") },
+  ],
+};
+
+/** Status cats from http.cat, kept landscape so the code and its caption stay readable. */
+const httpCat = (code: number, name: string): Prize => ({ name: `${code} ${name}`, image: `/gacha/cat/${code}.jpg` });
+
+/** Everyday codes common, client errors rare, server meltdowns super rare, the joke codes legendary. */
+const CATS: PrizePool = {
+  B: [
+    httpCat(200, "OK"),
+    httpCat(201, "Created"),
+    httpCat(204, "No Content"),
+    httpCat(301, "Moved Permanently"),
+    httpCat(304, "Not Modified"),
+    httpCat(400, "Bad Request"),
+    httpCat(404, "Not Found"),
+  ],
+  A: [
+    httpCat(401, "Unauthorized"),
+    httpCat(403, "Forbidden"),
+    httpCat(405, "Method Not Allowed"),
+    httpCat(408, "Request Timeout"),
+    httpCat(429, "Too Many Requests"),
+  ],
+  S: [
+    httpCat(500, "Internal Server Error"),
+    httpCat(502, "Bad Gateway"),
+    httpCat(503, "Service Unavailable"),
+    httpCat(504, "Gateway Timeout"),
+    httpCat(508, "Loop Detected"),
+  ],
+  SSS: [httpCat(418, "I'm a Teapot"), httpCat(420, "Enhance Your Calm")],
+};
+
+/** One capsule series per machine: the display card artwork, the machine's trim and what is inside. */
+export type Series = { jp: string; en: string; color: number; dark: number; prizes: PrizePool };
+
+export const GACHA_SERIES: Series[] = [
+  { jp: "ドットフルーツ", en: "PIXEL FRUITS", color: 0xe63946, dark: 0x9d0208, prizes: PLACEHOLDER },
+  { jp: "ねこだらけ", en: "CAT CLUB", color: 0xffb703, dark: 0xe85d04, prizes: CATS },
+  { jp: "レトロゲーム", en: "RETRO GAMES", color: 0x4cc9f0, dark: 0x3a0ca3, prizes: PLACEHOLDER },
+  { jp: "おにぎり", en: "ONIGIRI PALS", color: 0x52b788, dark: 0x1b4332, prizes: PLACEHOLDER },
+  { jp: "マンガ", en: "MANGA", color: 0xe5383b, dark: 0x1b1b1b, prizes: MANGA },
+  { jp: "ミーム", en: "MEMES", color: 0x6a994e, dark: 0x283618, prizes: MEMES },
+];
+
+/** How many different prizes a machine holds (the "全N種" on its card). */
+export const prizeCount = (series: Series) => Object.values(series.prizes).reduce((n, pool) => n + pool.length, 0);
+
+export function pickPrize(machine: number, rarity: RarityId, random = Math.random): Prize {
+  const pool = GACHA_SERIES[machine].prizes[rarity];
   return pool[Math.floor(random() * pool.length)];
 }
 

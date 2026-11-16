@@ -5,6 +5,7 @@ export type InteractionId =
   | "editor"
   | "games"
   | "about"
+  | "cards"
   | "pixel-art"
   | "favorites"
   | "drinks"
@@ -20,6 +21,7 @@ export const INTERACTION_LABELS: Record<InteractionId, string> = {
   editor: "Use the copy machine · Pixel editor",
   games: "Use the ATM · My games",
   about: "Talk to the clerk",
+  cards: "Buy manhole cards · Booster packs",
   "pixel-art": "Look at my pixel art",
   favorites: "Browse my favorite games",
   drinks: "Grab a drink",

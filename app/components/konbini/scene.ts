@@ -75,6 +75,8 @@ out float vTex;
 out float vKind;
 flat out vec3 vC;
 flat out float vR;
+flat out vec3 vHalf;
+flat out float vRot;
 void main() {
   float c = cos(iMisc.x), s = sin(iMisc.x);
   vec3 p = aPos * iSize;
@@ -110,6 +112,8 @@ void main() {
     w.y += sin(t * iAnim.y + iAnim.z) * iAnim.w;
   } else if (iAnim.x == 4.0) {   // sway, pivoting at the base
     w.x += sin(t * iAnim.y + iAnim.z) * iAnim.w * (aPos.y + 0.5);
+  } else if (iAnim.x == 7.0) {   // wag: the whole part slides sideways (tail swish, head turn)
+    w.x += sin(t * iAnim.y + iAnim.z) * iAnim.w;
   } else if (iAnim.x == 5.0) {   // sliding door
     w.x += iAnim.y * uDoor;
   } else if (cranked) {          // capsules rattle while the dial turns
@@ -118,6 +122,8 @@ void main() {
   vW = w;
   vC = w - p;
   vR = iSize.x * 0.5;
+  vHalf = iSize * 0.5;
+  vRot = iMisc.x;
   vCol = vec4(iCol.rgb, em);
   vKind = iMisc.y;
   vTex = (aNor.z > 0.5 && iUv.z > 0.0) ? 1.0 : 0.0;
@@ -136,6 +142,9 @@ in float vTex;
 in float vKind;
 flat in vec3 vC;
 flat in float vR;
+flat in vec3 vHalf;
+flat in float vRot;
+uniform mat4 uVP;
 uniform sampler2D uAtlas;
 uniform vec3 uLight;
 uniform vec3 uLamp;
@@ -152,6 +161,7 @@ float noise(vec2 p) {
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
 }
 void main() {
+  gl_FragDepth = gl_FragCoord.z;
   vec4 t = vTex > 0.5 ? texture(uAtlas, vUv) : vec4(1.0);
   if (vKind >= 3.0 && vKind < 4.0) {            // glow sprite (additive)
     if (vTex < 0.5) discard;
@@ -175,7 +185,34 @@ void main() {
   vec3 n = normalize(vN);
   float cover = 1.0;
   vec3 ballV = vec3(0.0);
-  if (vKind >= 7.0) {                           // ball: the sphere inscribed in the box, ray-traced
+  if (vKind >= 8.0) {                           // fur: the ellipsoid inscribed in the (rotated) box, ray-traced
+    vec3 cam = uCam;
+    if (uMirror < 0.0) cam.y = 2.0 * uPlane - cam.y;
+    float c = cos(vRot), s = sin(vRot);
+    vec3 oc = cam - vC, rw = vW - cam;
+    // World → unit-sphere space (undo the yaw, then the radii)
+    vec3 ro = vec3(c * oc.x - s * oc.z, oc.y, s * oc.x + c * oc.z) / vHalf;
+    vec3 rd = normalize(vec3(c * rw.x - s * rw.z, rw.y, s * rw.x + c * rw.z) / vHalf);
+    float b = dot(ro, rd);
+    float d = length(ro - b * rd);
+    cover = clamp((1.0 - d) / max(fwidth(d) * 1.6, 1e-5) + 0.5, 0.0, 1.0); // a slightly fuzzy edge
+    if (cover <= 0.0) discard;
+    vec3 q = ro + rd * (-b - sqrt(max(1.0 - d * d, 0.0)));
+    vec3 ql = q * vHalf;
+    vec3 nl = normalize(q / vHalf);
+    P = vC + vec3(c * ql.x + s * ql.z, ql.y, -s * ql.x + c * ql.z);
+    n = vec3(c * nl.x + s * nl.z, nl.y, -s * nl.x + c * nl.z);
+    ballV = normalize(cam - P);
+    base = vCol.rgb;
+    // Fur grain, and tabby stripes running across the cat (vUv.x: frequency, vUv.y: depth)
+    float along = s * P.x + c * P.z, across = c * P.x - s * P.z;
+    base *= 0.9 + 0.1 * noise(vec2(across * 140.0, P.y * 40.0 + along * 40.0));
+    if (vUv.x > 0.0) {
+      float wob = noise(vec2(across * 14.0, P.y * 14.0)) * 2.4;
+      float band = sin(along * vUv.x + P.y * vUv.x * 0.7 + wob);
+      base *= 1.0 - vUv.y * smoothstep(0.25, 0.85, band) * smoothstep(-0.5, 0.2, n.y);
+    }
+  } else if (vKind >= 7.0) {                           // ball: the sphere inscribed in the box, ray-traced
     vec3 cam = uCam;
     if (uMirror < 0.0) cam.y = 2.0 * uPlane - cam.y;
     vec3 rd = normalize(vW - cam);
@@ -209,7 +246,11 @@ void main() {
 
   float shade = 0.74 + 0.26 * clamp(dot(n, normalize(vec3(0.25, 0.8, 0.55))), 0.0, 1.0);
   vec3 col = mix(lit, base * shade, min(em, 1.0)) * max(em, 1.0);
-  if (vKind >= 7.0) {                           // glossy plastic: darker rim, one sharp highlight
+  if (vKind >= 8.0) {                           // fur: soft wrap-around, shadowed belly, a velvety rim
+    col *= mix(0.5, 1.0, smoothstep(-0.8, 0.35, n.y));
+    float rim = pow(1.0 - max(dot(n, ballV), 0.0), 2.5);
+    col += base * rim * (0.25 * uLight + vec3(0.06, 0.07, 0.1));
+  } else if (vKind >= 7.0) {                    // glossy plastic: darker rim, one sharp highlight
     col *= 0.62 + 0.38 * pow(max(dot(n, ballV), 0.0), 0.7);
     col += pow(max(dot(n, normalize(ballV + normalize(vec3(-0.35, 0.9, 0.45)))), 0.0), 60.0) * 0.6;
   }
@@ -220,6 +261,12 @@ void main() {
     col *= mix(0.72, 1.0, smoothstep(0.1, 0.85, vW.y)) * mix(0.86, 1.0, smoothstep(0.0, 1.2, wall));
   }
 
+  if (vKind >= 7.0) {                           // write the depth of the traced surface, so parts blend into each other
+    vec3 Pm = P;
+    if (uMirror < 0.0) Pm.y = 2.0 * uPlane - Pm.y;
+    vec4 clip = uVP * vec4(Pm, 1.0);
+    gl_FragDepth = clamp(clip.z / clip.w * 0.5 + 0.5, 0.0, 1.0);
+  }
   float a = cover;
   if (vKind >= 5.0 && vKind < 6.0) {            // polished tiles: let the reflection through
     vec3 V = normalize(uCam - vW);

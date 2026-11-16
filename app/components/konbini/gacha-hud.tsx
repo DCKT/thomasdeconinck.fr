@@ -42,11 +42,11 @@ export default function GachaHud({ gacha, phase, machine }: { gacha: GachaHandle
     setPull({
       key: ++pulls.current,
       rarity,
-      prize: pickPrize(rarity.id),
+      prize: pickPrize(machine, rarity.id),
       color: CAPSULE_COLORS[Math.floor(Math.random() * CAPSULE_COLORS.length)],
       state: "closed",
     });
-  }, [phase]);
+  }, [phase, machine]);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
@@ -55,7 +55,7 @@ export default function GachaHud({ gacha, phase, machine }: { gacha: GachaHandle
     const reduced = document.documentElement.dataset.motion === "off";
     const suspense = reduced ? 0 : pull.rarity.suspense;
     setPull({ ...pull, state: "opening" });
-    playRattle(suspense);
+    playRattle(suspense, pull.rarity.id);
     timer.current = window.setTimeout(() => {
       playOpen(pull.rarity.id);
       setTally((t) => ({ ...t, [pull.rarity.id]: t[pull.rarity.id] + 1 }));
@@ -160,7 +160,7 @@ export default function GachaHud({ gacha, phase, machine }: { gacha: GachaHandle
           {pull.state === "open" && (
             <div className="gacha-card" role="status">
               <b className="gacha-rank">{pull.rarity.id}</b>
-              <img src={pull.prize.image} alt="" />
+              <img src={pull.prize.image} alt="" onError={(e) => (e.currentTarget.hidden = true)} />
               <strong>{pull.prize.name}</strong>
               <small>
                 {pull.rarity.label} · {pull.rarity.jp}
