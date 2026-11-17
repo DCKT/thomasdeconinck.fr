@@ -91,3 +91,23 @@ export function formatDate(date: string, includeRelative = false) {
 
   return `${fullDate} (${formattedDate})`;
 }
+
+type Dated = { metadata: { publishedAt: string } };
+
+/** Newest first. Returns a new array. */
+export function sortByDate<T extends Dated>(posts: T[]): T[] {
+  return [...posts].sort(
+    (a, b) => new Date(b.metadata.publishedAt).getTime() - new Date(a.metadata.publishedAt).getTime(),
+  );
+}
+
+/** 2026-06-29 → 2026.06.29, as printed on a receipt. */
+export function shortDate(date: string) {
+  const [year, month, day] = date.slice(0, 10).split("-");
+  return `${year}.${month}.${day}`;
+}
+
+/** Reading time in minutes (~220 wpm), at least 1. */
+export function readingTime(content: string) {
+  return Math.max(1, Math.round(content.split(/\s+/).length / 220));
+}

@@ -8,6 +8,7 @@ const navItems = {
   "/": { name: "Home" },
   "/blog": { name: "Blog" },
   "/pixel-art": { name: "Pixel Art" },
+  "/pixel-editor": { name: "Editor" },
   "/games": { name: "Games" },
 };
 
