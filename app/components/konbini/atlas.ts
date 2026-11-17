@@ -1,11 +1,9 @@
 import type { Skin } from "app/lib/skins";
+import { ATLAS_H, ATLAS_W, FONT, rectUv, type Rect } from "./atlas-base";
 import { GACHA_SERIES, prizeCount } from "./gacha-data";
+import { paintSprites } from "./sprites";
 
-/** One 2D canvas holds every texture of the scene: a single upload, a single bind. */
-export const ATLAS_W = 2048;
-export const ATLAS_H = 1600;
-
-type Rect = readonly [x: number, y: number, w: number, h: number];
+export { ATLAS_H, ATLAS_W, FONT, rectUv } from "./atlas-base";
 
 const R = {
   sign: [0, 0, 2048, 192],
@@ -32,16 +30,11 @@ const R = {
   gachaPanel: [4, 1440, 272, 156],
   gachaHeader: [284, 1440, 944, 152],
 } as const satisfies Record<string, Rect>;
-/** This band of the atlas holds walk-mode artwork, painted lazily and uploaded on its own. */
-export const EXTRA_Y = 720;
-export const EXTRA_H = 560;
-
-export const rectUv = ([x, y, w, h]: Rect) => [
-  (x + 1) / ATLAS_W,
-  (y + 1) / ATLAS_H,
-  (x + w - 1) / ATLAS_W,
-  (y + h - 1) / ATLAS_H,
-];
+/**
+ * Bands of the atlas holding walk-mode artwork, painted lazily and uploaded on their own:
+ * [y, height]. The second one is the magazine covers (see walk.ts).
+ */
+export const EXTRA_BANDS = [[720, 560], [1900, 148]] as const;
 
 export const UV = Object.fromEntries(
   Object.entries(R).map(([k, r]) => [k, rectUv(r)]),
@@ -49,7 +42,6 @@ export const UV = Object.fromEntries(
 
 export const GACHA_CARD_UV = [UV.gachaCard0, UV.gachaCard1, UV.gachaCard2, UV.gachaCard3, UV.gachaCard4, UV.gachaCard5];
 
-export const FONT = `system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif`;
 const hex = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
 const CANDY = ["#e63946", "#f4a261", "#ffd166", "#2a9d8f", "#4cc9f0", "#f72585", "#8ac926", "#7b2cbf"];
 
@@ -455,6 +447,8 @@ export function paintAtlas(canvas: HTMLCanvasElement, skin: Skin) {
     ctx.fillText("CAPSULE", w / 2 + 150, h / 2 - 16);
     ctx.fillText("TOYS", w / 2 + 150, h / 2 + 22);
   });
+
+  paintSprites(ctx);
 
   region(R.sky, (w, h) => {
     const g = ctx.createLinearGradient(0, 0, 0, h);

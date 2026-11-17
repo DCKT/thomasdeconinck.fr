@@ -1,6 +1,9 @@
 import { SKINS, type SkinId } from "app/lib/skins";
-import { ATLAS_W, EXTRA_H, EXTRA_Y, paintAtlas } from "./atlas";
-import { buildWorld, LAMP_POS, STRIDE } from "./world";
+import { ATLAS_W, EXTRA_BANDS, paintAtlas } from "./atlas";
+import { buildWorld, FOOTPRINTS, LAMP_POS, STRIDE } from "./world";
+
+/** Size of the shader's footprint array (unused slots sit far away). */
+const FURN_N = 20;
 
 /**
  * A tiny purpose-built WebGL2 renderer: every object is an instanced box, so the
@@ -77,6 +80,7 @@ flat out vec3 vC;
 flat out float vR;
 flat out vec3 vHalf;
 flat out float vRot;
+flat out vec4 vRect;
 void main() {
   float c = cos(iMisc.x), s = sin(iMisc.x);
   vec3 p = aPos * iSize;
@@ -126,14 +130,18 @@ void main() {
   vRot = iMisc.x;
   vCol = vec4(iCol.rgb, em);
   vKind = iMisc.y;
-  vTex = (aNor.z > 0.5 && iUv.z > 0.0) ? 1.0 : 0.0;
-  vUv = mix(iUv.xy, iUv.zw, vec2(aPos.x + 0.5, 0.5 - aPos.y));
+  vRect = iUv;
+  // The artwork goes on the front (+z) face, or on the top face when the rect's z is negative
+  bool top = iUv.z < 0.0;
+  vTex = iUv.z == 0.0 ? 0.0 : ((top ? aNor.y : aNor.z) > 0.5 ? 1.0 : 0.0);
+  vUv = mix(iUv.xy, vec2(abs(iUv.z), iUv.w), top ? aPos.xz + 0.5 : vec2(aPos.x + 0.5, 0.5 - aPos.y));
   if (uMirror < 0.0) w.y = 2.0 * uPlane - w.y; // reflect through the floor plane
   gl_Position = uVP * vec4(w, 1.0);
 }`;
 
 const FRAG = `#version 300 es
 precision highp float;
+#define FURN_N ${FURN_N}
 in vec3 vW;
 in vec3 vN;
 in vec4 vCol;
@@ -144,6 +152,8 @@ flat in vec3 vC;
 flat in float vR;
 flat in vec3 vHalf;
 flat in float vRot;
+flat in vec4 vRect;
+uniform vec4 uFurn[FURN_N];
 uniform mat4 uVP;
 uniform sampler2D uAtlas;
 uniform vec3 uLight;
@@ -178,14 +188,56 @@ void main() {
     o = vec4(vCol.rgb * vCol.a * (0.35 + 2.2 * f), 1.0);
     return;
   }
-  vec3 base = vTex > 0.5 ? t.rgb : vCol.rgb;
+  // The atlas is premultiplied: cut-out artwork keeps clean edges at every mip level
+  vec3 base = vTex > 0.5 ? t.rgb / max(t.a, 0.004) : vCol.rgb;
   if (vKind >= 4.0 && vKind < 5.0) { o = vec4(base, 1.0); return; }
 
   vec3 P = vW;
   vec3 n = normalize(vN);
-  float cover = 1.0;
+  float cover = vKind < 1.0 || vKind >= 10.0 ? t.a : 1.0;
+  if (vKind >= 10.0 && vTex < 0.5) discard;     // card: only its artwork exists
   vec3 ballV = vec3(0.0);
-  if (vKind >= 8.0) {                           // fur: the ellipsoid inscribed in the (rotated) box, ray-traced
+  if (vKind >= 9.0 && vKind < 10.0) {           // tube: the upright (elliptic) cylinder inscribed in the box, ray-traced
+    vec3 cam = uCam;
+    if (uMirror < 0.0) cam.y = 2.0 * uPlane - cam.y;
+    float c = cos(vRot), s = sin(vRot);
+    vec3 oc = cam - vC, rw = normalize(vW - cam);
+    vec3 ro = vec3(c * oc.x - s * oc.z, oc.y, s * oc.x + c * oc.z);
+    vec3 rd = vec3(c * rw.x - s * rw.z, rw.y, s * rw.x + c * rw.z);
+    vec2 o2 = ro.xz / vHalf.xz, d2 = rd.xz / vHalf.xz;
+    float A = max(dot(d2, d2), 1e-9), B = dot(o2, d2), C = dot(o2, o2);
+    float near2 = C - B * B / A;                // closest the ray gets to the axis, squared
+    float dist = sqrt(max(near2, 0.0));
+    float tSide = (-B - sqrt(max(1.0 - near2, 0.0) * A)) / A;
+    float ySide = ro.y + rd.y * tSide;
+    float capY = ro.y > vHalf.y ? vHalf.y : -vHalf.y;
+    float tCap = (capY - ro.y) / (abs(rd.y) > 1e-6 ? rd.y : 1e-6);
+    vec3 qCap = ro + rd * tCap;
+    float rCap = length(qCap.xz / vHalf.xz);
+    float edge = clamp((1.0 - dist) / max(fwidth(dist), 1e-5) + 0.5, 0.0, 1.0);
+    float rim = clamp((1.0 - rCap) / max(fwidth(rCap), 1e-5) + 0.5, 0.0, 1.0);
+    vec3 q, nl;
+    if (near2 < 1.0 && tSide > 0.0 && abs(ySide) <= vHalf.y) {
+      q = ro + rd * tSide;
+      nl = normalize(vec3(q.x / (vHalf.x * vHalf.x), 0.0, q.z / (vHalf.z * vHalf.z)));
+      cover = edge;
+      base = vCol.rgb;
+      if (vRect.z > 0.0) {                      // label wrapped around the front half (mirrored behind)
+        vec2 uv = vec2(asin(clamp(q.x / vHalf.x, -1.0, 1.0)) / 3.14159 + 0.5, 0.5 - q.y / (2.0 * vHalf.y));
+        vec4 lab = texture(uAtlas, mix(vRect.xy, vRect.zw, uv));
+        base = mix(vCol.rgb, lab.rgb / max(lab.a, 0.004), lab.a);
+      }
+    } else if (abs(ro.y) > vHalf.y && tCap > 0.0 && rCap < 1.0 + fwidth(rCap)) {
+      q = qCap;
+      nl = vec3(0.0, sign(capY), 0.0);
+      cover = rim;
+      base = vCol.rgb * 0.94;
+    } else discard;
+    if (cover <= 0.0) discard;
+    P = vC + vec3(c * q.x + s * q.z, q.y, -s * q.x + c * q.z);
+    n = vec3(c * nl.x + s * nl.z, nl.y, -s * nl.x + c * nl.z);
+    ballV = -rw;
+  } else if (vKind >= 8.0 && vKind < 9.0) {     // fur: the ellipsoid inscribed in the (rotated) box, ray-traced
     vec3 cam = uCam;
     if (uMirror < 0.0) cam.y = 2.0 * uPlane - cam.y;
     float c = cos(vRot), s = sin(vRot);
@@ -206,13 +258,13 @@ void main() {
     base = vCol.rgb;
     // Fur grain, and tabby stripes running across the cat (vUv.x: frequency, vUv.y: depth)
     float along = s * P.x + c * P.z, across = c * P.x - s * P.z;
-    base *= 0.9 + 0.1 * noise(vec2(across * 140.0, P.y * 40.0 + along * 40.0));
-    if (vUv.x > 0.0) {
+    if (vKind < 8.25) base *= 0.9 + 0.1 * noise(vec2(across * 140.0, P.y * 40.0 + along * 40.0));
+    if (vRect.x > 0.0) {
       float wob = noise(vec2(across * 14.0, P.y * 14.0)) * 2.4;
-      float band = sin(along * vUv.x + P.y * vUv.x * 0.7 + wob);
-      base *= 1.0 - vUv.y * smoothstep(0.25, 0.85, band) * smoothstep(-0.5, 0.2, n.y);
+      float band = sin(along * vRect.x + P.y * vRect.x * 0.7 + wob);
+      base *= 1.0 - vRect.y * smoothstep(0.25, 0.85, band) * smoothstep(-0.5, 0.2, n.y);
     }
-  } else if (vKind >= 7.0) {                           // ball: the sphere inscribed in the box, ray-traced
+  } else if (vKind >= 7.0 && vKind < 8.0) {     // ball: the sphere inscribed in the box, ray-traced
     vec3 cam = uCam;
     if (uMirror < 0.0) cam.y = 2.0 * uPlane - cam.y;
     vec3 rd = normalize(vW - cam);
@@ -225,8 +277,8 @@ void main() {
     n = (P - vC) / vR;
     ballV = -rd;
     base = vCol.rgb;
-    if (vUv.x != 0.0 || vUv.y != 0.0) {         // capsule: coloured lid, clear bottom, a seam between
-      float side = dot(n, normalize(vec3(vUv.x, 0.6, vUv.y)));
+    if (vRect.x != 0.0 || vRect.y != 0.0) {     // capsule: coloured lid, clear bottom, a seam between
+      float side = dot(n, normalize(vec3(vRect.x, 0.6, vRect.y)));
       vec3 clear = mix(vec3(0.93, 0.95, 0.97), vCol.rgb, 0.16);
       base = mix(clear, vCol.rgb, smoothstep(-0.03, 0.03, side));
       base *= 0.68 + 0.32 * smoothstep(0.0, 0.07, abs(side));
@@ -245,23 +297,42 @@ void main() {
   lit += base * vec3(1.0, 0.6, 0.26) * max(dot(n, L2 * inversesqrt(e2)), 0.0) * 22.0 / (1.0 + e2);
 
   float shade = 0.74 + 0.26 * clamp(dot(n, normalize(vec3(0.25, 0.8, 0.55))), 0.0, 1.0);
-  vec3 col = mix(lit, base * shade, min(em, 1.0)) * max(em, 1.0);
-  if (vKind >= 8.0) {                           // fur: soft wrap-around, shadowed belly, a velvety rim
+  bool indoor = abs(P.x) < 6.0 && P.z < 0.0 && P.z > -7.0 && P.y < 4.1;
+  vec3 col;
+  if (indoor) {
+    // Inside, everything is lit by the three ceiling strips plus a lot of white bounce
+    float li = 0.0;
+    for (int i = 0; i < 3; i++) {
+      vec3 Ls = vec3(clamp(P.x, -5.2, 5.2), 3.95, -1.5 - 2.0 * float(i)) - P;
+      float q2 = dot(Ls, Ls);
+      li += max(dot(n, Ls * inversesqrt(q2)), 0.0) / (1.0 + q2 * 0.22);
+    }
+    col = base * (0.76 + 0.1 * n.y + 0.42 * li) * mix(0.78, 1.0, min(em, 1.0)) * max(em, 1.0);
+  } else {
+    col = mix(lit, base * shade, min(em, 1.0)) * max(em, 1.0);
+  }
+  if (vKind >= 9.0 && vKind < 10.0) {           // tube: a soft vertical sheen, like a can or a bottle
+    col *= 0.8 + 0.2 * pow(max(dot(n, ballV), 0.0), 0.6);
+    col += pow(max(dot(n, normalize(ballV + normalize(vec3(-0.5, 0.5, 0.4)))), 0.0), 24.0) * 0.16 * vCol.a;
+  } else if (vKind >= 8.5 && vKind < 9.0) {     // soft: skin, cloth, dough
+    col *= mix(0.72, 1.0, smoothstep(-0.9, 0.3, n.y));
+  } else if (vKind >= 8.0 && vKind < 8.5) {     // fur: soft wrap-around, shadowed belly, a velvety rim
     col *= mix(0.5, 1.0, smoothstep(-0.8, 0.35, n.y));
     float rim = pow(1.0 - max(dot(n, ballV), 0.0), 2.5);
     col += base * rim * (0.25 * uLight + vec3(0.06, 0.07, 0.1));
-  } else if (vKind >= 7.0) {                    // glossy plastic: darker rim, one sharp highlight
+  } else if (vKind >= 7.0 && vKind < 8.0) {     // glossy plastic: darker rim, one sharp highlight
     col *= 0.62 + 0.38 * pow(max(dot(n, ballV), 0.0), 0.7);
     col += pow(max(dot(n, normalize(ballV + normalize(vec3(-0.35, 0.9, 0.45)))), 0.0), 60.0) * 0.6;
   }
 
-  // Indoors: soft contact shadow towards the floor, darker corners
-  if (abs(vW.x) < 6.0 && vW.z < 0.0 && vW.z > -7.0 && vW.y < 4.0) {
-    float wall = min(min(5.95 - abs(vW.x), vW.z + 6.95), 2.0);
-    col *= mix(0.72, 1.0, smoothstep(0.1, 0.85, vW.y)) * mix(0.86, 1.0, smoothstep(0.0, 1.2, wall));
+  // Indoors: things darken where they meet the floor, walls where they meet the ceiling, corners a little
+  if (indoor) {
+    float wall = min(5.95 - abs(P.x), P.z + 6.95);
+    col *= mix(0.88, 1.0, smoothstep(0.0, 0.7, wall));
+    if (abs(n.y) < 0.5) col *= mix(0.74, 1.0, smoothstep(0.16, 0.5, P.y)) * mix(0.9, 1.0, smoothstep(4.0, 3.55, P.y));
   }
 
-  if (vKind >= 7.0) {                           // write the depth of the traced surface, so parts blend into each other
+  if (vKind >= 7.0 && vKind < 10.0) {           // write the depth of the traced surface, so parts blend into each other
     vec3 Pm = P;
     if (uMirror < 0.0) Pm.y = 2.0 * uPlane - Pm.y;
     vec4 clip = uVP * vec4(Pm, 1.0);
@@ -273,8 +344,16 @@ void main() {
     float fresnel = pow(1.0 - max(V.y, 0.0), 4.0);
     vec2 tile = fract(vW.xz / 0.6);
     float grout = step(0.985, max(tile.x, tile.y));
-    col *= 0.92 + 0.08 * hash(floor(vW.xz / 0.6));
-    a = mix(mix(0.8, 0.5, fresnel), 1.0, grout);
+    col *= 0.95 + 0.05 * hash(floor(vW.xz / 0.6));
+    // Contact shadows: the floor darkens around the foot of every fixture
+    float ao = 1.0;
+    for (int i = 0; i < FURN_N; i++) {
+      vec2 away = max(max(uFurn[i].xy - vW.xz, vW.xz - uFurn[i].zw), 0.0);
+      ao = min(ao, smoothstep(-0.04, 0.34, length(away)));
+    }
+    col *= mix(0.55, 1.0, ao);
+    col = mix(col, col * 0.8, grout);
+    a = mix(mix(0.9, 0.58, fresnel), 1.0, grout);
   }
   if (vKind >= 2.0 && vKind < 3.0) {                           // wet asphalt: puddles let the reflection through
     float puddle = noise(vW.xz * 0.33) + 0.5 * noise(vW.xz * 1.3 + 7.0);
@@ -398,7 +477,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
       throw new Error(gl!.getProgramInfoLog(program) ?? "program link failed");
     }
     gl!.useProgram(program);
-    for (const name of ["uVP", "uTime", "uMirror", "uAtlas", "uLight", "uLamp", "uCam", "uDoor", "uPlane", "uGacha"]) {
+    for (const name of ["uVP", "uTime", "uMirror", "uAtlas", "uLight", "uLamp", "uCam", "uDoor", "uPlane", "uGacha", "uFurn"]) {
       uniforms[name] = gl!.getUniformLocation(program, name);
     }
 
@@ -426,6 +505,10 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
 
     gl!.uniform1i(uniforms.uAtlas, 0);
     gl!.uniform3fv(uniforms.uLamp, LAMP_POS);
+    const furn = new Float32Array(FURN_N * 4).fill(999);
+    furn.set(FOOTPRINTS.flat().slice(0, FURN_N * 4));
+    gl!.uniform4fv(uniforms.uFurn, furn);
+    gl!.pixelStorei(gl!.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     gl!.enable(gl!.DEPTH_TEST);
     gl!.enable(gl!.CULL_FACE);
     gl!.disable(gl!.DITHER);
@@ -438,16 +521,18 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions): S
 
   const extraCanvas = document.createElement("canvas");
 
-  /** Paints + uploads only the walk-mode part of the atlas (cheap: a sub-image, not 2048×1280). */
+  /** Paints + uploads only the walk-mode bands of the atlas (cheap: sub-images, not 2048×2048). */
   function paintExtra() {
     if (!extra) return;
-    extraCanvas.width = ATLAS_W;
-    extraCanvas.height = EXTRA_H;
-    const ctx = extraCanvas.getContext("2d")!;
-    ctx.setTransform(1, 0, 0, 1, 0, -EXTRA_Y); // the painter works in atlas coordinates
-    extra.paint(extraCanvas, skin);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    gl!.texSubImage2D(gl!.TEXTURE_2D, 0, 0, EXTRA_Y, gl!.RGBA, gl!.UNSIGNED_BYTE, extraCanvas);
+    for (const [y, h] of EXTRA_BANDS) {
+      extraCanvas.width = ATLAS_W;
+      extraCanvas.height = h;
+      const ctx = extraCanvas.getContext("2d")!;
+      ctx.setTransform(1, 0, 0, 1, 0, -y); // the painter works in atlas coordinates
+      extra.paint(extraCanvas, skin);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      gl!.texSubImage2D(gl!.TEXTURE_2D, 0, 0, y, gl!.RGBA, gl!.UNSIGNED_BYTE, extraCanvas);
+    }
     gl!.generateMipmap(gl!.TEXTURE_2D);
   }
 

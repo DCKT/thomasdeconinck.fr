@@ -3,14 +3,18 @@
  * when the visitor hovers / clicks the "Click me" box, so the home page stays light.
  */
 import type { SKINS, SkinId } from "app/lib/skins";
-import { FONT, rectUv } from "./atlas";
+import { FONT, rectUv } from "./atlas-base";
 import { CARDS } from "./cards-data";
 import type { MangaItem } from "app/lib/komga";
 import type { ShelfGame } from "app/lib/steam";
 import { mangaCoverUrl, PRINTS, type InteractionId } from "./interactions";
 import { drawIcon, drawPixelated, loadCover } from "./pixel-icons";
 import type { CameraPose, SceneExtra, SceneHandle } from "./scene";
-import { ANIM, Bag, mulberry32, NO_ANIM, NO_UV } from "./world";
+import { startAmbience, stopAmbience } from "./ambience";
+import { topUv } from "./atlas-base";
+import { ANIM, Bag, KIND, mulberry32, NO_ANIM, NO_UV } from "./bag";
+import { SPR } from "./sprites";
+import { CEIL } from "./store";
 
 type Skin = (typeof SKINS)[SkinId];
 type Vec3 = [number, number, number];
@@ -27,6 +31,8 @@ const INTERACTIONS: { id: InteractionId; zone: Rect; facing: [number, number] }[
   { id: "blog", zone: [-5.6, -2.15, -1.15, -0.85], facing: [0, 1] },
   { id: "editor", zone: [1.5, -1.75, 2.62, -1.03], facing: [0, 1] },
   { id: "games", zone: [2.85, -1.75, 3.62, -1.03], facing: [0, 1] },
+  { id: "kiosk", zone: [3.85, -1.4, 4.65, -0.85], facing: [0, 1] },
+  { id: "icecream", zone: [4.3, -1.4, 5.0, -0.2], facing: [1, 0] },
   { id: "fried", zone: [2.6, -2.45, 3.62, -1.5], facing: [1, 0] },
   { id: "about", zone: [2.6, -3.1, 3.62, -2.45], facing: [1, 0] },
   { id: "cards", zone: [2.6, -4.75, 3.62, -4.2], facing: [1, 0] },
@@ -47,11 +53,12 @@ const SOLIDS: Rect[] = [
   [-7, -0.06, -1.1, 1], [1.1, -0.06, 7, 1], [-1.1, 0.02, 1.1, 1], // storefront, doors
   [-5.85, -0.85, -1.25, -0.4], [-4.85, -1.5, -4.35, -1.2], // magazine rack + reader
   [1.62, -1.03, 2.58, -0.37], [2.92, -1.03, 3.68, -0.37], // copy machine, ATM
-  [3.85, -5.45, 5.95, -1.45], [3.7, -6.95, 5.95, -5.45], // counter + clerk, staff corner
+  [3.82, -5.45, 5.95, -1.45], [3.7, -6.95, 5.95, -5.45], // counter + clerk, staff corner
+  [4.0, -0.8, 4.5, -0.3], [5.25, -1.4, 5.95, -0.15], // ticket kiosk, ice cream chest
   [-5.95, -6.95, -5.25, -1.35], // drink fridges
   [-5.25, -6.95, 3.8, -6.18], // chilled cases
   [-4.35, -3.02, 1.95, -2.18], [-4.35, -4.82, 1.95, -3.98], // gondolas
-  [1.93, -3.0, 2.32, -2.2], [1.93, -4.8, 2.32, -4.0], // end caps
+  [1.93, -2.98, 2.38, -2.22], [1.93, -4.78, 2.38, -4.02], // end caps
   [-5.8, -1.25, -5.25, -0.85], // baskets
   [0.25, -5.78, 0.75, -5.42], // customer at the onigiri
   [0.8, -0.78, 1.25, -0.42], // wet floor sign
@@ -60,7 +67,7 @@ const SOLIDS: Rect[] = [
 const RADIUS = 0.25;
 const EYE = 1.6;
 const WALK_FOV = (70 * Math.PI) / 180;
-const START: Vec3 = [0, EYE, -1.4];
+const START: Vec3 = [0, EYE, -0.8];
 
 // ── Interior extras (lazy geometry + atlas art, painted below y = 720) ──────
 const SIGN_TEXTS = [
@@ -83,6 +90,14 @@ const MAX_MANGA = 18;
 const TOPPERS = ["FAVORITE GAMES", "FAVORITE MANGA"] as const;
 const topperRect = (i: number) => [i * 408, 1128, 400, 80] as const;
 const MAX_CARTS = 8;
+/** The blog on the magazine rack: one cover per article, in the atlas's second lazy band. */
+const MAX_COVERS = 18;
+const coverRect = (i: number) => [i * 108, 1900, 104, 146] as const;
+const COVER_INKS = [
+  ["#c1121f", "#ffffff", "#ffd166"], ["#1d3557", "#f1faee", "#4cc9f0"], ["#ffd60a", "#111111", "#e63946"],
+  ["#2a9d8f", "#ffffff", "#e9c46a"], ["#f1faee", "#1d3557", "#e63946"], ["#3a0ca3", "#ffffff", "#f72585"],
+  ["#f28482", "#22223b", "#ffffff"], ["#111318", "#ffffff", "#49e08a"],
+] as const;
 /**
  * The manhole card display at the counter (see cards-data.ts): banner, wrapper,
  * the four cards shown off on the top tier and the poster on the counter front.
@@ -156,6 +171,7 @@ const brandOf = (skin: Skin) => (skin.colors[0] === 0xffffff ? skin.colors[1] : 
 /** Set when walk mode starts (the data comes from the server: favourites + Steam). */
 let featured: ShelfGame[] = [];
 let manga: MangaItem[] = [];
+let posts: { title: string; date: string }[] = [];
 const covers = new Map<string, HTMLImageElement>();
 const mangaCovers = new Map<string, HTMLImageElement>();
 
@@ -192,10 +208,50 @@ export const interior: SceneExtra = {
       ctx.fillRect(x, y + h - 8, w, 8);
       ctx.textAlign = "left";
       ctx.font = `800 24px ${FONT}`;
-      ctx.fillText(jp, x + 18, y + h / 2 - 4);
+      ctx.fillText(jp, x + 18, y + h / 2 - 4, 150);
       ctx.textAlign = "right";
       ctx.font = `900 ${en.length > 10 ? 26 : 32}px ${FONT}`;
-      ctx.fillText(en, x + w - 18, y + h / 2 - 4);
+      ctx.fillText(en, x + w - 18, y + h / 2 - 4, 200);
+    });
+
+    // Magazine covers: every article of the blog gets its own issue
+    posts.slice(0, MAX_COVERS).forEach((post, i) => {
+      const [x, y, w, h] = coverRect(i);
+      const [bg, ink, pop] = COVER_INKS[i % COVER_INKS.length];
+      ctx.fillStyle = bg;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = ink;
+      ctx.textAlign = "left";
+      ctx.font = `900 19px ${FONT}`;
+      ctx.fillText("THOMAS", x + 6, y + 14, w - 40);
+      ctx.font = `800 8px ${FONT}`;
+      ctx.fillText(`週刊ブログ · ${post.date}`, x + 6, y + 29, w - 12);
+      ctx.fillStyle = pop;
+      ctx.fillRect(x + 6, y + 36, w - 12, 3);
+      ctx.beginPath();
+      ctx.arc(x + w - 17, y + 15, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = bg;
+      ctx.textAlign = "center";
+      ctx.font = `900 8px ${FONT}`;
+      ctx.fillText(`No.${posts.length - i}`, x + w - 17, y + 15.5, 20);
+      // The headline, wrapped
+      ctx.fillStyle = ink;
+      ctx.textAlign = "left";
+      ctx.font = `900 13px ${FONT}`;
+      const lines: string[] = [];
+      let line = "";
+      for (const word of post.title.split(" ")) {
+        const next = line ? `${line} ${word}` : word;
+        if (line && ctx.measureText(next).width > w - 12) {
+          lines.push(line);
+          line = word;
+        } else line = next;
+      }
+      lines.push(line);
+      lines.slice(0, 6).forEach((text, k) => ctx.fillText(text, x + 6, y + 52 + k * 15, w - 12));
+      ctx.fillStyle = pop;
+      ctx.fillRect(x, y + h - 10, w, 10);
     });
 
     // Cartridge labels: the game's own pixel art if provided, else a generated one
@@ -362,31 +418,36 @@ export const interior: SceneExtra = {
     const candy = [0xe63946, 0xf4a261, 0xffd166, 0x2a9d8f, 0x4cc9f0, 0xf72585, 0x8ac926, 0x7b2cbf];
     const pick = () => candy[Math.floor(rnd() * candy.length)];
     const brand = brandOf(skin);
+    /** Things on the counter face the customer (-x). */
+    const FACING_COUNTER = -Math.PI / 2;
 
-    // Floor tiles
-    for (let x = -5.4; x < 6; x += 0.6) bag.box(x, 0.16, -3.5, 0.012, 0.004, 6.9, 0xaab2b8, 0.75);
-    for (let z = -6.6; z < 0; z += 0.6) bag.box(0, 0.16, z, 11.9, 0.004, 0.012, 0xaab2b8, 0.75);
-
-    // Inside face of the rack: magazines (the blog) all along
+    // Inside face of the rack: the blog, one issue per article, two copies deep
+    const covers = Math.min(posts.length, MAX_COVERS);
     for (let row = 0; row < 2; row++) {
-      for (let i = 0; i < 14; i++) bag.box(-5.62 + i * 0.315, 0.68 + row * 0.5, -0.78, 0.26, 0.38, 0.04, pick(), 0.95);
+      for (let i = 0; i < 14; i++) {
+        const x = -5.62 + i * 0.315, y = 0.68 + row * 0.5;
+        const uv = covers ? rectUv(coverRect((row * 14 + i) % covers)) : SPR.mag[(i + row) % SPR.mag.length];
+        bag.box(x, y, -0.78, 0.26, 0.365, 0.02, 0xf4f4f0, 1, uv, Math.PI);
+        bag.box(x, y + 0.012, -0.762, 0.26, 0.365, 0.014, 0xe9e9e4, 1);
+      }
     }
-    // Shelf strips under each tier, with the price tags konbini shelves are covered in
-    for (const y of [0.64, 1.14]) bag.box(-3.55, y, -0.78, 4.5, 0.03, 0.05, 0xffffff, 1);
+    // Shelf strips under each tier
+    for (const y of [0.64, 1.14]) bag.box(-3.55, y, -0.795, 4.5, 0.04, 0.02, 0xffffff, 1);
 
+    const SIGN_Y = 2.5;
     // Hanging signs: two boxes back to back, with a gap so their faces never z-fight
     for (const sign of SIGNS) {
       for (const side of [1, -1]) {
         const uv = rectUv(signRect(side > 0 ? sign.a : sign.b));
         if (sign.axis === "z") {
-          bag.box(sign.x, 3.05, sign.z + side * 0.007, 1.6, 0.32, 0.01, 0xffffff, 1, uv, side > 0 ? 0 : Math.PI);
+          bag.box(sign.x, SIGN_Y, sign.z + side * 0.007, 1.6, 0.32, 0.01, 0xffffff, 1.1, uv, side > 0 ? 0 : Math.PI);
         } else {
-          bag.box(sign.x + side * 0.007, 3.05, sign.z, 1.6, 0.32, 0.01, 0xffffff, 1, uv, (side * Math.PI) / 2);
+          bag.box(sign.x + side * 0.007, SIGN_Y, sign.z, 1.6, 0.32, 0.01, 0xffffff, 1.1, uv, (side * Math.PI) / 2);
         }
       }
       for (const e of [-0.6, 0.6]) {
-        if (sign.axis === "z") bag.box(sign.x + e, 3.21, sign.z, 0.015, 0.8, 0.015, 0x9aa0a6, 0.6);
-        else bag.box(sign.x, 3.21, sign.z + e, 0.015, 0.8, 0.015, 0x9aa0a6, 0.6);
+        if (sign.axis === "z") bag.box(sign.x + e, SIGN_Y + 0.32, sign.z, 0.012, CEIL - SIGN_Y - 0.32, 0.012, 0x9aa0a6, 0.8);
+        else bag.box(sign.x, SIGN_Y + 0.32, sign.z + e, 0.012, CEIL - SIGN_Y - 0.32, 0.012, 0x9aa0a6, 0.8);
       }
     }
 
@@ -434,53 +495,84 @@ export const interior: SceneExtra = {
       bag.box(x, y + 0.03, -2.702, 0.3, 0.3, 0.004, 0xffffff, 1, rectUv(printRect(i)), Math.PI);
     });
 
-    // Shopping baskets, in the corner between the rack and the fridges
-    for (let i = 0; i < 4; i++) bag.box(-5.52, 0.16 + i * 0.14, -1.05, 0.48, 0.2, 0.34, brand, 0.85);
+    // Shopping baskets, stacked in the corner between the rack and the coolers
+    for (let i = 0; i < 5; i++) {
+      const y = 0.16 + i * 0.07;
+      bag.box(-5.52, y, -1.05, 0.46 - 0.004 * i, 0.2, 0.32, brand, 0.95);
+      bag.box(-5.52, y + 0.2, -1.05, 0.48, 0.016, 0.34, 0x2b2e35, 0.8);
+    }
+    bag.box(-5.52, 0.66, -1.05, 0.36, 0.012, 0.02, 0x2b2e35, 0.8);
+    for (const e of [-0.18, 0.18]) bag.box(-5.52 + e, 0.5, -1.05, 0.012, 0.17, 0.02, 0x2b2e35, 0.8);
 
     // Price tags along every shelf edge
-    const tags = (x0: number, x1: number, y: number, z: number, step = 0.34) => {
-      for (let x = x0 + 0.1; x < x1 - 0.05; x += step) bag.box(x, y, z, 0.07, 0.028, 0.004, rnd() < 0.8 ? 0xfff3b0 : 0xffffff, 1.05);
+    const tag = () => SPR.tag[Math.floor(rnd() * SPR.tag.length)];
+    const tags = (x0: number, x1: number, y: number, z: number, step: number, back = false) => {
+      for (let x = x0 + 0.1; x < x1 - 0.05; x += step) bag.box(x, y, z, 0.085, 0.03, 0.004, 0xffffff, 1.1, tag(), back ? Math.PI : 0);
     };
     for (const y of [0.28, 0.6, 0.92]) {
-      tags(-4.3, 1.9, y - 0.055, -2.6 + 0.408);
-      tags(-4.3, y > 0.3 ? -1.2 : 1.9, y - 0.055, -2.6 - 0.412);
+      tags(-4.3, 1.9, y - 0.053, -2.6 + 0.408, y > 0.9 ? 0.688 : 0.57);
+      tags(-4.3, y > 0.3 ? -1.2 : 1.9, y - 0.053, -2.6 - 0.408, 0.5, true);
     }
     for (const y of [0.28, 0.64, 1.0, 1.36]) {
-      tags(-4.3, 1.9, y - 0.055, -4.4 + 0.408);
-      tags(-4.3, 1.9, y - 0.055, -4.4 - 0.412);
+      tags(-4.3, 1.9, y - 0.053, -4.4 + 0.408, 0.39);
+      tags(-4.3, 1.9, y - 0.053, -4.4 - 0.408, y > 0.3 && y < 1.3 ? 0.688 : 0.57, true);
     }
-    for (const [y, front] of [[0.62, -6.2], [0.98, -6.32], [1.34, -6.42], [1.7, -6.52]]) tags(-5.25, 3.75, y - 0.048, front + 0.012, 0.4);
+    for (const [y, front] of [[0.62, -6.2], [0.98, -6.32], [1.34, -6.42], [1.7, -6.52]]) tags(-5.25, 3.75, y - 0.048, front + 0.012, 0.34);
+    // …and on the cooler rails, facing the aisle
+    for (let level = 0; level < 5; level++) {
+      for (let z = -6.2; z < -1.5; z += 0.39) {
+        bag.box(-5.338, 0.277 + level * 0.43, z, 0.085, 0.03, 0.004, 0xffffff, 1.1, tag(), Math.PI / 2);
+      }
+    }
     // Shelf talkers sticking out of the shelves
     for (let i = 0; i < 14; i++) {
       const g = i % 2 ? -2.6 + 0.43 : -4.4 + 0.43;
       bag.box(-4.0 + rnd() * 5.6, 0.45 + Math.floor(rnd() * 3) * 0.33, g, 0.006, 0.1, 0.12, [0xe63946, 0xffd60a, brand, 0xff7b00][i % 4], 1.1);
     }
+    // Promo cards clipped above the chilled case and the coolers
+    [-4.4, -1.7, 0.1, 2.3].forEach((x, i) => bag.box(x, 2.1, -6.42, 0.44, 0.22, 0.006, 0xffffff, 1.15, SPR.pop[i]));
+    [-2.3, -4.5].forEach((z, i) => bag.box(-5.236, 2.57, z, 0.4, 0.2, 0.006, 0xffffff, 1.15, SPR.pop[i * 2], Math.PI / 2));
 
-    // Ceiling: AC vents, smoke detectors, security dome, round mirror, exit sign
-    for (const [x, z] of [[-2.8, -3.4], [1.8, -5.6]]) {
-      bag.box(x, 3.95, z, 0.7, 0.04, 0.7, 0xd8dcdf, 0.9);
-      for (let k = -2; k <= 2; k++) bag.box(x, 3.945, z + k * 0.12, 0.6, 0.01, 0.02, 0x9aa0a6, 0.8);
+    // Ceiling: tile grid, air conditioning, smoke detectors, speakers, security dome, mirror, exit sign
+    const top = CEIL - 0.004;
+    for (let x = -5.4; x < 6; x += 1.2) bag.box(x, top, -3.5, 0.012, 0.004, 6.9, 0xc9ced3, 0.9);
+    for (let z = -6.3; z < 0; z += 0.6) {
+      if (Math.abs(((z + 0.5) % 2) + 1) < 0.2) continue; // the light strips already draw these
+      bag.box(0, top, z, 11.9, 0.004, 0.012, 0xc9ced3, 0.9);
     }
-    for (const [x, z] of [[-0.5, -2.2], [3.5, -4.2], [-4, -5.4]]) bag.box(x, 3.94, z, 0.12, 0.05, 0.12, 0xf5f5f2, 0.95);
-    bag.box(5.3, 3.8, -1.0, 0.18, 0.16, 0.18, 0x2b2e35, 0.7);
-    bag.box(5.3, 3.74, -1.0, 0.1, 0.06, 0.1, 0x111111, 0.6);
-    bag.box(5.7, 2.75, -6.7, 0.45, 0.45, 0.05, 0xdfe7ee, 1.25, NO_UV, -Math.PI / 4);
+    for (const [x, z] of [[-2.8, -2.5], [1.8, -4.5]]) {
+      bag.box(x, CEIL - 0.04, z, 0.84, 0.04, 0.84, 0xe6e8ea, 1);
+      bag.box(x, CEIL - 0.045, z, 0.5, 0.01, 0.5, 0xd0d4d8, 0.9);
+      for (const e of [-0.34, 0.34]) {
+        bag.box(x + e, CEIL - 0.046, z, 0.07, 0.01, 0.66, 0x7d838a, 0.8);
+        bag.box(x, CEIL - 0.046, z + e, 0.66, 0.01, 0.07, 0x7d838a, 0.8);
+      }
+    }
+    for (const [x, z] of [[-0.5, -2.5], [3.5, -4.5], [-4, -4.6]]) bag.box(x, CEIL - 0.04, z, 0.12, 0.04, 0.12, 0xf5f5f2, 1, NO_UV, 0, KIND.tube);
+    for (const [x, z] of [[-3.4, -4.5], [0.6, -2.5], [3.1, -2.5]]) {
+      bag.box(x, CEIL - 0.02, z, 0.22, 0.02, 0.22, 0xe6e8ea, 1, NO_UV, 0, KIND.tube); // speakers (the jingle has to come from somewhere)
+      bag.box(x, CEIL - 0.024, z, 0.16, 0.006, 0.16, 0x9aa0a6, 0.8, NO_UV, 0, KIND.tube);
+    }
+    bag.box(5.3, CEIL - 0.05, -1.0, 0.2, 0.05, 0.2, 0xf5f5f2, 1, NO_UV, 0, KIND.tube);
+    bag.box(5.3, CEIL - 0.15, -1.0, 0.16, 0.16, 0.16, 0x15171c, 0.6, NO_UV, 0, KIND.ball);
+    bag.box(5.7, 2.5, -6.7, 0.42, 0.42, 0.05, 0xdfe7ee, 1.25, NO_UV, -Math.PI / 4);
     bag.box(5.1, 2.32, -6.84, 0.42, 0.16, 0.03, 0x1faa59, 1.5);
     bag.box(5.1, 2.37, -6.825, 0.24, 0.06, 0.005, 0xffffff, 1.6);
+    bag.box(5.884, 2.25, -0.8, 0.7, 0.34, 0.006, 0xffffff, 1.1, SPR.camera[0], -Math.PI / 2);
 
-    // Counter extras: card terminals, a donation box, carrier bags, a hand bell
-    for (const z of [-2.55, -4.08]) {
-      bag.box(3.98, 1.16, z, 0.1, 0.05, 0.14, 0x2b2e35, 0.7);
-      bag.box(3.975, 1.21, z, 0.08, 0.008, 0.1, 0x22c55e, 1.4);
-    }
+    // Counter extras: a donation box, carrier bags, the lottery board, where to queue
     bag.box(3.93, 1.16, -5.3, 0.14, 0.18, 0.14, 0xe9f5ff, 1.1);
     bag.box(3.93, 1.34, -5.3, 0.15, 0.02, 0.15, brand, 0.95);
     bag.box(4.55, 0.4, -5.38, 0.5, 0.5, 0.06, 0xf5f5f2, 0.95);
-    bag.box(4.12, 1.16, -5.33, 0.06, 0.07, 0.06, 0xd4a017, 1.1);
+    bag.box(3.884, 0.24, -2.0, 0.78, 0.37, 0.008, 0xffffff, 1.15, SPR.kuji[0], FACING_COUNTER);
+    bag.box(3.884, 0.3, -3.35, 0.56, 0.28, 0.008, 0xffffff, 1.15, SPR.pop[2], FACING_COUNTER);
+    for (const [x, z] of [[3.42, -2.75], [2.82, -2.75], [3.42, -4.45]]) {
+      bag.box(x, 0.161, z, 0.36, 0.002, 0.36, 0xffffff, 1, topUv(SPR.foot[0]), FACING_COUNTER, KIND.card);
+    }
     // ── Manhole card boosters: the one thing on the counter that is really for sale ──
     // A three-tier stand in front of the second register. Everything faces the customer (-x).
     const cardZ = -4.5;
-    const FACING = -Math.PI / 2;
+    const FACING = FACING_COUNTER;
     const tierX = (k: number) => 3.875 + k * 0.09;
     const tierTop = (k: number) => 1.19 + k * 0.115;
     for (let k = 0; k < 3; k++) {
@@ -521,27 +613,14 @@ export const interior: SceneExtra = {
     bag.box(3.889, 0.185, cardZ, 0.66, 0.5, 0.006, 0xffd60a, 1.1, NO_UV, FACING);
     // And a banner hung over the main aisle, readable from the door and from the back of the store
     for (const side of [1, -1]) {
-      bag.box(3.08, 2.42, -3.95 + side * 0.007, 1.45, 0.46, 0.01, 0xffffff, 1.35, rectUv(CARD_SIGN), side > 0 ? 0 : Math.PI);
+      bag.box(3.08, 2.36, -3.95 + side * 0.007, 1.45, 0.46, 0.01, 0xffffff, 1.35, rectUv(CARD_SIGN), side > 0 ? 0 : Math.PI);
     }
-    for (const e of [-0.6, 0.6]) bag.box(3.08 + e, 2.88, -3.95, 0.012, 1.1, 0.012, 0x9aa0a6, 0.6);
+    for (const e of [-0.6, 0.6]) bag.box(3.08 + e, 2.82, -3.95, 0.012, CEIL - 2.82, 0.012, 0x9aa0a6, 0.8);
 
     // Entrance: mat and a wet floor sign (rainy night)
     bag.box(0, 0.16, -0.55, 1.9, 0.012, 0.8, 0x3a3f47, 0.8);
     for (const dz of [-0.07, 0.07]) bag.box(1.02, 0.16, -0.6 + dz, 0.32, 0.58, 0.02, 0xffd60a, 1.05);
     bag.box(1.02, 0.52, -0.58, 0.18, 0.1, 0.005, 0x111111, 1);
-
-    // A customer choosing an onigiri, basket in hand
-    bag.anim = [ANIM.bob, 1.2, 2.1, 0.015];
-    bag.box(0.5, 0.16, -5.6, 0.36, 0.82, 0.22, 0x2f3e46, 0.85);
-    bag.box(0.5, 0.98, -5.6, 0.46, 0.62, 0.28, 0x8d6e63, 0.85);
-    bag.box(0.5, 1.6, -5.62, 0.26, 0.28, 0.26, 0xf1c9a5, 0.9);
-    bag.box(0.5, 1.84, -5.58, 0.28, 0.1, 0.3, 0x111111, 0.85);
-    bag.box(0.8, 0.7, -5.6, 0.34, 0.2, 0.24, brand, 0.85);
-    bag.anim = NO_ANIM;
-
-    // The clerk waves now and then
-    bag.anim = [ANIM.sway, 2.4, 0, 0.12];
-    bag.box(4.9, 1.35, -2.45, 0.1, 0.4, 0.1, 0xf1c9a5, 0.9);
 
     return new Float32Array(bag.data);
   },
@@ -588,7 +667,7 @@ export type WalkHandle = {
   destroy: () => void;
 };
 
-export type WalkContent = { games: ShelfGame[]; manga: MangaItem[] };
+export type WalkContent = { games: ShelfGame[]; manga: MangaItem[]; posts: { title: string; date: string }[] };
 
 const prepared = new WeakSet<SceneHandle>();
 /** Repainting the artwork costs a frame or two: never do it during the entrance / exit flights. */
@@ -608,6 +687,7 @@ export function prepareWalk(scene: SceneHandle, content: WalkContent) {
   prepared.add(scene);
   featured = content.games.slice(0, MAX_CARTS);
   manga = content.manga.slice(0, MAX_MANGA);
+  posts = content.posts;
   const { gamesStart, books } = shelfLayout();
   MANGA_ZONE[2] = books ? gamesStart - 0.04 : MANGA_ZONE[0];
   scene.setExtra(interior);
@@ -644,6 +724,7 @@ export function startWalk(
   },
 ): WalkHandle {
   prepareWalk(scene, opts.content);
+  startAmbience();
 
   type Transition = { kind: "enter" | "exit"; t: number; duration: number; from: CameraPose };
   let transition: Transition | null = {
@@ -828,8 +909,8 @@ export function startWalk(
   canvas.addEventListener("pointerup", onPointerUp);
   canvas.addEventListener("pointercancel", onPointerUp);
   scene.setTicker(tick);
-
   function finish() {
+    stopAmbience();
     flying = false;
     if (pendingArt) {
       pendingArt.refreshExtraArt();

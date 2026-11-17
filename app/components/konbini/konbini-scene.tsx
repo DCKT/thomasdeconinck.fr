@@ -84,7 +84,7 @@ export default function KonbiniScene({ data }: { data: WalkData }) {
       setHud(() => hud.default);
       current = startWalk(handle, canvas, {
         reducedMotion: root.dataset.motion === "off",
-        content: { games: data.games, manga: data.manga },
+        content: { games: data.games, manga: data.manga, posts: data.posts },
         onPrompt: setPrompt,
         onInteract: (id) => window.dispatchEvent(new CustomEvent(USE_EVENT, { detail: id })),
         onControl: () => setControl(true),
@@ -96,7 +96,7 @@ export default function KonbiniScene({ data }: { data: WalkData }) {
     // Hovering the door box: fetch walk mode and build the interior now, not during the flight
     const onPrefetch = () =>
       void loadWalk().then(([walkModule]) => {
-        if (handle && !cancelled) walkModule.prepareWalk(handle, { games: data.games, manga: data.manga });
+        if (handle && !cancelled) walkModule.prepareWalk(handle, { games: data.games, manga: data.manga, posts: data.posts });
       });
 
     // The capsule machines: same full-screen takeover as walk mode, different controller

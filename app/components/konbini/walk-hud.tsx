@@ -6,6 +6,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "app/lib/games";
 import type { MangaItem } from "app/lib/komga";
 import type { ShelfGame } from "app/lib/steam";
+import { beep } from "./ambience";
 import { USE_EVENT } from "./events";
 import { INTERACTION_LABELS, mangaCoverUrl, PRINTS, TOASTS, type InteractionId } from "./interactions";
 import { drawIcon, drawPixelated, loadCover } from "./pixel-icons";
@@ -85,7 +86,10 @@ export default function WalkHud({
       }
       else {
         const lines = TOASTS[id] ?? [];
-        if (lines.length) say(lines[Math.floor(Math.random() * lines.length)]);
+        if (lines.length) {
+          say(lines[Math.floor(Math.random() * lines.length)]);
+          beep();
+        }
       }
     };
     window.addEventListener(USE_EVENT, onUse);

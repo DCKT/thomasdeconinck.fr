@@ -13,7 +13,9 @@ export type InteractionId =
   | "oden"
   | "coffee"
   | "onigiri"
-  | "snacks";
+  | "snacks"
+  | "icecream"
+  | "kiosk";
 
 export const INTERACTION_LABELS: Record<InteractionId, string> = {
   blog: "Read the blog",
@@ -30,6 +32,8 @@ export const INTERACTION_LABELS: Record<InteractionId, string> = {
   coffee: "Pour a coffee",
   onigiri: "Grab an onigiri",
   snacks: "Pick a snack",
+  icecream: "Slide the lid · Ice cream",
+  kiosk: "Use the ticket machine",
 };
 
 /** Things you buy: they just say something nice. */
@@ -40,6 +44,8 @@ export const TOASTS: Partial<Record<InteractionId, string[]>> = {
   coffee: ["Regular hot coffee, ¥120. The machine whirrs…", "Iced café latte. Cup, ice, button."],
   onigiri: ["Tuna mayo onigiri. Pull tab 1, then 2, then 3.", "Salmon onigiri. Nori still crispy."],
   snacks: ["A bag of chips for the walk home.", "Chocolate biscuit sticks. Obviously."],
+  icecream: ["A chocolate monaka, cold enough to hurt.", "Soda bar. There might be a winning stick inside.", "Matcha ice cream. The lid squeaks shut."],
+  kiosk: ["The machine prints a ticket… for a concert in 2009.", "「画面にタッチしてください」. You touch the screen. It beeps."],
 };
 
 /** Same-origin, resized manga cover (proxied from Komga by app/api/komga/cover). */
